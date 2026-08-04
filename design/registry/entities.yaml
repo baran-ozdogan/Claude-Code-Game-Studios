@@ -1,0 +1,461 @@
+# Game World Entity Registry
+#
+# PURPOSE: Single source of truth for all named game-world facts that appear
+# in more than one document. Skills check this before writing new content to
+# detect cross-doc inconsistencies at authoring time.
+#
+# RULES:
+#   - Only register facts that cross system boundaries. Internal-only facts
+#     (a formula used in one GDD only) do NOT need to be registered.
+#   - Never delete entries — set status: deprecated instead.
+#   - When a value changes: update the value, set revised: to today's date,
+#     and add a comment with the old value and which GDD changed it.
+#   - source: is the authoritative GDD — the one that "owns" this fact.
+#     Other GDDs that reference it list themselves in referenced_by.
+#   - When a new GDD references an existing entry, append its path to
+#     referenced_by. Do not create a duplicate entry.
+#
+# WRITTEN BY: /design-system (Phase 5 — after GDD sections are approved)
+#             /consistency-check (when resolving conflicts)
+# READ BY:    /design-system (Phase 2 — before authoring begins, and after
+#               Section C/D writes to conflict-check new entities/formulas)
+#             /consistency-check (primary input — grep-first, GDD-second)
+#             /review-all-gdds (Phase 1 — baseline for Phase 2 checks)
+#             /architecture-review (data structure and interface validation)
+#
+# SEARCH PATTERNS (for skills using Grep):
+#   All entity names:        Grep pattern="^  - name:" path="design/registry/entities.yaml"
+#   Specific entity:         Grep pattern="  - name: goblin" path="design/registry/entities.yaml"
+#   All items:               Grep pattern="^  - name:" path="design/registry/entities.yaml" (items section)
+#   What combat.md owns:     Grep pattern="source: design/gdd/combat.md"
+#   What inventory.md uses:  Grep pattern="referenced_by.*inventory"
+#   All gold values:          Grep pattern="value_gold:"
+#   Deprecated entries:      Grep pattern="status: deprecated"
+#
+# FORMAT: YAML. Consistent indentation is critical for grep reliability.
+#   Sections: entities | items | formulas | constants
+#   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
+
+version: 1
+last_updated: "2026-08-02" # etkilesim-sistemi.md added hold_progress
+
+# ─── ENTITIES ────────────────────────────────────────────────────────────────
+# Named game-world objects: enemies, NPCs, characters, factions, bosses.
+# Register an entity here when it appears in more than one GDD — e.g., an
+# enemy defined in combat.md that also drops items listed in inventory.md.
+#
+# Required fields: name, status, source, referenced_by, added
+# Attribute fields: any key stats that could appear in another GDD
+#   (health, damage, drops, faction, etc.)
+
+entities: []
+
+# Example (remove when first real entry is added):
+#
+# entities:
+#   - name: goblin
+#     status: active              # active | deprecated
+#     source: design/gdd/combat.md
+#     referenced_by:
+#       - design/gdd/combat.md
+#       - design/gdd/inventory.md
+#     health: 40
+#     damage: 8
+#     drops:
+#       - item: goblin_arm        # must match an entry in items section
+#         qty: 1
+#         drop_rate: 0.8          # 0.0–1.0
+#     added: 2026-03-26
+#     revised: ""
+
+
+# ─── ITEMS ───────────────────────────────────────────────────────────────────
+# Named collectables, equipment, consumables, crafting materials, currency.
+# Register an item when its name or value appears in more than one GDD.
+#
+# Required fields: name, status, source, referenced_by, added
+# Attribute fields: value_gold, weight, stackable, category, and any stat
+#   modifiers that another system (e.g., economy, crafting) might reference.
+
+items: []
+
+# Example:
+#
+# items:
+#   - name: goblin_arm
+#     status: active
+#     source: design/gdd/combat.md   # drop defined in combat GDD
+#     referenced_by:
+#       - design/gdd/combat.md
+#       - design/gdd/inventory.md    # inventory GDD lists its weight/stack rules
+#       - design/gdd/economy.md      # economy GDD references its sell price
+#     value_gold: 5
+#     weight: 1
+#     stackable: true
+#     category: crafting_material
+#     added: 2026-03-26
+#     revised: ""
+
+
+# ─── FORMULAS ────────────────────────────────────────────────────────────────
+# Named calculations with defined variables and output ranges.
+# Register a formula when its output feeds into another system's input,
+# or when another GDD references it by name.
+#
+# Required fields: name, status, source, referenced_by, variables[],
+#   output_range[min, max], added
+# Optional: expression (the actual formula), notes
+
+formulas:
+  - name: movement_acceleration
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - v_t
+      - v_target
+      - delta_t
+      - k
+      - T_ramp
+    output_range: [0, 1.6]
+    expression: "v(t+Δt) = v_target + (v(t) - v_target) × e^(-k·Δt), k = 3/T_ramp"
+    notes: "T_ramp is a Tuning Knob (0.15-0.25s). v_target is fed by approach_slow_taper."
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_taper
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - d
+      - x
+      - TaperMult
+      - CarryMult
+    output_range: [0.945, 1.6]
+    expression: "x = clamp(d/1.5, 0, 1); ease(x) = x²(3-2x); TaperMult = 0.7 + 0.3×ease(x); v_target = 1.6 × CarryMult × TaperMult"
+    notes: "d = distance to nearest flagged interactable — deliberately shared across ALL interactables (not just memory-triggers) as camouflage per CD-GDD-ALIGN, protects Pillar 5 (Anlam Sona Saklı)."
+    added: 2026-08-01
+    revised: ""
+
+  - name: headbob_amplitude
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - Amplitude
+      - A_max
+      - v
+      - S
+    output_range: [0, 3]
+    expression: "Amplitude(v, S) = A_max × (v/1.6) × (S/100)"
+    notes: "A_max not yet finalized (Tuning Knob, 1-3cm range) — see Open Questions in source GDD."
+    added: 2026-08-01
+    revised: ""
+
+  - name: shift_progress
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - ElapsedTime
+      - Duration
+      - x
+      - ShiftProgress
+    output_range: [0, 1]
+    expression: "ShiftProgress = 3x² − 2x³, where x = clamp(ElapsedTime/Duration, 0, 1)"
+    notes: "Smoothstep easing — zero derivative at both endpoints, matches 'whisper not alarm' Player Fantasy."
+    added: 2026-08-01
+    revised: ""
+
+  - name: hysteresis_radius
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - R_trigger
+      - k_hysteresis
+      - R_exit
+    output_range: null
+    expression: "R_exit = R_trigger × k_hysteresis"
+    notes: "Proportional buffer, not fixed additive — keeps dead zone visually consistent across differently sized trigger zones."
+    added: 2026-08-01
+    revised: ""
+
+  - name: light_color_intensity_blend
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - ShiftProgress
+      - BaseColor
+      - MemoryColor
+      - BaseIntensity
+      - MemoryIntensityMultiplier
+    output_range: null
+    expression: "LightColor = Lerp(BaseColor, MemoryColor, ShiftProgress); LightIntensity = BaseIntensity × Lerp(1, MemoryIntensityMultiplier, ShiftProgress)"
+    notes: "Both channels driven by the same ShiftProgress — guarantees color and intensity always move in lockstep."
+    added: 2026-08-01
+    revised: ""
+
+  - name: ambient_crossfade
+    status: active
+    source: design/gdd/adaptif-ses-sistemi.md
+    referenced_by:
+      - design/gdd/adaptif-ses-sistemi.md
+    variables:
+      - elapsed
+      - T
+      - x
+      - volume_A
+      - volume_B
+    output_range: [0, 1]
+    expression: "x = clamp(elapsed/T, 0, 1); ease(x) = x²(3-2x); volume_B = ease(x); volume_A = 1 - ease(x)"
+    notes: "Same smoothstep curve/rationale as shift_progress ('whisper not alarm') — one easing convention across systems. T is a Tuning Knob, 1-2s."
+    added: 2026-08-02
+    revised: ""
+
+  - name: footstep_volume
+    status: active
+    source: design/gdd/adaptif-ses-sistemi.md
+    referenced_by:
+      - design/gdd/adaptif-ses-sistemi.md
+      - design/gdd/gorev-tasima-dongusu.md
+    variables:
+      - speed
+      - walk_speed_unloaded
+    output_range: [0, 1]
+    expression: "footstep_volume = speed / walk_speed_unloaded"
+    notes: "Speed-relative, not state-relative — never branches on carry state. walk_speed_unloaded is the shared registry constant (1.6 m/s), consistent with birinci-sahis-kontrolcu.md's usage."
+    added: 2026-08-02
+    revised: ""
+
+  - name: hold_progress
+    status: active
+    source: design/gdd/etkilesim-sistemi.md
+    referenced_by:
+      - design/gdd/etkilesim-sistemi.md
+    variables:
+      - elapsedHoldTime
+      - HoldDuration
+      - t
+    output_range: [0, 1]
+    expression: "t = clamp(elapsedHoldTime / HoldDuration, 0, 1)"
+    notes: "Deliberately linear, not eased — Player Fantasy ('Eller Zaten Biliyor') calls for a confident, mechanical action, not a dramatic charge-up. Downstream systems (Görev/Taşıma Döngüsü, Anı-Tetikleyici Etkileşim) may remap t through their own easing in their own GDDs, but this core value stays linear."
+    added: 2026-08-02
+    revised: ""
+
+# Example:
+#
+# formulas:
+#   - name: damage_formula
+#     status: active
+#     source: design/gdd/combat.md
+#     referenced_by:
+#       - design/gdd/combat.md
+#       - design/gdd/progression.md   # progression GDD scales attack variable
+#     variables:
+#       - attack
+#       - defense
+#       - crit_chance
+#       - crit_multiplier
+#     output_range: [0, 999]
+#     expression: "max(0, attack - defense) * (1 + crit_chance * crit_multiplier)"
+#     notes: "Output feeds into health-system damage intake. Min is 0 (armour
+#       can absorb all damage). Max is uncapped in formula but tuning knob
+#       damage_cap in combat.md clamps at 999."
+#     added: 2026-03-26
+#     revised: ""
+
+
+# ─── CONSTANTS ───────────────────────────────────────────────────────────────
+# Named numerical values referenced across multiple systems.
+# Register a constant when it is defined in one GDD but another GDD must
+# agree with it (e.g., gold carry limit defined in economy but checked in
+# inventory, or base inventory slots defined in inventory but displayed in HUD).
+#
+# Required fields: name, status, source, referenced_by, value, unit, added
+
+constants:
+  - name: walk_speed_unloaded
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/adaptif-ses-sistemi.md
+    value: 1.6
+    unit: m/s
+    added: 2026-08-01
+    revised: ""
+
+  - name: walk_speed_carrying
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/gorev-tasima-dongusu.md
+    value: 1.35
+    unit: m/s
+    added: 2026-08-01
+    revised: ""
+
+  - name: carry_multiplier
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/gorev-tasima-dongusu.md
+    value: 0.84375
+    unit: ratio
+    notes: "walk_speed_carrying / walk_speed_unloaded (1.35/1.6)"
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_radius
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: 1.5
+    unit: m
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_min_multiplier
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: 0.7
+    unit: ratio
+    notes: "Speed floor at d=0 (max 30% reduction)"
+    added: 2026-08-01
+    revised: ""
+
+  - name: pitch_clamp
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: [-80, 80]
+    unit: degrees
+    added: 2026-08-01
+    revised: ""
+
+  - name: fov_default
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: [75, 80]
+    unit: degrees
+    notes: "Accessibility slider range 60-100"
+    added: 2026-08-01
+    revised: ""
+
+  - name: shift_duration
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 3.0
+    unit: s
+    notes: "Tuning Knob range 2-5s. Validated by concept prototype."
+    added: 2026-08-01
+    revised: ""
+
+  - name: hysteresis_factor
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 1.15
+    unit: ratio
+    notes: "Tuning Knob range 1.05-1.3. R_exit = R_trigger x k_hysteresis"
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_intensity_multiplier_default
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 0.6
+    unit: ratio
+    notes: "Tuning Knob range 0.5-0.9, but default must be >=0.6 per accessibility requirement (color-blind players need the luminance drop alone to read)."
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_color_blue
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: [128, 179, 255]
+    unit: RGB
+    notes: "Primary MemoryColor target for light lerp — 'emotional/cold memory' triggers"
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_color_sodium_green
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: [150, 204, 153]
+    unit: RGB
+    notes: "Alternate MemoryColor target — 'industrial/artificial memory' triggers"
+    added: 2026-08-01
+    revised: ""
+
+  - name: volume_profile_white_balance
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: { temperature: -60, tint: 10 }
+    notes: "Locked Volume Profile override, formalized from concept prototype"
+    added: 2026-08-01
+    revised: ""
+
+  - name: volume_profile_color_adjustments
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: { post_exposure: -0.5, saturation: -20 }
+    notes: "Locked Volume Profile override, formalized from concept prototype"
+    added: 2026-08-01
+    revised: ""
+
+# Example:
+#
+# constants:
+#   - name: gold_carry_limit
+#     status: active
+#     source: design/gdd/economy.md
+#     referenced_by:
+#       - design/gdd/economy.md
+#       - design/gdd/inventory.md   # inventory enforces the carry limit
+#       - design/gdd/ui.md          # HUD displays current gold vs limit
+#     value: 9999
+#     unit: gold
+#     added: 2026-03-26
+#     revised: ""
+#
+#   - name: base_inventory_slots
+#     status: active
+#     source: design/gdd/inventory.md
+#     referenced_by:
+#       - design/gdd/inventory.md
+#       - design/gdd/progression.md  # progression unlocks additional slots
+#     value: 20
+#     unit: slots
+#     added: 2026-03-26
+#     revised: ""
