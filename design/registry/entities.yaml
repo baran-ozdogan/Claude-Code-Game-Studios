@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-08-02" # etkilesim-sistemi.md added hold_progress
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -106,7 +106,150 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: movement_acceleration
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - v_t
+      - v_target
+      - delta_t
+      - k
+      - T_ramp
+    output_range: [0, 1.6]
+    expression: "v(t+Δt) = v_target + (v(t) - v_target) × e^(-k·Δt), k = 3/T_ramp"
+    notes: "T_ramp is a Tuning Knob (0.15-0.25s). v_target is fed by approach_slow_taper."
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_taper
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - d
+      - x
+      - TaperMult
+      - CarryMult
+    output_range: [0.945, 1.6]
+    expression: "x = clamp(d/1.5, 0, 1); ease(x) = x²(3-2x); TaperMult = 0.7 + 0.3×ease(x); v_target = 1.6 × CarryMult × TaperMult"
+    notes: "d = distance to nearest flagged interactable — deliberately shared across ALL interactables (not just memory-triggers) as camouflage per CD-GDD-ALIGN, protects Pillar 5 (Anlam Sona Saklı)."
+    added: 2026-08-01
+    revised: ""
+
+  - name: headbob_amplitude
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    variables:
+      - Amplitude
+      - A_max
+      - v
+      - S
+    output_range: [0, 3]
+    expression: "Amplitude(v, S) = A_max × (v/1.6) × (S/100)"
+    notes: "A_max not yet finalized (Tuning Knob, 1-3cm range) — see Open Questions in source GDD."
+    added: 2026-08-01
+    revised: ""
+
+  - name: shift_progress
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - ElapsedTime
+      - Duration
+      - x
+      - ShiftProgress
+    output_range: [0, 1]
+    expression: "ShiftProgress = 3x² − 2x³, where x = clamp(ElapsedTime/Duration, 0, 1)"
+    notes: "Smoothstep easing — zero derivative at both endpoints, matches 'whisper not alarm' Player Fantasy."
+    added: 2026-08-01
+    revised: ""
+
+  - name: hysteresis_radius
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - R_trigger
+      - k_hysteresis
+      - R_exit
+    output_range: null
+    expression: "R_exit = R_trigger × k_hysteresis"
+    notes: "Proportional buffer, not fixed additive — keeps dead zone visually consistent across differently sized trigger zones."
+    added: 2026-08-01
+    revised: ""
+
+  - name: light_color_intensity_blend
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    variables:
+      - ShiftProgress
+      - BaseColor
+      - MemoryColor
+      - BaseIntensity
+      - MemoryIntensityMultiplier
+    output_range: null
+    expression: "LightColor = Lerp(BaseColor, MemoryColor, ShiftProgress); LightIntensity = BaseIntensity × Lerp(1, MemoryIntensityMultiplier, ShiftProgress)"
+    notes: "Both channels driven by the same ShiftProgress — guarantees color and intensity always move in lockstep."
+    added: 2026-08-01
+    revised: ""
+
+  - name: ambient_crossfade
+    status: active
+    source: design/gdd/adaptif-ses-sistemi.md
+    referenced_by:
+      - design/gdd/adaptif-ses-sistemi.md
+    variables:
+      - elapsed
+      - T
+      - x
+      - volume_A
+      - volume_B
+    output_range: [0, 1]
+    expression: "x = clamp(elapsed/T, 0, 1); ease(x) = x²(3-2x); volume_B = ease(x); volume_A = 1 - ease(x)"
+    notes: "Same smoothstep curve/rationale as shift_progress ('whisper not alarm') — one easing convention across systems. T is a Tuning Knob, 1-2s."
+    added: 2026-08-02
+    revised: ""
+
+  - name: footstep_volume
+    status: active
+    source: design/gdd/adaptif-ses-sistemi.md
+    referenced_by:
+      - design/gdd/adaptif-ses-sistemi.md
+      - design/gdd/gorev-tasima-dongusu.md
+    variables:
+      - speed
+      - walk_speed_unloaded
+    output_range: [0, 1]
+    expression: "footstep_volume = speed / walk_speed_unloaded"
+    notes: "Speed-relative, not state-relative — never branches on carry state. walk_speed_unloaded is the shared registry constant (1.6 m/s), consistent with birinci-sahis-kontrolcu.md's usage."
+    added: 2026-08-02
+    revised: ""
+
+  - name: hold_progress
+    status: active
+    source: design/gdd/etkilesim-sistemi.md
+    referenced_by:
+      - design/gdd/etkilesim-sistemi.md
+    variables:
+      - elapsedHoldTime
+      - HoldDuration
+      - t
+    output_range: [0, 1]
+    expression: "t = clamp(elapsedHoldTime / HoldDuration, 0, 1)"
+    notes: "Deliberately linear, not eased — Player Fantasy ('Eller Zaten Biliyor') calls for a confident, mechanical action, not a dramatic charge-up. Downstream systems (Görev/Taşıma Döngüsü, Anı-Tetikleyici Etkileşim) may remap t through their own easing in their own GDDs, but this core value stays linear."
+    added: 2026-08-02
+    revised: ""
 
 # Example:
 #
@@ -139,7 +282,157 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: walk_speed_unloaded
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/adaptif-ses-sistemi.md
+    value: 1.6
+    unit: m/s
+    added: 2026-08-01
+    revised: ""
+
+  - name: walk_speed_carrying
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/gorev-tasima-dongusu.md
+    value: 1.35
+    unit: m/s
+    added: 2026-08-01
+    revised: ""
+
+  - name: carry_multiplier
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+      - design/gdd/gorev-tasima-dongusu.md
+    value: 0.84375
+    unit: ratio
+    notes: "walk_speed_carrying / walk_speed_unloaded (1.35/1.6)"
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_radius
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: 1.5
+    unit: m
+    added: 2026-08-01
+    revised: ""
+
+  - name: approach_slow_min_multiplier
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: 0.7
+    unit: ratio
+    notes: "Speed floor at d=0 (max 30% reduction)"
+    added: 2026-08-01
+    revised: ""
+
+  - name: pitch_clamp
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: [-80, 80]
+    unit: degrees
+    added: 2026-08-01
+    revised: ""
+
+  - name: fov_default
+    status: active
+    source: design/gdd/birinci-sahis-kontrolcu.md
+    referenced_by:
+      - design/gdd/birinci-sahis-kontrolcu.md
+    value: [75, 80]
+    unit: degrees
+    notes: "Accessibility slider range 60-100"
+    added: 2026-08-01
+    revised: ""
+
+  - name: shift_duration
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 3.0
+    unit: s
+    notes: "Tuning Knob range 2-5s. Validated by concept prototype."
+    added: 2026-08-01
+    revised: ""
+
+  - name: hysteresis_factor
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 1.15
+    unit: ratio
+    notes: "Tuning Knob range 1.05-1.3. R_exit = R_trigger x k_hysteresis"
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_intensity_multiplier_default
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: 0.6
+    unit: ratio
+    notes: "Tuning Knob range 0.5-0.9, but default must be >=0.6 per accessibility requirement (color-blind players need the luminance drop alone to read)."
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_color_blue
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: [128, 179, 255]
+    unit: RGB
+    notes: "Primary MemoryColor target for light lerp — 'emotional/cold memory' triggers"
+    added: 2026-08-01
+    revised: ""
+
+  - name: memory_color_sodium_green
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: [150, 204, 153]
+    unit: RGB
+    notes: "Alternate MemoryColor target — 'industrial/artificial memory' triggers"
+    added: 2026-08-01
+    revised: ""
+
+  - name: volume_profile_white_balance
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: { temperature: -60, tint: 10 }
+    notes: "Locked Volume Profile override, formalized from concept prototype"
+    added: 2026-08-01
+    revised: ""
+
+  - name: volume_profile_color_adjustments
+    status: active
+    source: design/gdd/isik-volume-durum-sistemi.md
+    referenced_by:
+      - design/gdd/isik-volume-durum-sistemi.md
+    value: { post_exposure: -0.5, saturation: -20 }
+    notes: "Locked Volume Profile override, formalized from concept prototype"
+    added: 2026-08-01
+    revised: ""
 
 # Example:
 #
