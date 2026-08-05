@@ -220,9 +220,14 @@ yeniden eşleme kendi GDD'lerinde tanımlanır, burada değil.
   `HoldDuration <= 0` kontrolü bölme işleminden ÖNCE yapılır) doğrudan
   `OnHoldComplete()` çağrılır ve Editor'da `Debug.LogWarning` basılır.
 - **Eğer SphereCast aynı karede birden fazla `IInteractable`'ı vurursa**
-  (çakışan collider'lar): `Physics.SphereCastAll` sonuç sırası mesafeye göre
-  garanti değildir; odak seçimi açıkça "en küçük `hit.distance`" kuralıyla
-  yapılır, mesafe eşitliğinde collider'ın `InstanceID`'si en küçük olan
+  (çakışan collider'lar): `Physics.SphereCastNonAlloc` (düzeltildi — bkz.
+  ADR-0007, unity-specialist bulgusu 2026-08-05: `SphereCastAll` her
+  çağrıda GC allocation yapar, bu projenin hot-path standardına aykırı;
+  `SphereCastNonAlloc` + tekrar kullanılan bir buffer aynı çoklu-hit
+  semantiğini allocation olmadan sağlar, davranış değişmedi) sonuç sırası
+  mesafeye göre garanti değildir; odak seçimi açıkça "en küçük
+  `hit.distance`" kuralıyla yapılır, mesafe eşitliğinde collider'ın
+  `InstanceID`'si en küçük olan
   kazanır (kareden kareye deterministik).
 - **Eğer kilit BAŞKA bir sistem tarafından zaten tutuluyorsa** (örn.
   Sahne Kesmeli Anlatı bir cutscene için): Hold başlatılmaz, Holding
