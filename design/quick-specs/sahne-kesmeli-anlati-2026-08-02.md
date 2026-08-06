@@ -158,34 +158,7 @@ Sahne Kesmeli Anlatı, bir gecenin ne zaman biteceğine ve psikiyatri seansı sa
   `onComplete`/`onFailed` içinde serbest bırakılır — bu aynı zamanda
   Seviye/Sahne Geçişi'nin kendi Blocked Acceptance Criteria tablosundaki
   AC-12'nin (kilit-serbest-bırakma) eksik yarısını da kapatır.
-- **Tekrar-tetiklenme guard'ı**: Sistem gece başına **tam bir kez** tetiklenir — `HasTriggeredThisNight` bool, `RequestHardCut` çağrılır çağrılmaz `true` olur; ikinci bir bitiş sinyali (örn. aynı karede iki koşul da sağlanırsa) no-op'tur. **Aynı karede öncelik sırası** (design-review, 2026-08-06 — re-verification bulgusu, kullanıcı kararıyla çözüldü, bkz. aşağıdaki not) belirler HANGİ koşulun bu tek çağrıyı ürettiği — bkz. hemen aşağıdaki madde.
-- **Aynı karede iki koşulun da sağlanması — öncelik kuralı (design-review,
-  2026-08-06 — re-verification bulgusu, en kritik yeni bulgu, kullanıcı
-  kararıyla çözüldü)**: 2026-08-04'te eklenen `HardCutConfig.Abrupt`
-  ayrımından önce bu belirsizlik zararsızdı — iki bitiş de mekanik olarak
-  özdeşti. Artık değil: hangi koşulun "önce gerçekleştiği" tanımsızsa
-  (görev-tamamlama sinyali ile doygunluk sinyali tam olarak aynı Update
-  karesinde tetiklenirse — gerçekçi bir senaryo, çünkü `HasCarriedInFinalRound`
-  zaten son roundda taşımayı gerektirir, tam da son teslimatın da
-  gerçekleştiği pencere), Unity'nin event-abone sırası (bu belgede hiç
-  tanımlanmamış) hangi tonun (`Abrupt=true`/`false`) oynatılacağına keyfi
-  olarak karar verirdi — bu, belgenin kendi Player Fantasy'sinin ("iki
-  bitiş, iki farklı his taşımalı") güvenilir şekilde teslim edilmemesi
-  anlamına gelirdi. **Kural**: sistem her karede önce (a) görev-tamamlama
-  koşulunu kontrol eder; `OnTaskListCompleted` bu karede zaten fırlamışsa
-  VE `HasTriggeredThisNight=false` ise, **(a) kazanır** (`Abrupt=false`),
-  doygunluk koşulu o karede ayrıca değerlendirilmeden geçilir. Doygunluğun
-  üç event'inden biri (`OnTriggerSettled`, `OnFinalRoundStarted`,
-  `OnFinalRoundItemPickedUp`) aynı karede fırlarsa ve görev-tamamlama
-  sinyali fırlamamışsa, (b) normal şekilde değerlendirilir. Seçim
-  kasıtlı: Pillar 2 (Sessiz Gerilim, Şok Değil) ile tutarlı — iki koşul
-  da meşru şekilde `true` olduğunda, varsayılan olarak daha sakin sonuca
-  gidilir, ani/şok edici olana değil; ayrıca oyuncunun görevini bitirmiş
-  olması gecenin kapanışını hak eden birincil sinyal olarak okunur.
-  Bu, `HasTriggeredThisNight` guard'ının **hangi** çağrının gerçekleştiğini
-  belirlemesi değil, sadece ikinci bir çağrının asla olmamasını garanti
-  etmesiyle aynı seviyede — öncelik kuralı, guard tetiklenmeden **önce**
-  hangi koşulun kontrol edildiğini belirler.
+- **Tekrar-tetiklenme guard'ı**: Sistem gece başına **tam bir kez** tetiklenir — `HasTriggeredThisNight` bool, `RequestHardCut` çağrılır çağrılmaz `true` olur; ikinci bir bitiş sinyali (örn. aynı karede iki koşul da sağlanırsa) no-op'tur.
 - **Oturum kapanışı**: `onComplete` içinde Gece/Oturum Durumu'nun oturumu sonlandırılır (`IsSessionActive=false`) VE hareket kilidi serbest bırakılır. `onFailed` içinde de hareket kilidi serbest bırakılır (oturum sonlandırılmaz — geçiş başarısız oldu, gece teknik olarak bitmedi).
 - **Diyalog seçimine karışmaz**: `onComplete` sonrası (psikiyatri sahnesi aktif), Diyalog/Anlatı İçeriği kendi başlangıç akışıyla `IsClueKnown` sorgular — bu sistem sadece doğru sahnenin yüklü olmasını garanti eder.
 
@@ -237,7 +210,6 @@ bu alanın veri-sahipliği N5'ten bağımsız, hâlâ ayrı bir açık madde.)*
 - [ ] **[BLOCKING, design-review 2026-08-04 — verification design-theory bulgusu, en kritik bulgu, eklendi]** GIVEN yukarıdaki durumun devamı (tüm tetikleyiciler `Held`, `IsFinalRoundActive=true`, `HasCarriedInFinalRound=false`), WHEN oyuncu son round'un ilk eşyasını alır ve `OnFinalRoundItemPickedUp` fırlar, THEN doygunluk koşulu bu event üzerinden yeniden değerlendirilir ve `true` bulunur, `RequestMovementLock(this, Full)` ardından `RequestHardCut` tam bir kez çağrılır (`config.Abrupt=true` ile) — bu, önceki taslağın "son round hiç oynanmadan gece biter" hatasının somut düzeltme testidir (bkz. `gdd-cross-review-2026-08-04.md`)
 - [ ] **[design-review, 2026-08-04 — full re-verification bulgusu, eklendi, saturation-timing düzeltmesinin çekirdek testi]** GIVEN son tetikleyicinin Hold'u tamamlanmış (`FiredTriggerIds`'e girmiş) ama henüz `Held`'e ulaşmamış (`SettledTriggerIds`'e girmemiş), WHEN saturation koşulunun diğer iki şartı (`IsFinalRoundActive`, `HasCarriedInFinalRound`) zaten `true`, THEN `RequestHardCut` **henüz** çağrılmaz — ışığın rampası ve stinger'ın tamamlanması için gereken süre boyunca gece bitmez, sadece `Held` gerçekten ulaşıldığında (`OnTriggerSettled` fırladığında) tetiklenir
 - [ ] **[design-review, 2026-08-04 — full re-verification bulgusu, eklendi]** GIVEN saturation koşulu tetiklenir, WHEN `RequestHardCut` çağrılır, THEN `config.Abrupt=true` iletilir; GIVEN görev-tamamlama koşulu tetiklenir, WHEN `RequestHardCut` çağrılır, THEN `config.Abrupt=false` iletilir — iki bitiş asla aynı `Abrupt` değerini paylaşmaz
-- [ ] **[design-review, 2026-08-06 — re-verification bulgusu, eklendi, öncelik kuralının çekirdek testi]** GIVEN `OnTaskListCompleted` fırlar VE aynı karede doygunluk koşulunun üç event'inden biri de fırlar (tüm üç doygunluk şartı zaten `true`), WHEN sistem her ikisini de aynı karede alır, THEN `RequestHardCut` tam bir kez çağrılır, `config.Abrupt=false` ile (görev-tamamlama kazanır) — sonuç Unity'nin event-abone sırasından bağımsız, deterministiktir
 - [ ] GIVEN `HasTriggeredThisNight=true`, WHEN diğer bitiş sinyali de gelir, THEN hiçbir ek `RequestHardCut` çağrısı yapılmaz
 - [ ] GIVEN preload-eşiği koşullarından biri sağlanır, WHEN `PreloadHardCut` çağrılır, THEN gerçek tetiklemede sıfır-kare gecikme garantisi korunur
 - [ ] GIVEN `RequestHardCut`'ın `onComplete`'i çağrılır, WHEN callback çalışır, THEN Gece/Oturum Durumu'nun oturum-sonlandırma çağrısı VE hareket-kilidi-serbest-bırakma çağrısı tam bir kez yapılır
