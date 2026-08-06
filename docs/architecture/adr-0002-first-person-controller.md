@@ -95,6 +95,21 @@ void Awake() {
 ```
 This preserves this ADR's original constructor/Inspector-injection intent exactly — a test or a scene author can still directly assign a specific (real or mock) `IFlaggedObjectRegistry` and it takes priority — while closing the previously-open question of what assigns the real one during normal gameplay. `flagged_object_registry`'s producer is now resolved (`interaction-system`, ADR-0007) in `docs/registry/architecture.yaml`; this ADR's own Decision above is otherwise unchanged.
 
+**Amendment (ADR-0008, Elevator/Floor-Access System, 2026-08-05) — `ISceneTransitionAware` gets a real consumer, plus a new `IPlayerTeleport` interface and self-registration**: `ISceneTransitionAware` (see Key Interfaces below) was originally specified as "not exposed directly" — implemented by `PlayerController` but never made reachable by any other system. ADR-0008 (Elevator) is the first real consumer, and closes a gap ADR-0006's own Risks section had flagged as unsolved (a static Foundation-tier consumer needing a reference to a scene-resident `MonoBehaviour` singleton that doesn't exist yet when `FoundationCompositionRoot.Wire()` runs at `BeforeSceneLoad`). Rather than a raw property push from `Awake()` (considered and rejected by TD-ADR review for lacking symmetric teardown — a destroyed `PlayerController` left behind an interface-typed static reference does not safely degrade to null), `PlayerController` now self-registers using this project's existing `scene_object_self_registration` convention:
+```csharp
+void OnEnable()  => FoundationCompositionRoot.RegisterPlayer(this);
+void OnDisable() => FoundationCompositionRoot.UnregisterPlayer(this);
+```
+`FoundationCompositionRoot.MovementLock` (typed `ISceneTransitionAware`) and a new `FoundationCompositionRoot.PlayerTeleport` (typed `IPlayerTeleport`, see below) are both assigned/cleared together by this registration pair, reference-checked on the way out. This ADR's own Decision above (the movement-lock state machine itself) is otherwise unchanged — only reachability and lifecycle safety are added.
+
+**New interface, `IPlayerTeleport`** (ADR-0008): deliberately kept separate from `ISceneTransitionAware` rather than adding a `Teleport` method to it — every future holder of the movement lock (Cutscene, etc.) would otherwise also gain the ability to hard-teleport the player, which this ADR never intended to expose that broadly:
+```csharp
+public interface IPlayerTeleport {
+    void Teleport(Vector3 position, Quaternion rotation);
+}
+```
+`PlayerController` implements it: `_characterController.enabled = false; transform.SetPositionAndRotation(position, rotation); _verticalVelocity = 0f; _characterController.enabled = true;` — disable/set/re-enable is required for `CharacterController` (confirmed correct for Unity 6.3 by unity-specialist review during ADR-0008), and the vertical-velocity/grounded-state reset prevents a free-fall/snap on the first `Move()` after teleporting. This is the only place in the codebase permitted to move the player by a hard position set rather than `Move()`'s velocity-delta — `CharacterController` otherwise remains "never exposed directly" exactly as this ADR's Key Interfaces originally specified.
+
 ### Input consumption pattern (design decision, confirmed with user)
 A generated C# class (`new PlayerControls()`, from Unity's Input Actions asset with "Generate C# Class" checked) is instantiated in `Awake()`, with `controls.Enable()`/`controls.Disable()` called from `OnEnable()`/`OnDisable()` — matching the engine reference's documented recommended pattern. `Move`/`Look` are read via `ReadValue<Vector2>()` each `Update()` (continuous Value-type actions).
 
@@ -221,4 +236,5 @@ N/A — greenfield system, no existing code to migrate from.
 ## Related Decisions
 - Enables: future ADRs for Etkileşim Sistemi, Asansör/Kat-Erişim Sistemi, Görev/Taşıma Döngüsü, Adaptif Ses Sistemi, Işık/Volume Durum Sistemi, Sahne Kesmeli Anlatı
 - Depends conceptually (not formally) on ADR-0001's `RequestMovementLock`/`ReleaseMovementLock` non-ownership stance — ADR-0001 explicitly never calls these; this ADR is where they're actually defined
+- Amended by ADR-0008 (Elevator/Floor-Access System) — `ISceneTransitionAware` gets its first real consumer, new `IPlayerTeleport` interface, `PlayerController` self-registers into `FoundationCompositionRoot` via `OnEnable`/`OnDisable`
 - See `docs/architecture/architecture-review-2026-08-05.md` for the full requirements baseline and recommended ADR authoring order

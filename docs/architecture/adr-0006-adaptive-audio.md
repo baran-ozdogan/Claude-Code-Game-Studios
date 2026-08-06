@@ -102,6 +102,42 @@ public static class FoundationCompositionRoot {
 ```
 This class does not conceptually "belong" to Adaptive Audio alone — it is specified here because this ADR is where the recurring problem became undeniable (three `LightingQuery` assignments plus a new `TransitionSource` assignment, all needing one deterministic, ordered bootstrap). **ADR-0005 is amended** (see accompanying amendment) to note that its own bootstrap method is superseded by this composition root — `LightingVolumeQueryAdapter` itself remains ADR-0005's, only the *assignment* of it to consumer properties has moved. Future Batch 2/3 ADRs that need similar cross-static wiring add their assignment to `FoundationCompositionRoot.Wire()` and register themselves in the `foundation_composition_root` registry entry's `referenced_by` list, rather than hand-editing whichever ADR happened to define the interface first.
 
+**Amendment (ADR-0007, Interaction System, 2026-08-05)**: extends `FoundationCompositionRoot` with a `FlaggedObjectRegistry` static property, pull-wired in `Wire()` (`InteractableRegistryAdapter` wraps the static `InteractableRegistry`) — see ADR-0007 for the full addition. Also introduces the "MonoBehaviour adopts the composition-root value only if its own injected field is still unset" sub-case for `PlayerController.Awake()`, since `Wire()` cannot assign an instance field on a not-yet-created `MonoBehaviour`.
+
+**Amendment (ADR-0008, Elevator/Floor-Access System, 2026-08-05)**: extends `FoundationCompositionRoot` further, closing this ADR's own Risks section's flagged-as-unsolved "two-way dependency" gap (a static consumer needing a reference *into* a not-yet-existing `MonoBehaviour` singleton — the reverse direction from ADR-0007's adopt-if-unset fix):
+```csharp
+public static class FoundationCompositionRoot {
+    // ... existing LightingQuery/TransitionSource/FlaggedObjectRegistry (ADR-0005/0006/0007) ...
+
+    public static ISceneTransitionManager TransitionManager { get; private set; } = new NullSceneTransitionManager();
+    public static ISceneTransitionAware MovementLock { get; private set; } = new NullMovementLockController();
+    public static IPlayerTeleport PlayerTeleport { get; private set; } = new NullPlayerTeleport();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void Wire() {
+        // ... existing assignments ...
+        TransitionManager = new SceneTransitionManagerAdapter();   // SceneTransitionManager is itself a
+                                                                     // static class (ADR-0001) -- pull-wired
+                                                                     // here exactly like TransitionSource.
+    }
+
+    // NOT a raw property push (TD-ADR review, ADR-0008: unsafe -- a destroyed
+    // PlayerController behind an interface-typed static reference does not
+    // safely degrade to null). Reuses this project's existing
+    // scene_object_self_registration convention instead, called from
+    // PlayerController.OnEnable/OnDisable:
+    internal static void RegisterPlayer(PlayerController player) {
+        MovementLock = player;
+        PlayerTeleport = player;
+    }
+    internal static void UnregisterPlayer(PlayerController player) {
+        if (ReferenceEquals(MovementLock, player)) MovementLock = new NullMovementLockController();
+        if (ReferenceEquals(PlayerTeleport, player)) PlayerTeleport = new NullPlayerTeleport();
+    }
+}
+```
+This establishes the composition root's second sub-case, alongside ADR-0007's "adopt if own field still unset": **static-implemented dependencies are pull-wired in `Wire()`; MonoBehaviour-implemented dependencies self-register via `OnEnable`/`OnDisable`, reference-checked on the way out.** See ADR-0008 for the full rationale, including the rejected raw-push alternative.
+
 ### Mixer topology (this ADR owns and defines)
 Four groups under Master: **Ambiance** (the two crossfade sources — previously unrouted/implicit-Master in an earlier GDD draft, now explicit so the Stinger group's limiter can be isolated), **Stinger** (the pool, carries the static brickwall limiter), **CutSting** (independent single source, exempt from abrupt-stop-all), **SFX** (new — owned by this ADR, routed into by the future Carry Loop ADR's pickup/delivery/jostle sounds, no dynamic processing, explicitly no ducking per the project's "no build-up/riser/crescendo" mixing philosophy).
 
@@ -198,4 +234,5 @@ N/A — greenfield system.
 - Amends ADR-0005 (redirects its bootstrap method to `FoundationCompositionRoot`, ends the per-consumer bootstrap-patching pattern)
 - Reuses ADR-0005's co-residency-guard pattern for `AmbientZoneVolume`, by direct precedent
 - Enables the future Görev/Taşıma Döngüsü ADR (SFX mixer group routing)
+- Amended by ADR-0007 (Interaction System) and ADR-0008 (Elevator/Floor-Access System) — both extend `FoundationCompositionRoot` with new properties; ADR-0008 also adds the composition root's first scene-object self-registration sub-case
 - See `docs/architecture/architecture-review-2026-08-05.md` for the full requirements baseline — **this ADR completes Batch 1 (Foundation layer)**
