@@ -274,8 +274,15 @@ ikisi de artık tasarlanmış)*:
   verification turuyla `Needs Revision`'a geri düştü — bkz.
   `gdd-cross-review-2026-08-04.md`)* — `IInteractable.Hold` tipini
   uygular, `OnHoldProgress(t)`'i kasıtlı olarak kullanmaz (bkz. o GDD'nin
-  kendi Core Rules'ı) — **bu ret, 2026-08-04 verification bulgusuyla bu
-  sistemin Hold Player Fantasy'siyle çeliştiği bulundu, henüz çözülmedi**
+  kendi Core Rules'ı) — bu ret, 2026-08-04 verification bulgusuyla bu
+  sistemin varsayılan Hold-doldurma göstergesiyle (bkz. yukarıdaki Core
+  Rules) çeliştiği bulunmuştu; **aynı gün, `SuppressDefaultHoldFill`
+  opt-out mekanizmasıyla çözüldü** (design-review, 2026-08-06 —
+  re-verification bulgusu: bu satır o çözümden sonra güncellenmemişti,
+  hâlâ "henüz çözülmedi" diyordu — düzeltildi). O sistem
+  `SuppressDefaultHoldFill => true` döndürerek varsayılan göstergeyi
+  tamamen devre dışı bırakır, gerçek bir sıfır-geri-bildirim garantisi
+  sağlar (bkz. `ani-tetikleyici-etkilesim.md` Core Rules)
 - **Birinci Şahıs Kontrolcü** *(design-review, 2026-08-04 — verification
   bulgusu, eklendi — tek yönlü bağımlılık boşluğu kapatıldı)* — Formül
   2'nin (`approach_slow_taper`) `d` değişkeni için bu sistemin
