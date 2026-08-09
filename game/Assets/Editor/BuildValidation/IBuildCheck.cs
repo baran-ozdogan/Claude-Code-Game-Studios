@@ -28,6 +28,27 @@ internal interface IBuildCheck
 }
 
 /// <summary>
+/// Opsiyonel ek arayüz: sahneler-ARASI toplam iddiası olan SceneScan check'leri
+/// implement eder (ör. "taranan sahnelerin EN AZ birinde X olmalı" — TR-isik-021).
+/// Sözleşme: BeginWalk yürüyüş BAŞINDA biriken gözlemi sıfırlar (check
+/// instance'ları registry'de kalıcı; sıfırlama başta olmak ZORUNDA — başka bir
+/// check yürüyüşü ortada patlatırsa FinalizeWalk hiç koşmaz ve sondaki bir
+/// self-reset bayat gözlemi SONRAKİ build'e sızdırıp blocking check'i yanlış
+/// geçirtirdi, LP review bulgusu). Run her sahnede gözlem biriktirir;
+/// FinalizeWalk tamamlanan yürüyüşten sonra TAM BİR KEZ (sıfır sahne durumunda
+/// da) toplam iddiayı değerlendirir. Yalnız SceneScan check'leri için —
+/// AssetScan'de implement edilirse hook'lar hiç çağrılmaz.
+/// </summary>
+internal interface IBuildCheckAggregate
+{
+    /// <summary>Yürüyüş başında bir kez — biriken gözlem burada sıfırlanır.</summary>
+    void BeginWalk();
+
+    /// <summary>Tüm sahneler gezildikten sonra bir kez; context.ScenePath null'dur.</summary>
+    void FinalizeWalk(BuildCheckContext context);
+}
+
+/// <summary>
 /// Per-invocation context handed to a check. SceneScan checks receive the path
 /// of the currently opened scene; AssetScan checks receive null.
 /// </summary>

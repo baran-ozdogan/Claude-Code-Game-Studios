@@ -1,7 +1,9 @@
 {
     "name": "BuildValidation",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Foundation"
+    ],
     "includePlatforms": [
         "Editor"
     ],

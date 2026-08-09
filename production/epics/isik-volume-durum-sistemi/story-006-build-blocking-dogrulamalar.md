@@ -1,12 +1,12 @@
 # Story 006: Build-blocking doğrulamalar
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -53,9 +53,16 @@
 ## Test Evidence
 
 **Story Type**: Logic → `game/Assets/Tests/EditMode/isik_volume_build_checks_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 15 test, EditMode süiti 68/68 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: Story 003 (`ShiftZone`/`ZoneLight` tipleri); proje-kurulumu Story 006 (çatı — DONE)
 - Unlocks: level-design içerik yazımı güvenli hale gelir
+
+## Completion Notes
+**Completed**: 2026-08-09 — **EPİC 6/6 TAMAM**
+**Criteria**: 6/6 passing (EditMode 68/68, PlayMode 32/32 lokal CLI)
+**Deviations**: Tek bilinçli çatı genişlemesi — `IBuildCheckAggregate` (BeginWalk/FinalizeWalk) + runner kancaları: Automatic-varlık sahneler-arası TOPLAM iddia, per-scene Run'la ifade edilemezdi (LP: doğru minimal şekil teyitli). LP bulgusuyla kritik yanlış-geçirme bug'ı kapanış öncesi yapısal çözüldü: sıfırlama yürüyüş BAŞINDA (BeginWalk) — ortada patlayan yürüyüşün bayat gözlemi sonraki build'i geçirtemez (aborted-walk sızıntı testi eklendi). AABB kesişimi dönük kutular için bilinçli muhafazakâr (yorumda). AC22 ClueDefinition çaprazı anlati epic'ine, StingerAudioRadius>0 ani-tetikleyici epic'ine devredildi (README + registry TODO güncel).
+**Test Evidence**: Logic — `game/Assets/Tests/EditMode/isik_volume_build_checks_test.cs` (15 test: her check throws/silent çifti + suçlu adlar + sahne yolu, sıfır-bölge QA case'i, aggregate çatı sözleşmesi [çok-sahne/sıfır-sahne/null ScenePath], aborted-walk, null ışık girdisi, dönük kutu, registry kaydı)
+**Code Review**: Complete — LP-CODE-REVIEW: CONCERNS→giderildi (BeginWalk yapısal fix + registry test daraltma + README), QL-TEST-COVERAGE: GAPS→6 test eklendi (full mod, general-purpose subagent gate'leri)

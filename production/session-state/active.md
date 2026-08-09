@@ -1,5 +1,17 @@
 # Session State — Active
 
+## Session Extract — /story-done isik-volume Story 006 → **IŞIK/VOLUME EPİC'İ TAMAM (6/6)**, 2026-08-09
+- Verdict: COMPLETE WITH NOTES → **Status: Complete**; `production/epics/index.md` → Işık/Volume **Complete (2026-08-09)** — bugün biten ÜÇÜNCÜ epic (Proje Kurulumu, Gece/Oturum, Işık/Volume)
+- Gate'ler: **LP CONCERNS→giderildi** — kritik yanlış-geçirme bug'ı yapısal çözüldü: aggregate sıfırlaması yürüyüş BAŞINDA (`IBuildCheckAggregate.BeginWalk` + runner kancası; sonda self-reset kaldırıldı); registry testi IsikVolume/* 'a daraltıldı; README güncel. **QL GAPS→kapatıldı** — 6 test (aggregate çatı sözleşmesi çok/sıfır-sahne + null ScenePath, aborted-walk sızıntısı, null ışık girdisi, dönük kutu, mesajda sahne yolu).
+- Süit: **EditMode 68/68, PlayMode 32/32**. CI: 7410e67 (Story 005) YEŞİL (run 31326370384).
+- Next: Story 006 değişiklikleri commit'lenmedi (talimat bekliyor). Epic bitti — sıradaki doğal işler: başka Foundation epic'ine `/create-stories` (önerilen: InteractableRegistry ya da Birinci Şahıs Kontrolcü) YA DA sprint close-out (/smoke-check → /team-qa).
+
+## Session Extract — /dev-story isik-volume Story 006, 2026-08-09
+- Story: `production/epics/isik-volume-durum-sistemi/story-006-build-blocking-dogrulamalar.md` — 4 build-blocking sahne-scan check'i (Status hâlâ Ready; /story-done bekliyor — kapanınca EPİC 6/6 TAMAM)
+- Files changed: `Editor/BuildValidation/IsikVolumeBuildChecks.cs` (YENİ — BakedLight [Mode≠Mixed her hali], SharedLight, BoxOverlap [8-köşe world-AABB, fizik-bağımsız; paylaşılan-profil over-lerp gerekçesi mesajda], AutomaticPresence [stateful aggregate, self-reset]); **çatı genişlemesi**: `IBuildCheck.cs`+`IBuildCheckAggregate` arayüzü, `BuildValidationRunner.RunAll`'a yürüyüş-sonu FinalizeWalk kancası (sahneler-arası toplam iddialar için — sıfır-sahne yürüyüşünde de koşar); `BuildValidationRegistry` dörtlü kayıt + TODO güncel; `BuildValidation.asmdef`+Foundation ref; Foundation AssemblyInfo +InternalsVisibleTo("BuildValidation"); `Tests/EditMode/isik_volume_build_checks_test.cs` (YENİ, 9 test — throws/doesn't-throw çiftleri, mesaj adları, sıfır-bölge QA case'i, self-reset kanıtı, registry kaydı)
+- Süit: **EditMode 62/62, PlayMode 32/32** (ilk koşuda yeşil). Blockers: None.
+- Next: `/story-done` → **isik-volume epic'i 6/6 Complete** → epic index güncellenir. Commit yok (talimat bekliyor). CI: 7410e67 (Story 005) izleniyor.
+
 ## Session Extract — /story-done isik-volume Story 005, 2026-08-09
 - Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 5/6 — kalan TEK story: 006 build-blocking doğrulamalar)
 - Gate'ler: **LP APPROVE** (RevertShift Persistent-Held guard'ı üç gerekçeyle doğru bulundu; Persistent Held coroutine'i artık terminal — yield break, LP önerisi), **QL GAPS→kapatıldı** (restore+TriggerShift null-config invariant'ı; ResetAll oturum-sınırı; mid-In revert + reload diriltme davranış sabitlemesi).

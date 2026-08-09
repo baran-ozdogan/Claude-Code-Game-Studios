@@ -79,12 +79,33 @@ internal sealed class BuildValidationRunner : IPreprocessBuildWithReport
             return;
         }
 
+        // Aggregate begin — biriken gözlemler yürüyüşün BAŞINDA sıfırlanır
+        // (ortada patlayan yürüyüşün bayat gözlemi sonraki build'e sızamaz).
+        foreach (IBuildCheck check in sceneChecks)
+        {
+            if (check is IBuildCheckAggregate aggregate)
+            {
+                aggregate.BeginWalk();
+            }
+        }
+
         foreach (string scenePath in sceneWalker.EnabledScenePaths)
         {
             sceneWalker.OpenScene(scenePath);
             foreach (IBuildCheck check in sceneChecks)
             {
                 check.Run(new BuildCheckContext(check.Name, scenePath));
+            }
+        }
+
+        // Aggregate finalize — sahneler-arası toplam iddiaları yürüyüş bittikten
+        // sonra değerlendirilir (sıfır sahne yürüyüşünde de: "hiç yok" da bir
+        // toplam sonuçtur). Eklendi: isik-volume Story 006 (TR-isik-021).
+        foreach (IBuildCheck check in sceneChecks)
+        {
+            if (check is IBuildCheckAggregate aggregate)
+            {
+                aggregate.FinalizeWalk(new BuildCheckContext(check.Name, null));
             }
         }
     }
