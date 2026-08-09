@@ -5,7 +5,7 @@
 
 ## Engine & Language
 
-- **Engine**: Unity 6.3 LTS (6000.3.0f1)
+- **Engine**: Unity 6.5 (6000.5.6f1)
 - **Language**: C#
 - **Rendering**: URP (Universal Render Pipeline) — HDRP avoided (see TD-FEASIBILITY in game-concept.md)
 - **Physics**: Unity Physics (PhysX)

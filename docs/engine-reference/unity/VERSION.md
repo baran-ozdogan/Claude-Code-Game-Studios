@@ -2,11 +2,17 @@
 
 | Field | Value |
 |-------|-------|
-| **Engine Version** | Unity 6.3 LTS (6000.3.0f1) |
+| **Engine Version** | Unity 6.5 (6000.5.6f1) |
 | **Release Date** | December 2025 |
-| **Project Pinned** | 2026-08-01 |
+| **Project Pinned** | 2026-08-01 (6000.3.0f1) → re-pinned 2026-08-09 (6000.5.6f1) |
 | **Last Docs Verified** | 2026-08-01 |
 | **LLM Knowledge Cutoff** | May 2025 |
+
+> **Re-pin note (2026-08-09, Story 001)**: Docs originally pinned 6000.3.0f1, but the
+> machine's installed editors are 6000.5.5f1/6000.5.6f1 and the greybox prototype was
+> built with 6000.5.6f1 — the pin never matched the actual installation. User decision:
+> re-pin to **6000.5.6f1**. Historical records (ADRs, gate-checks, reviews) intentionally
+> keep the old version string; live docs were updated.
 
 ## Knowledge Gap Warning
 
