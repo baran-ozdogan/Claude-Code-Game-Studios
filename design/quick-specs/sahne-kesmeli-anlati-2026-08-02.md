@@ -57,6 +57,30 @@ Sahne Kesmeli Anlatı, bir gecenin ne zaman biteceğine ve psikiyatri seansı sa
   hâlâ erken/eager sinyal olarak `FiredTriggerIds` kullanır, çünkü
   preload'un amacı hazırlık, gerçek tetikleme değil.
   Diğer sinyal daha sonra gelirse anlamsızdır — gece zaten bitmiştir (bkz. tekrar-tetiklenme guard'ı).
+  **İki koşul aynı anda sağlanırsa — açık öncelik kuralı (design-review,
+  2026-08-04 — üçüncü tur full re-verification bulgusu, eklendi, kritik
+  bulgu)**: (a) ve (b), ikisi de erteleme mekanizması yüzünden (bkz.
+  aşağıda "(a)'nın da in-flight tetikleyicileri beklemesi gerekir") aynı
+  `OnTriggerSettled` event'inde birlikte değerlendirilebilir — ör. oyuncu
+  son teslimatı yaparken (a) sağlanır, VE tam o an son tetikleyici de
+  `Held`'e ulaşıp (b)'yi sağlar. `IsFinalRoundActive`, `AllRoundsComplete`'e
+  ulaşıldıktan sonra da `true` kalmaya devam ettiğinden (bkz.
+  `gorev-tasima-dongusu.md` States and Transitions notu), bu çakışma
+  gerçek/ulaşılabilir bir senaryo, teorik değil. Önceki taslak hangi
+  koşulun kazanacağını (dolayısıyla oyuncunun `Abrupt=true` mu
+  `Abrupt=false` mu bitiş alacağını) hiç belirtmiyordu — bu, tam da
+  round-2 düzeltmesinin garanti etmeye çalıştığı "iki bitiş güvenilir
+  şekilde farklı" iddiasını, tanımsız bir handler-sırası kazasına
+  bırakıyordu. **Düzeltme**: (b) (doygunluk) (a)'ya göre önceliklidir —
+  aynı değerlendirmede ikisi de `true` bulunursa, `Abrupt=true` (doygunluk
+  tonu) kullanılır. Gerekçe: (b) üç ayrı koşulun (tüm tetikleyiciler
+  Held, son round aktif, son roundda taşınmış) hepsinin sağlanmasını
+  gerektiren, yapısal olarak daha "spesifik" durum — ve projenin kendi
+  diliyle, anı-tetikleyicinin bilerek tamamlanması ("bile bile yaptım")
+  görev teslimatından daha ağırlıklı bir anlatı anı olarak konumlanıyor
+  (bkz. `ani-tetikleyici-etkilesim.md` Player Fantasy). Bu öncelik sadece
+  bu tam çakışma anı için geçerlidir — normal (çakışmayan) durumda
+  "hangisi önce gerçekleşirse" kuralı değişmeden kalır.
   **`HasCarriedInFinalRound` guard'ı neden eklendi (design-review, 2026-08-04
   — verification design-theory bulgusu, en kritik bulgu, kullanıcı kararıyla
   çözüldü)**: `IsFinalRoundActive` guard'ı tek başına yetersizdi —
@@ -123,18 +147,80 @@ Sahne Kesmeli Anlatı, bir gecenin ne zaman biteceğine ve psikiyatri seansı sa
   Seviye/Sahne Geçişi'nin eski bir isteği için eklenmişti), yeni bir API
   gerekmiyor.
 - **Preload zamanlaması**: Seviye/Sahne Geçişi'nin `PreloadHardCut(toScene)`'i, iki bitiş koşulundan biri "bir adım kalana" ulaştığında çağrılır: görev tarafında son round aktifken, anı-tetikleyici tarafında (`IsFinalRoundActive=true` VE `FiredTriggerIds.Count == TotalConfiguredTriggerCountForNight - 1`) olduğunda. Hangisi önce olursa preload o anda başlar; ikinci preload çağrısı Seviye/Sahne Geçişi'nin kendi no-op kuralı sayesinde zaten güvenlidir.
-- **Gerçek tetikleme**: (a) ya da (b) tam gerçekleştiğinde `RequestMovementLock(this, MovementLockScope.Full)` çağrılır, hemen ardından `RequestHardCut(toScene, config, onComplete, onFailed)` çağrılır.
-- **İki bitişin farklı tonu — `HardCutConfig.Abrupt` (design-review,
-  2026-08-04 — full re-verification bulgusu, kullanıcı kararıyla
-  çözüldü)**: Bu belgenin kendi Player Fantasy'si iki bitişin farklı
-  hissetmesi gerektiğini söylüyordu (görev tamamlama = "sakin bir teslim
-  anı"; doygunluk = "dünya seni durdurur") ama önceki taslakta ikisi de
-  aynı `HardCutConfig`'i, aynı sıfır-kare swap'ı, aynı anlık-tüm-sesi-kes
-  kuralını ve aynı CutSting'i paylaşıyordu — hissedilen fark hiçbir
-  mekanizmaya bağlı değildi. Movement-lock'un `Full` kapsamı **her iki**
-  bitiş için de korunur (bu duygusal ton değil, teknik bir gereklilik —
-  zero-frame swap sırasında kameranın oyuncu girdisiyle sürüklenmemesi
-  gerekir), ama ses/görsel şiddeti artık farklılaşıyor: `RequestHardCut`
+- **(a)'nın da in-flight tetikleyicileri beklemesi gerekir (design-review,
+  2026-08-04 — ikinci tur full re-verification bulgusu, en kritik bulgu,
+  kullanıcı kararıyla çözüldü)**: Saturation-timing düzeltmesi (bkz.
+  yukarıda) sadece (b) koşulunu `Held`'e ulaşana kadar erteliyordu — (a)
+  (`OnTaskListCompleted`) hiç incelenmemişti. Ama aynı yıkıcı senaryo
+  simetrik olarak (a) üzerinden de mümkün: oyuncu son eşyayı taşırken
+  (hiçbir sistem Hold etkileşimlerini `IsCarrying` durumuna göre
+  kısıtlamaz — bkz. `etkilesim-sistemi.md`/`ani-tetikleyici-etkilesim.md`)
+  son anı-tetikleyiciyi de tutup tamamlayabilir (`FiredTriggerIds`'e
+  girer, `Shifting-In` başlar), sonra ~3sn dolmadan teslimat bölgesine
+  ulaşıp `OnTaskListCompleted`'ı tetikleyebilir — bu durumda görev
+  tamamlama bitişi, hâlâ `Shifting-In`'de olan tetikleyicinin sahnesini
+  (ve GameObject'ini, unload ile) ışık rampası bitmeden, ipucu bilinir
+  olmadan yok ederdi — tam olarak saturation-timing düzeltmesinin önlemek
+  için var olduğu hasar, sadece diğer kapıdan. **Düzeltme**: `OnTaskListCompleted`
+  alındığında, `FiredTriggerIds.Count > SettledTriggerIds.Count` ise
+  (en az bir tetikleyici hâlâ "uçuşta" — ateşlenmiş ama henüz Held'e
+  ulaşmamış), gerçek tetikleme **ertelenir**. Sistem zaten abone olduğu
+  `OnTriggerSettled` event'ini dinlemeye devam eder; `FiredTriggerIds.Count
+  == SettledTriggerIds.Count` eşitliğine ulaşıldığı ilk anda (tüm uçuştaki
+  tetikleyiciler yerleşince) ertelenmiş görev-tamamlama tetiklemesi
+  gerçekleşir. Görev tamamlanmış olma durumu (`TaskListCompletedPending`
+  bool) bu bekleme boyunca hatırlanır — `OnTaskListCompleted` ikinci kez
+  dinlenmez, sadece bir kez alınıp bayrak set edilir. Eğer hiç uçuşta
+  tetikleyici yoksa (`FiredTriggerIds.Count == SettledTriggerIds.Count`
+  zaten doğruysa), erteleme sıfır süre sürer — mevcut davranış (anında
+  tetikleme) değişmez, bu MVP'nin çoğunluk senaryosu için (oyuncu bir
+  tetikleyiciyi tam o anda tutmuyorsa) davranış aynen korunur.
+- **Gerçek tetikleme**: (a) ya da (b) yukarıdaki erteleme koşulları
+  gözetilerek tam gerçekleştiğinde `RequestMovementLock(this,
+  MovementLockScope)` çağrılır (kapsam, aşağıdaki `Abrupt` değerine göre
+  belirlenir — bkz. "İki bitişin farklı tonu"), hemen ardından
+  `RequestHardCut(toScene, config, onComplete, onFailed)` çağrılır.
+- **İki bitişin farklı tonu — `HardCutConfig.Abrupt` VE hareket-kilidi
+  kapsamı (design-review, 2026-08-04 — kullanıcı kararıyla çözüldü; kilit
+  kapsamı ikinci tur full re-verification bulgusuyla eklendi)**: Bu
+  belgenin kendi Player Fantasy'si iki bitişin farklı hissetmesi
+  gerektiğini söylüyordu (görev tamamlama = "sakin bir teslim anı";
+  doygunluk = "dünya seni durdurur") ama önceki taslakta ikisi de aynı
+  `HardCutConfig`'i, aynı sıfır-kare swap'ı, aynı anlık-tüm-sesi-kes
+  kuralını, aynı CutSting'i **ve aynı `Full` hareket kilidini**
+  paylaşıyordu — sadece ses tarafını farklılaştırmak, "aynı kesmeyi daha
+  düşük seste tekrarlamak" oldu, orijinal düzeltme önerisinin
+  ("kısa fade + daha yumuşak kilit, sadece doygunluk için Full") kilit
+  yarısını hiç uygulamadan. **Düzeltme**: hareket kilidi kapsamı da
+  `Abrupt`'a bağlı hale getirildi — `Abrupt=true` (doygunluk) için
+  `MovementLockScope.Full` (değişmedi — oyuncunun iradesi dışında,
+  "torn away" bir an, Look de donmalı); `Abrupt=false` (görev tamamlama)
+  için **`MovementLockScope.MoveOnly`** (Look serbest kalır — Asansör'ün
+  kendi `Waiting` durumunda zaten sorunsuzca kullandığı aynı kapsam,
+  "sakin" bir anın oyuncunun iradesini tamamen elinden alması
+  gerekmiyor).
+  **Dürüstlük notu (design-review, 2026-08-04 — üçüncü tur full
+  re-verification bulgusu)**: `RequestMovementLock` ile hemen ardından
+  gelen `RequestHardCut` arasında (zero-frame swap nedeniyle) oyuncunun
+  serbest kalan Look'u fiilen kullanabileceği anlamlı bir pencere yoktur
+  — bu kilit-kapsamı değişikliği **küçük, yapısal bir tutarlılık
+  düzeltmesidir** ("neden bu anda oyuncunun iradesi tamamen alınıyor"
+  sorusuna doğru cevabı vermek için), hissedilen tonun **asıl taşıyıcısı
+  değildir. Hissedilen farkın gerçek kaynağı Adaptif Ses'in `Abrupt`
+  dallanması** (anlık tüm-sesi-kes + CutSting'e karşı birkaç saniyelik
+  crossfade + sessizlik) — bu, oyuncunun fiilen algılayabileceği,
+  saniyeler süren bir farktır. Sahne geçişinin kendisi (zero-frame
+  `SetActiveScene` çağrısı) her iki tonda da teknik olarak değişmez — Seviye/Sahne
+  Geçişi'nin psikiyatri sahnesine geçmek için sahip olduğu tek mekanizma
+  bu, ve o GDD kendi görsel/ses varlığı taşımıyor (bkz. o dosyanın Visual/Audio
+  Requirements'ı), yani bir "yumuşak fade" eklemek yeni bir sahiplik
+  sorusu açardı. **Kabul edilen sınırlama**: bu yüzden görev-tamamlama
+  bitişi hâlâ teknik olarak zero-frame bir sahne değişimidir — farklılaşma
+  ses kanalında (Abrupt) ve oyuncu ajansında (Look serbest) yaşıyor, kare
+  bazında bir fade'de değil. Playtest bunun yeterli olmadığını gösterirse,
+  Seviye/Sahne Geçişi'ne sahiplenilmiş bir kısa fade eklemek ayrı bir
+  tasarım kararı olarak ele alınmalı, bu turda kapsam dışı bırakıldı.
+  Ses/görsel şiddeti farklılaşıyor: `RequestHardCut`
   çağrısına iletilen `config`, `HardCutConfig.Abrupt` (bool) alanı taşır
   — (b) (doygunluk) için `Abrupt=true` (mevcut davranış, değişmedi:
   anlık tüm-sesi-kes + CutSting), (a) (görev tamamlama) için
@@ -176,7 +262,7 @@ Sahne Kesmeli Anlatı, bir gecenin ne zaman biteceğine ve psikiyatri seansı sa
 - **Seviye/Sahne Geçişi** — `PreloadHardCut`, `RequestHardCut`, `onComplete`, `onFailed`
 - **Görev/Taşıma Döngüsü** — `OnTaskListCompleted`; `IsFinalRoundActive` sorgusu (2026-08-02'de eklendi, artık hem preload zamanlaması hem doygunluk guard'ı için kullanılıyor); `OnFinalRoundStarted` event'ine abone olur (design-review, 2026-08-03 — verification N5 bulgusu, eklendi — bkz. Core Rules); `HasCarriedInFinalRound` sorgusu VE `OnFinalRoundItemPickedUp` event'ine abone olur (design-review, 2026-08-04 — verification design-theory bulgusu, eklendi — doygunluğun üçüncü şartı, bkz. Core Rules)
 - **Gece/Oturum Durumu** — oturum sonlandırma (`EndSession()`, 2026-08-02'de eklendi); **`SettledTriggerIds.Count`** sorgusu (design-review, 2026-08-04 — full re-verification bulgusuyla `FiredTriggerIds.Count`'tan değiştirildi, saturation-timing düzeltmesi — bkz. Core Rules) ve preload zamanlaması için hâlâ `FiredTriggerIds.Count` sorgusu (erken/eager sinyal, değişmedi); `OnTriggerSettled` event'ine abone olur (design-review, 2026-08-04 — full re-verification bulgusuyla `OnTriggerFired`'dan değiştirildi)
-- **Birinci Şahıs Kontrolcü** *(design-review, 2026-08-03 — `/review-all-gdds` bulgusu, eklendi)* — `RequestMovementLock(this, MovementLockScope.Full)`/`ReleaseMovementLock(this)` çağırır (bkz. Core Rules, "Hareket kilidi")
+- **Birinci Şahıs Kontrolcü** *(design-review, 2026-08-03 — `/review-all-gdds` bulgusu, eklendi; kapsam 2026-08-04 üçüncü tur bulgusuyla düzeltildi — bu satır hâlâ koşulsuz `Full` diyordu, aynı dosyanın kendi Core Rules'ıyla çelişerek)* — `RequestMovementLock(this, scope)`/`ReleaseMovementLock(this)` çağırır — `scope=MovementLockScope.Full` doygunluk bitişinde (`Abrupt=true`), `scope=MovementLockScope.MoveOnly` görev-tamamlama bitişinde (`Abrupt=false`) (bkz. Core Rules, "İki bitişin farklı tonu")
 - **Diyalog/Anlatı İçeriği** — dolaylı, bu sistem onu tetiklemez
 
 **Not (design-review, 2026-08-03, güncellendi 2026-08-04)**: Anlatı Durum/İpucu Takibi artık bu
@@ -203,7 +289,7 @@ bu alanın veri-sahipliği N5'ten bağımsız, hâlâ ayrı bir açık madde.)*
 
 ## Acceptance Criteria
 
-- [ ] GIVEN `OnTaskListCompleted` fırlar (anı-tetikleyiciler doymadan), WHEN sistem event'i alır, THEN `RequestMovementLock(this, Full)` ardından `RequestHardCut(toScene, config, ...)` tam bir kez çağrılır, `config.Abrupt=false` ile (design-review, 2026-08-04 — full re-verification bulgusu, `Abrupt` parametresi eklendi, bkz. Core Rules "İki bitişin farklı tonu")
+- [ ] GIVEN `OnTaskListCompleted` fırlar (anı-tetikleyiciler doymadan), WHEN sistem event'i alır, THEN `RequestMovementLock(this, MoveOnly)` ardından `RequestHardCut(toScene, config, ...)` tam bir kez çağrılır, `config.Abrupt=false` ile (design-review, 2026-08-04 — `Abrupt` parametresi eklendi; **ADR-0015, 2026-08-08 — bu AC'nin bayat `Full` harfi kendi Core Rules'ının `Abrupt=false → MoveOnly` kuralına sync edildi**: 2026-08-04 üçüncü tur düzeltmesi Dependencies satırını güncellemiş ama bu AC'yi atlamıştı; bkz. Core Rules "İki bitişin farklı tonu")
 - [ ] **[design-review, 2026-08-04 — full re-verification bulgusuyla `FiredTriggerIds`/`OnTriggerFired`'dan `SettledTriggerIds`/`OnTriggerSettled`'e değiştirildi, saturation-timing düzeltmesi]** GIVEN gecenin tüm `MemoryTriggerDef`'leri `Held`'e ulaşmış olur (`SettledTriggerIds.Count == TotalConfiguredTriggerCountForNight`) VE `IsFinalRoundActive=true` VE `HasCarriedInFinalRound=true`, WHEN `OnTriggerSettled`, `OnFinalRoundStarted` ya da `OnFinalRoundItemPickedUp` fırlar (hangisi bu üç koşulu `true` yapan sonuncuysa), THEN `RequestMovementLock(this, Full)` ardından `RequestHardCut(toScene, config, ...)` tam bir kez çağrılır, `config.Abrupt=true` ile
 - [ ] **[design-review, 2026-08-03 — eklendi, kritik bulgu; 2026-08-04'te `OnTriggerSettled`'e güncellendi]** GIVEN gecenin tüm `MemoryTriggerDef`'leri `Held`'e ulaşmış olur AMA `IsFinalRoundActive=false` (oyuncu son round'a henüz ulaşmadı), WHEN `OnTriggerSettled` fırlar, THEN `RequestHardCut` çağrılmaz — gece, görev döngüsü kendi son round'una ulaşana (ya da tamamlanana) kadar erken bitmez
 - [ ] **[design-review, 2026-08-03 — verification N5 bulgusu, eklendi; 2026-08-04'te üçüncü koşulu ve `OnTriggerSettled`'i yansıtacak şekilde güncellendi]** GIVEN bir oyuncu tüm `MemoryTriggerDef`'leri round 1-2'de `Held`'e ulaştırmış (doygunluk koşulu `IsFinalRoundActive=false` yüzünden asılı kalmış), WHEN oyuncu daha sonra son round'a ulaşır ve `OnFinalRoundStarted` fırlar AMA `HasCarriedInFinalRound=false` (henüz hiç eşya almadı), THEN `RequestHardCut` **hâlâ** çağrılmaz — gece, son round'un malzemesinden en az biri elde alınana kadar bitmez
@@ -220,6 +306,32 @@ bu alanın veri-sahipliği N5'ten bağımsız, hâlâ ayrı bir açık madde.)*
 *(design-review, 2026-08-03 — `/review-all-gdds` bulgusu, eklendi: bu
 Quick Spec önceden bir Open Questions bölümü hiç taşımıyordu.)*
 
+- **~3sn erteleme penceresinin pacing'i doğrulanmadı (design-review,
+  2026-08-04 — ikinci tur full re-verification bulgusu)**: Saturation-timing
+  düzeltmesi, ışık geçişinin zaten kilitli `Duration≈3s`'ini "bitiş
+  tetiklenebilir olmadan önce bekle" süresi olarak ödünç alıyor — bu
+  değer görsel geçiş hızı için kilitlenmişti, "oyuncunun kararlı eylemi
+  ile oyunun onu kabul etmesi arasındaki gecikme ne kadar tatmin edici
+  hissettirir" sorusu için değil. Oyuncu bu pencere boyunca serbestçe
+  hareket etmeye devam edebilir (başka bir eşya alabilir, asansöre
+  binebilir vb.) — bu, "gecikmiş bir anti-klimaks" gibi mi yoksa doğal
+  bir "son nefes" anı gibi mi hissettirir, hiçbir doküman bunu
+  tartışmıyor. Sahip: Vertical Slice playtest.
+- **Doygunluk kilidi bir asansör yolculuğunu keserse Look donabilir
+  (design-review, 2026-08-04 — ikinci tur full re-verification bulgusu)**:
+  Eğer `OnTriggerSettled` oyuncu asansörde `Waiting` durumundayken
+  (Asansör zaten kendi `MoveOnly` kilidini tutuyorken) fırlarsa, bu
+  sistem hemen `RequestMovementLock(this, Full)` çağırır — FPC'nin "en
+  kısıtlayıcı kapsam kazanır" kuralı gereği `Look` de donar, gerçek
+  `RequestHardCut` ise Seviye/Sahne Geçişi'nin asimetrik kuyruğa-alma
+  kuralı gereği asansör yolculuğu bitene kadar ertelenir (bkz.
+  `seviye-sahne-gecisi.md` Edge Cases, "bekleyen slot") — bu süre
+  boyunca oyuncu, Asansör'ün kendi AC13'ünün vaat ettiği serbest Look'u
+  kaybeder. **Kabul edilen sınırlama**: bu, sınırlı süreli (asansör
+  yolculuğunun geri kalanı kadar) ve zaten yaklaşan bir sahne kesmesinin
+  önü olduğundan kabul edilebilir bir ödünleşim olarak değerlendirildi —
+  ama hiçbir doküman bunu daha önce hiç ele almamıştı, şimdi burada
+  açıkça not düşülüyor. Yeniden tasarım gerekmiyor, sadece belgeleniyor.
 - **`onFailed` sonrası retry mi, terminal hata mı?**: HARD CUT'ın
   `RequestHardCut` çağrısı başarısız olursa (hedef sahne yüklenemedi),
   bu sistem otomatik yeniden mi dener, yoksa gece'yi kurtarılamaz bir

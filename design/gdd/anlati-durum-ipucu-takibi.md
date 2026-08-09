@@ -31,8 +31,10 @@ sonucunu** (oyuncu artık şunu biliyor) tutar. Diyalog/Anlatı İçeriği,
 gösterileceğine karar vermek için bu duruma sorgu atar. **(Sahne
 Kesmeli Anlatı artık bu listede değil — design-review, 2026-08-03:
 o sistem kendi gece-sonu doygunluk sinyalini artık bu sistemden değil,
-Gece/Oturum Durumu'nun `FiredTriggerIds.Count`'undan okuyor, bkz.
-Dependencies.)**
+Gece/Oturum Durumu'nun `SettledTriggerIds.Count`'undan okuyor (design-review,
+2026-08-04 üçüncü tur bulgusuyla `FiredTriggerIds.Count`'tan düzeltildi —
+bu satır saturation-timing düzeltmesinin taşındığı ikinci ismi hiç
+yakalamamıştı), bkz. Dependencies.)**
 
 Oyuncu bu sistemle hiçbir zaman doğrudan etkileşmez — sadece sonuçlarını
 (bir psikiyatri seansında beklenmedik bir referans, finaldeki bir callback)
@@ -311,8 +313,10 @@ semantiği, bkz. Core Rules), matematiksel bir formül değil.
 artık bu listede değil.** Önceki taslakta bu sistemin `OnClueKnown`
 event'ine abone olduğu belirtiliyordu; o sistemin 2026-08-03
 revizyonu bu aboneliği tamamen kaldırdı — kendi gece-sonu doygunluk
-sinyalini artık Gece/Oturum Durumu'nun `FiredTriggerIds.Count`'undan
-okuyor (bkz. `design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md`
+sinyalini artık Gece/Oturum Durumu'nun `SettledTriggerIds.Count`'undan
+okuyor (design-review, 2026-08-04 üçüncü tur bulgusuyla
+`FiredTriggerIds.Count`'tan düzeltildi, bkz.
+`design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md`
 Core Rules ve Dependencies). Bu sistem artık Sahne Kesmeli Anlatı'nın
 hiçbir bağımlılığı değil.
 

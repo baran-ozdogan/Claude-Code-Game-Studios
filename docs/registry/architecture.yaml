@@ -30,7 +30,9 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-08-07"
+# (ADR-0010 registry entries added 2026-08-07 — see interfaces/live_monobehaviour_state_static_accessor,
+#  api_decisions/interaction_focus_detection_layer_mask below)
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +45,98 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: player_state
+    status: active
+    owner_system: player-state-provider
+    adr: docs/architecture/adr-0003-player-state-and-movement-lock.md
+    interface: "IPlayerState (EyeCamera, Velocity, IsGrounded, MovementLocked, IsCarrying, IsLocked, MovementLockChanged event), accessed via PlayerStateProvider.Current static accessor; movement lock via RequestMovementLock(requester, scope)/ReleaseMovementLock(requester)"
+    write_access: "EyeCamera/Velocity/IsGrounded/IsCarrying written only by FirstPersonController (internal set); movement lock holders written only via Request/Release by the calling system. IsCarrying's mirror mechanism defined by ADR-0013: CarrySlotRigController (same Player GameObject) translates GorevTasimaDongusu's OnCarryingStarted/Ended events into sibling FirstPersonController.SetCarrying(bool) calls - external systems never touch the setter directly"
+    referenced_by:
+      - docs/architecture/adr-0003-player-state-and-movement-lock.md
+      - docs/architecture/adr-0013-carry-loop-and-round-state.md   # defines the IsCarrying mirror mechanism
+    added: 2026-08-05
+    revised: ""
+
+  - state: interactable_registry
+    status: active
+    owner_system: interactableregistry
+    adr: docs/architecture/adr-0004-interactableregistry-foundation-ownership.md
+    interface: "InteractableRegistry.Register(IInteractable)/Deregister(IInteractable) (called only from OnEnable/OnDisable), InteractableRegistry.Snapshot() (frame-start read-only cache, IReadOnlyList<IInteractable>)"
+    write_access: "any IInteractable implementer, via OnEnable/OnDisable only — never ad hoc"
+    referenced_by:
+      - docs/architecture/adr-0004-interactableregistry-foundation-ownership.md
+    added: 2026-08-05
+    revised: ""
+
+  - state: gece_oturum_durumu_session_state
+    status: active
+    owner_system: geceoturumdurumu
+    adr: docs/architecture/adr-0006-session-state-service-and-round-counter-ownership.md
+    interface: "IGeceOturumDurumuState (IsSessionActive, CurrentNightNumber, HasFired(id)/HasSettled(id)/IsPersistent(id), FiredCount/SettledCount, CurrentRoundIndex/TotalRoundCount, TotalConfiguredTriggerCountForNight, EndSession()), accessed via GeceOturumDurumu.Instance static accessor; internal write paths via GeceOturumDurumu.InternalInstance: SetRoundState(idx,total), SetTotalConfiguredTriggerCountForNight(count), AddFiredTrigger(shiftId)"
+    write_access: "PersistentShiftIds (Shifting-In) and SettledTriggerIds (Held, gated on FiredTriggerIds membership) written via this service's own subscription to Işık/Volume's OnShiftStateChanged; FiredTriggerIds written DIRECTLY by Anı-Tetikleyici Etkileşim's OnHoldComplete() via AddFiredTrigger (idempotent, fires OnTriggerFired on first add) — the quick spec's locked model, NOT the subscription (corrected by ADR-0014: the previous line over-generalized 'written only via subscription' to all three sets, the likely seed being ADR-0006's own lumped Requirements wording, also fixed); CurrentRoundIndex/TotalRoundCount written only by Görev/Taşıma Döngüsü via SetRoundState(); TotalConfiguredTriggerCountForNight written once at night begin by the night-begin orchestrator (ADR-0015-owed caller), build-verified against the MemoryTriggerDef asset count; EndSession() convention-restricted to Sahne Kesmeli Anlatı (all single-caller rules convention-enforced, not compiler-checked — QQ-03)"
+    referenced_by:
+      - docs/architecture/adr-0006-session-state-service-and-round-counter-ownership.md
+      - docs/architecture/adr-0014-memory-trigger-orchestration.md   # adds the field + two internal writers; corrected the Fired writer attribution
+      - docs/architecture/adr-0015-end-condition-orchestration.md   # in-place reset conversion; OnTriggerFired/OnTriggerSettled persistent consumer
+    added: 2026-08-06
+    revised: "2026-08-08 — ADR-0014: +TotalConfiguredTriggerCountForNight, +SetTotalConfiguredTriggerCountForNight/AddFiredTrigger; Fired writer corrected from 'subscription-only' (old value preserved in write_access comment above) to the quick spec's direct-write model"
+
+  - state: anlati_durum_ipucu_takibi_state
+    status: active
+    owner_system: anlatidurumipucutakibi
+    adr: docs/architecture/adr-0007-clue-tracking-architecture.md
+    interface: "IAnlatiDurumState (IsClueKnown(id), GetKnownClueIds(), MarkClueKnown(id), OnClueKnown event), accessed via AnlatiDurumIpucuTakibi.Instance static accessor"
+    write_access: "MarkClueKnown() is deliberately public/unrestricted — GDD explicitly allows non-shift callers (e.g. a future dialogue choice) to mark a clue known directly, bypassing the shift-requirement path; internal _seenShiftIds is written only via this service's own subscription to Işık/Volume's OnShiftStateChanged (Held only)"
+    referenced_by:
+      - docs/architecture/adr-0007-clue-tracking-architecture.md
+      - docs/architecture/adr-0015-end-condition-orchestration.md   # in-place reset conversion (regime decision)
+    added: 2026-08-06
+    revised: ""
+
+  - state: adaptif_ses_sistemi_state
+    status: active
+    owner_system: adaptifsessistemi
+    adr: docs/architecture/adr-0009-audio-architecture.md
+    interface: "IAdaptifSesState (HasAlreadyPlayed(shiftId)), accessed via AdaptifSesSistemi.Instance static accessor — pure state, no subscriptions, no upstream Foundation dependency (corrects ADR-0001's original assumption, see ADR-0009 Decision)"
+    write_access: "MarkPlayed(shiftId)/ClearPlayed(shiftId) are internal, reached only via AdaptifSesSistemi.InternalInstance by AdaptifSesController — a MonoBehaviour, not another static service; this is the pattern's first consumer whose sole writer is a MonoBehaviour rather than the state's own constructor-subscribed handler"
+    referenced_by:
+      - docs/architecture/adr-0009-audio-architecture.md
+    added: 2026-08-07
+    revised: ""
+
+  - state: diyalog_anlati_icerigi_used_callback_ids
+    status: active
+    owner_system: diyaloganlatiicerigi
+    adr: docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    interface: "IDiyalogAnlatiIcerigiState (IsCallbackUsed(callbackId), GetUsedCallbackIds()), accessed via DiyalogAnlatiIcerigi.Instance static accessor — this pattern's first Core-layer (not Foundation-layer) consumer"
+    write_access: "MarkCallbackUsed(callbackId) is internal, reached only via DiyalogAnlatiIcerigi.InternalInstance by DialogueSceneController — a MonoBehaviour, not another static service, mirroring AdaptifSesSistemi/AdaptifSesController's (ADR-0009) write shape"
+    referenced_by:
+      - docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    added: 2026-08-07
+    revised: ""
+
+  - state: elevator_system_ride_state
+    status: active
+    owner_system: asansorkaterisimsistemi
+    adr: docs/architecture/adr-0011-elevator-state-machine.md
+    interface: "IElevatorSystemState (CurrentState, ActiveFloorScene, OriginScene, DestinationScene, TryCall(floorScene, isSessionActive), OnDoorsOpeningStarted/OnDoorsOpen/OnDoorsClosingStarted/OnIdleReached/OnReadyForTransition events), accessed via ElevatorSystem.Instance static accessor. ActiveFloorScene is the SINGLE authority for which floor's ElevatorController currently ticks the shared state machine — reassigned exactly once per ride, at OnTransitionComplete(). No automatic return ride: the arrival-side DoorsClosing always winds down to Idle regardless of playerInCabin (user decision, ADR-0011 TD-ADR review) — every ride begins with an explicit TryCall."
+    write_access: "Tick/SetTransition/EnterWaiting/RejectedSynchronously/OnTransitionComplete/OnTransitionFailed are internal, reached only via ElevatorSystem.InternalInstance by whichever ElevatorController's floor equals ActiveFloorScene — two different per-floor MonoBehaviour instances share write responsibility over a ride's lifetime, the pattern's first multi-writer-handoff consumer"
+    referenced_by:
+      - docs/architecture/adr-0011-elevator-state-machine.md
+    added: 2026-08-07
+    revised: ""
+
+  - state: gorev_tasima_dongusu_carry_state
+    status: active
+    owner_system: gorevtasimadongusu
+    adr: docs/architecture/adr-0013-carry-loop-and-round-state.md
+    interface: "IGorevTasimaState (CurrentState, CarriedCount, AreSlotsFull, IsFinalRoundActive, HasCarriedInFinalRound, IsFocusable(itemId, roundIdx, sessionActive), OnCarryingStarted/OnCarryingEnded/OnRoundActivated/OnFinalRoundStarted/OnFinalRoundItemPickedUp/OnTaskListCompleted events), accessed via GorevTasimaDongusu.Instance static accessor - the ADR-0001 pattern's FIRST Feature-layer consumer. Round counters are NOT re-exposed here - Adaptif Ses reads them from GeceOturumDurumu (ADR-0006). HARD ordering constraint (binding on ADR-0015/boot): StartNight() must complete before the depot scene's objects first activate, else round-0 items permanently self-deactivate."
+    write_access: "TryPickUp/DeliverAll/StartNight are internal, reached only via GorevTasimaDongusu.InternalInstance by CarryItemPickup/DropOffZone (scene MonoBehaviours). The IsCarrying mirror: CarrySlotRigController (persistent Player GameObject) subscribes to OnCarryingStarted/Ended and calls its sibling FirstPersonController.SetCarrying - the PlayerStateProvider write stays physically inside the Player object, honoring player_state's 'written only by FirstPersonController' framing. CurrentRoundIndex/TotalRoundCount written only via GeceOturumDurumu.InternalInstance.SetRoundState, resolved lazily at invocation time (never constructor-captured)."
+    referenced_by:
+      - docs/architecture/adr-0013-carry-loop-and-round-state.md
+    added: 2026-08-08
+    revised: ""
 
 # Example:
 #
@@ -71,7 +164,46 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: session_scoped_state_static_facade
+    status: active
+    pattern: direct_call
+    producer: "N/A — project-wide pattern, not owned by one system"
+    consumers:
+      - gece-oturum-durumu         # in-place reset since ADR-0015 (exposed events + persistent subscribers)
+      - isik-volume-durum-sistemi  # in-place reset since ADR-0015 (exposed events + persistent subscribers)
+      - anlati-durum-ipucu-takibi  # in-place reset since ADR-0015 (constructor-subscribes to an in-place source)
+      - adaptif-ses-sistemi        # state/event slice only (HeldSessionAlreadyPlayed) — system also owns MonoBehaviour-driven audio playback outside this pattern
+      - diyalog-anlati-icerigi     # state/event slice only (UsedCallbackIds) — system also owns MonoBehaviour-driven UI Toolkit playback outside this pattern
+      - asansor-kat-erisim-sistemi # state/event slice only (ElevatorSystem ride state) — driven by per-floor MonoBehaviours, in-place reset required (ADR-0011)
+      - gorev-tasima-dongusu       # carry/round state (ADR-0013) — the pattern's first FEATURE-layer consumer; in-place reset (event-exposing facade)
+      - interactableregistry
+      # seviye-sahne-gecisi REMOVED (ADR-0008, 2026-08-06) — that system is
+      # a MonoBehaviour in a persistent scene, not a plain static-facade
+      # consumer of this pattern; see ADR-0001's own inline correction note.
+    adr: docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    signal_signature: "N/A — see ADR for interface+static-facade shape; reset centralized in FoundationBootstrap.ResetAll(), [RuntimeInitializeOnLoadMethod(SubsystemRegistration)], ordered by Foundation dependency graph"
+    referenced_by:
+      - docs/architecture/adr-0001-in-memory-static-service-pattern.md
+      - docs/architecture/adr-0012-dialogue-callback-selection-timing.md   # diyalog-anlati-icerigi's own UsedCallbackIds slice, already anticipated as a consumer above
+    added: 2026-08-05
+    revised: "2026-08-06 — removed seviye-sahne-gecisi from consumers (ADR-0008)"
+
+  - contract: live_monobehaviour_state_static_accessor
+    status: active
+    pattern: direct_call
+    producer: "N/A — per-consumer pattern, not owned by one system (distinct from session_scoped_state_static_facade above: this is for a live MonoBehaviour's own state/members, not FoundationBootstrap-reset pure C# state)"
+    consumers:
+      - uiroot
+      - diyalog-anlati-icerigi   # DialogueSceneController reads UIRoot.Instance.Root for #dialogue-subtitle (ADR-0012)
+      - initial-spawn-anchor     # depot-scene boot-spawn contract (ADR-0015): exactly one per initial level scene, build-verified; Awake-set Instance + duplicate guard
+    adr: docs/architecture/adr-0010-interaction-state-machine.md
+    signal_signature: "N/A — a plain `public static T Instance { get; private set; }` set in Awake() with a duplicate-instance guard (Destroy(gameObject) + Debug.LogError on a second instance), read directly by other MonoBehaviours (e.g. InteractionController.OnEnable() reading UIRoot.Instance.Root). Same shape as PlayerStateProvider (ADR-0003)/SceneTransitionManager (ADR-0008)/AdaptifSesController (ADR-0009), but those are registered as api_decisions execution-context entries since they also own FoundationBootstrap-adjacent state; UIRoot has no such state, so it is registered here as a pure lookup-contract instead."
+    referenced_by:
+      - docs/architecture/adr-0010-interaction-state-machine.md
+      - docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    added: 2026-08-07
+    revised: ""
 
 # Example:
 #
@@ -131,7 +263,152 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: session_scoped_state_persistence
+    status: active
+    api: "Plain C# class + interface + static facade property, reset centrally via FoundationBootstrap.ResetAll() ([RuntimeInitializeOnLoadMethod(SubsystemRegistration)], ordered by Foundation dependency graph)"
+    not: "DontDestroyOnLoad singleton MonoBehaviour; ScriptableObject runtime-set/variable pattern; full third-party DI framework (VContainer/Zenject)"
+    adr: docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    reason: "Closes 2 LP-FEASIBILITY findings (Domain Reload risk, DI/testability conflict with coding-standards.md) with the smallest change consistent with architecture.md's already-established static-service persistence principle; ScriptableObjects have their own equivalent Domain-Reload-style gotcha and would blur this project's clean config/state object split; a full DI framework is disproportionate to 5 Foundation services in a solo/small-team MVP (corrected from 6 — ADR-0008, 2026-08-06 — removed seviye-sahne-gecisi from this pattern)."
+    referenced_by:
+      - docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: ui_rendering_framework
+    status: active
+    api: "UI Toolkit (UIDocument/VisualElement/USS) exclusively; one shared UIDocument for all UI elements, rooted in a dedicated persistent 'UI' scene loaded additively once at boot and never unloaded; per-frame/per-state visual updates driven by direct C# style.* writes, never USS transition/declarative animation, for elements with a GDD-locked timing contract"
+    not: "UGUI/Canvas/TextMeshProUGUI (anywhere in the project, including future menus); IMGUI; DontDestroyOnLoad for the UI GameObject; per-element UIDocument split"
+    adr: docs/architecture/adr-0002-ui-framework-ui-toolkit.md
+    reason: "Matches Unity 6's own current-best-practice guidance with no countervailing cost on a greenfield project; single shared document is the correct categorization for one always-on non-modal HUD overlay with no independent navigation lifecycle (not 4 separate 'screens'); reuses the project's existing additive-scene-persistence pattern (see session_scoped_state_persistence) instead of introducing DontDestroyOnLoad as a second mechanism; C#-driven timing keeps GDD-locked animation contracts (e.g. strictly-linear Hold-fill progress) in reviewed gameplay code rather than an unreviewed .uss file."
+    referenced_by:
+      - docs/architecture/adr-0002-ui-framework-ui-toolkit.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: player_persistence_across_scene_swap
+    status: active
+    api: "Dedicated persistent 'Player' scene, loaded additively once at boot (same mechanism/timing family as the 'UI' scene from ADR-0002), never unloaded; SOFT transitions reposition the existing player Transform to the target scene's SoftTransitionAnchor rather than destroying/recreating the GameObject"
+    not: "DontDestroyOnLoad for the player GameObject"
+    adr: docs/architecture/adr-0003-player-state-and-movement-lock.md
+    reason: "Third consistent application of this project's 'persistent scene, not DontDestroyOnLoad' pattern (state: ADR-0001, UI: ADR-0002, player: here); matches seviye-sahne-gecisi.md's own requirement that the player is repositioned, not recreated, on a SOFT transition; avoids a third independent persistence mechanism for the same underlying problem."
+    referenced_by:
+      - docs/architecture/adr-0003-player-state-and-movement-lock.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: isik_volume_rendering_mechanism
+    status: active
+    api: "Shared URP VolumeProfile asset + one local (isGlobal=false, blendDistance=0) Volume per ShiftZone, Volume.weight driven directly from script by ShiftProgress; each zone's own Light array color/intensity lerped in lockstep by the same value"
+    not: "Custom ScriptableRendererFeature/RenderGraph pass; baked lightmap set switching"
+    adr: docs/architecture/adr-0005-isik-volume-rendering-architecture.md
+    reason: "Every value isik-volume-durum-sistemi.md needs (White Balance/Tint/Post Exposure/Saturation, Light color/intensity) is already achievable via standard, stable, pre-cutoff Volume/Light APIs — a custom RenderGraph pass would duplicate this for zero functional gain while introducing the project's single highest-risk engine domain; baked lightmap swapping can't animate smoothly through ShiftProgress and was already rejected in the GDD itself. Empirically validated for the single-zone case by prototypes/yankilar-volume-weight-spike/."
+    referenced_by:
+      - docs/architecture/adr-0005-isik-volume-rendering-architecture.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: session_round_counter_ownership
+    status: active
+    api: "CurrentRoundIndex/TotalRoundCount stored on Gece/Oturum Durumu (Foundation), written only by Görev/Taşıma Döngüsü (Feature) via a direct internal method call — GeceOturumDurumu.InternalInstance.SetRoundState(idx, total) — on every round transition; Adaptif Ses Sistemi reads them via a plain polled property, no event"
+    not: "Storage remaining on Görev/Taşıma Döngüsü with Adaptif Ses reading upward across layers (the original violation); Gece/Oturum Durumu subscribing to a Görev/Taşıma-owned event to receive the write (would make a Foundation service depend on a Feature-layer event source — backwards regardless of data-flow direction)"
+    adr: docs/architecture/adr-0006-session-state-service-and-round-counter-ownership.md
+    reason: "Implements architecture.md Phase 1's Feature→Foundation relocation decision; a direct method call (Feature calling into Foundation's surface) keeps the dependency arrow pointing the architecturally allowed way, which a reverse event subscription would not, even though both move the same two integers."
+    referenced_by:
+      - docs/architecture/adr-0006-session-state-service-and-round-counter-ownership.md
+      - docs/architecture/adr-0013-carry-loop-and-round-state.md   # the concrete SetRoundState caller - lazy lambda, invocation-time resolution
+    added: 2026-08-06
+    revised: ""
+
+  - purpose: foundation_service_config_asset_loading
+    status: active
+    api: "When a Foundation static service needs a config ScriptableObject (e.g. a central content registry), load it via Addressables (LoadAssetAsync + WaitForCompletion for a synchronous, one-time load), lazily on first real gameplay use — never in the service's constructor/ResetOnLoad. Established by AnlatiDurumIpucuTakibi's ClueRegistry load (EnsureRegistryLoaded(), called from the first real OnShiftStateChanged(Held) handler invocation)."
+    not: "Resources.Load (deprecated per deprecated-apis.md, Addressables is the documented replacement); loading eagerly in the constructor/ResetOnLoad (untested at FoundationBootstrap.ResetAll()'s ultra-early SubsystemRegistration timing — no prior Foundation service constructor had called any engine asset-loading API from that code path before this ADR)"
+    adr: docs/architecture/adr-0007-clue-tracking-architecture.md
+    reason: "This project's first real Addressables consumer — matches current-best-practices.md's documented Addressables-over-Resources preference while sidestepping the SubsystemRegistration-timing uncertainty entirely by deferring the load past boot, to a point where the engine/Addressables system is certainly fully initialized (real gameplay having occurred)."
+    referenced_by:
+      - docs/architecture/adr-0007-clue-tracking-architecture.md
+    added: 2026-08-06
+    revised: ""
+
+  - purpose: scene_transition_execution_context
+    status: active
+    api: "Seviye/Sahne Geçişi (SceneTransitionManager) is a MonoBehaviour on a single GameObject in a new persistent 'Foundation' scene, loaded additively once at boot (same mechanism/timing family as ADR-0002's 'UI' scene and ADR-0003's 'Player' scene), never unloaded. Its one genuine timed requirement (0.5-2s deferred scene unload after Complete) uses an ordinary Coroutine (WaitForSeconds), not Awaitable or Task.Delay."
+    not: "The ADR-0001 plain-static-service pattern (this is the one documented exception — see ADR-0001's own inline correction note); Awaitable.WaitForSecondsAsync (undocumented in this project's engine-reference, unverified); System.Threading.Tasks.Task.Delay (not Unity-native, disconnects from Time.timeScale/Play-mode-stop semantics)"
+    adr: docs/architecture/adr-0008-scene-transition-state-machine.md
+    reason: "First Foundation system needing both SceneManager's async load-completion callbacks AND a genuine timed delay unrelated to any external event — Coroutine is this project's most-proven async mechanism (Işık/Volume's per-zone ticker, ADR-0005) for a system whose zero-frame-swap/zero-black-frame guarantees are its most safety-critical requirements; minimizing mechanism risk was judged more valuable than static-service pattern purity."
+    referenced_by:
+      - docs/architecture/adr-0008-scene-transition-state-machine.md
+      - docs/architecture/adr-0012-dialogue-callback-selection-timing.md   # consumes OnTransitionStateChanged for deferred callback-selection timing
+    added: 2026-08-06
+    revised: ""
+
+  - purpose: adaptif_ses_execution_context
+    status: active
+    api: "Adaptif Ses Sistemi's playback side (AdaptifSesController) is a MonoBehaviour reusing ADR-0008's persistent 'Foundation' scene — the second such system, not a new host scene (see scene_transition_execution_context above). Its state slice (AdaptifSesSistemi, HeldSessionAlreadyPlayed) stays a plain ADR-0001 static facade with zero subscriptions. All subscriptions (to Işık/Volume's OnShiftStateChanged and SceneTransitionManager's OnTransitionStateChanged) happen in AdaptifSesController.Start(), never in any FoundationBootstrap.ResetAll()-time constructor."
+    not: "The static facade itself subscribing to anything (ADR-0001's original, incorrect assumption for this system — corrected by ADR-0009); a third/fourth persistent scene for this controller (reuses ADR-0008's 'Foundation' scene instead)"
+    adr: docs/architecture/adr-0009-audio-architecture.md
+    reason: "Establishes the general shape for any future Foundation system that is a genuine state+MonoBehaviour hybrid: pure-state static facade (ADR-0001 pattern) for anything that must survive scene loads and be test-substitutable, paired with a MonoBehaviour (reusing the 'Foundation' persistent scene, not a new one) for anything requiring real Unity objects/subscriptions/timed behavior — subscriptions always at Start()-time, never constructor-time, satisfying the constructor_time_subscription_to_scenetransitionmanager forbidden pattern by construction."
+    referenced_by:
+      - docs/architecture/adr-0009-audio-architecture.md
+    added: 2026-08-07
+    revised: ""
+
+  - purpose: interaction_focus_detection_layer_mask
+    status: active
+    api: "Etkileşim Sistemi's focus-detection SphereCast (InteractionController.ResolveFocusTarget) checks a combined LayerMask — a dedicated \"Interactable\" layer OR'd with a general \"Environment\" layer (walls/doors/other solid non-interactable geometry, including visually-transparent-but-physically-solid surfaces). The closest hit of either layer wins (ties broken by collider.GetInstanceID()); if the closest hit is not an IInteractable, the cast is treated as fully occluded, even if a real IInteractable exists further along the ray."
+    not: "SphereCast against the Interactable layer alone (rejected — see ADR-0010 Alternative 1: physically implausible, lets the player interact through solid geometry)"
+    adr: docs/architecture/adr-0010-interaction-state-machine.md
+    reason: "Resolves etkilesim-sistemi.md's Open Question #2; matches Pillar 3 (Görev Gerçekliği)'s reachability expectations and the GDD's own glass-occlusion example — visual transparency is irrelevant, only collider presence on either layer matters. User-confirmed via AskUserQuestion, 2026-08-07."
+    referenced_by:
+      - docs/architecture/adr-0010-interaction-state-machine.md
+    added: 2026-08-07
+    revised: ""
+
+  - purpose: dialogue_callback_selection_deferred_evaluation
+    status: active
+    api: "Diyalog/Anlatı İçeriği's DialogueSceneController subscribes to SceneTransitionManager.Instance.OnTransitionStateChanged in OnEnable() and evaluates callback selection only on the TransitionState.Complete event where gameObject.scene == SceneManager.GetActiveScene() — i.e. the Complete that actually made THIS scene active, not merely the first Complete received after subscribing."
+    not: "Evaluating in Awake()/Start() directly (reproduces the GDD's saturation-timing bug — rejected by the GDD itself); a one-frame-delayed coroutine with no SceneTransitionManager reference (doesn't verify the swap actually completed); filtering OnTransitionStateChanged by event-arrival-order alone without the gameObject.scene identity check (unsound once PreloadHardCut is in play — see the broadcast_transition_event_consumed_without_identity_filter forbidden pattern this ADR's own bug generalizes into)"
+    adr: docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    reason: "Resolves the GDD's own critical (2026-08-04) requirement that scene-entry logic must be deferred past Awake/Start to genuine scene-active time, reusing ADR-0008's existing OnTransitionStateChanged event (already established for this exact 'wait for the swap to genuinely happen' need by ADR-0009) rather than inventing a new scene-activation signal. The gameObject.scene identity check was added after an initial draft's event-ordering-only reasoning was found unsound for the PreloadHardCut path during unity-specialist review."
+    referenced_by:
+      - docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    added: 2026-08-07
+    revised: ""
+
+  - purpose: elevator_execution_context
+    status: active
+    api: "Asansör/Kat-Erişim Sistemi is per-floor: each floor scene carries its own visually-identical cabin prefab (ElevatorController + ElevatorTriggerZoneRelay children), with the logical single-cabin ride state shared cross-scene via the ElevatorSystem static facade (ADR-0001 pattern, in-place reset). The floor controller whose scene name equals ElevatorSystem.Instance.ActiveFloorScene is the sole Tick() driver; _thisFloorSceneName is derived from gameObject.scene.name, never hand-authored."
+    not: "A single shared cabin GameObject in a new persistent 'Elevator' scene (rejected — no genuine always-loaded-object need, and it would depend on the unresolved RenderGraph/multi-scene camera-stacking spike from seviye-sahne-gecisi.md Open Question #2); an IInteractable call button (GDD's own explicit rejection — direct trigger-zone + Interact read, no crosshair/prompt); a MonoBehaviour-embedded state machine (violates coding-standards.md's test rule AND cannot be shared across two per-floor controller instances)"
+    adr: docs/architecture/adr-0011-elevator-state-machine.md
+    reason: "Resolves asansor-kat-erisim-sistemi.md's Open Question #1 (cabin architecture), whose owner the GDD itself named as 'technical-director, via an ADR.' Per-floor prefabs + shared facade satisfy the cross-scene busy-lockout requirement (GDD AC12) without a fifth persistent scene or the unverified camera-stacking dependency. User-confirmed via AskUserQuestion, 2026-08-07."
+    referenced_by:
+      - docs/architecture/adr-0011-elevator-state-machine.md
+    added: 2026-08-07
+    revised: ""
+
+  - purpose: scene_object_state_restore_timing
+    status: active
+    api: "A scene object restoring already-set state from a static service on scene (re)load (a delivered CarryItemPickup, a Committed MemoryTriggerObject) performs the restore query at the TOP of its own OnEnable(), before the InteractableRegistry.Register call in the same method body. Two outcome variants, both on record: deactivate-entirely (SetActive(false) + return before Register — CarryItemPickup, ADR-0013) or stay-visible-skip-Register (object remains rendered scenery, simply never registers — MemoryTriggerObject, ADR-0014; revised 2026-08-08, the original wording mandated SetActive(false) for all cases). Deregister of a never-registered object is a safe no-op (ADR-0004)."
+    not: "Querying in Awake() (the original TR-ani-tetik-002/TR-gorev-005 spec, superseded): under the Editor's 'Reload Scene: Off' Enter Play Mode Setting, Awake() does not re-run on surviving scene objects across a Play Stop-Play boundary while FoundationBootstrap.ResetAll() DOES clear the restore-source state - an Awake-only query silently skips the re-check (architecture.md QQ-07, forwarded by ADR-0001, closed by ADR-0013)"
+    adr: docs/architecture/adr-0013-carry-loop-and-round-state.md
+    reason: "OnEnable re-fires in exactly the scenario Awake misses, and the 'before registration' guarantee is preserved within the same OnEnable body - the fix ADR-0001's Risks section anticipated. The ADR-0014 adoption mandate is DISCHARGED (2026-08-08): MemoryTriggerObject adopted the stay-visible variant and both GDD/quick-spec Awake() wordings are synced."
+    referenced_by:
+      - docs/architecture/adr-0013-carry-loop-and-round-state.md
+      - docs/architecture/adr-0014-memory-trigger-orchestration.md   # second adopter, stay-visible variant
+    added: 2026-08-08
+    revised: "2026-08-08 — ADR-0014: api wording extended to cover both restore variants (old wording mandated SetActive(false) universally)"
+
+  - purpose: end_condition_execution_context
+    status: active
+    api: "Sahne Kesmeli Anlatı follows the ADR-0009 hybrid shape's second application: pure C# EndConditionStateMachine (all gate/deferral/priority logic, delegate-injected facts, BLOCKING-testable) inside a minimal SahneKesmeliAnlati static facade (in-place reset; NightBeginPending per-session flag), driven by SahneKesmeliAnlatiController in the persistent Foundation scene. Subscriptions are OnEnable/OnDisable-SYMMETRIC (a recorded deviation from adaptif_ses_execution_context's 'subscriptions at Start()' letter: Start()-time subscribe paired with OnDisable-unsubscribe is a session-2 dead zone under Reload Scene: Off, since OnDisable fires at session exit but Start() never re-runs — OnEnable re-fires, restoring delivery; night-begin setup stays in Start() because SceneTransitionManager.Instance is not guaranteed during the OnEnable pass). The controller is ALSO the night-begin orchestrator (the ADR-0013/0014-owed caller): SetTotalConfiguredTriggerCountForNight + StartNight from NightConfigDef, THEN the initial level-scene load. MINIMAL BOOT CONTRACT: the build's initial load set contains ONLY the persistent scenes (UI/Player/Foundation); the first level scene loads exclusively via this controller's post-setup call — the structural guarantee behind ADR-0013's setup-before-depot-activation constraint. Initial player placement: depot-authored InitialSpawnAnchor applied in the boot load's onComplete."
+    not: "Polling the end conditions in Update() (the quick spec's own N5 finding rejected implicit polling); a plain static service with constructor-time subscriptions (banned pathways + no home for the serialized NightConfigDef); a separate NightBootstrapper component (same config + same ordering contract split across two components for zero behavioral difference)"
+    adr: docs/architecture/adr-0015-end-condition-orchestration.md
+    reason: "Closes the Required ADRs list (15/15). The OnEnable/OnDisable symmetry was user-confirmed after TD-ADR review caught the Start()/OnDisable asymmetry as a real lifecycle defect; the boot contract satisfies two prior ADRs' binding constraint structurally rather than by convention."
+    referenced_by:
+      - docs/architecture/adr-0015-end-condition-orchestration.md
+    added: 2026-08-08
+    revised: ""
 
 # Example:
 #
@@ -157,7 +434,93 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: independent_runtimeinitializeonload_per_session_service
+    status: active
+    description: "A session-scoped-state service must not attribute its own [RuntimeInitializeOnLoadMethod] reset method. All resets are centralized in FoundationBootstrap.ResetAll(), called in explicit Foundation dependency order."
+    why: "Unity does not guarantee relative execution order between independent RuntimeInitializeOnLoadMethod callbacks at the same load stage — an unlucky order could reset a service before another service that subscribes to its events in its own constructor, silently dropping that subscription for the session. Confirmed as a live bug in ADR-0001's original draft during TD-ADR review, not just a theoretical risk."
+    adr: docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    added: 2026-08-05
+
+  - pattern: dont_destroy_on_load_singleton_for_session_state
+    status: active
+    description: "Session-scoped state (facts that must survive a scene load within one play session) must not be implemented as a DontDestroyOnLoad singleton MonoBehaviour."
+    why: "No GameObject/Transform/component lifecycle is needed for pure state/event data; carries real overhead, risks duplicate-instance bugs across additive scene loads, and doesn't independently solve the Domain Reload or testability/DI requirements this project's coding-standards.md requires."
+    adr: docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    added: 2026-08-05
+
+  - pattern: caching_session_state_interface_reference_across_session_boundary
+    status: active
+    description: "Consumers must always read a session-scoped-state service's static facade (e.g. GeceOturumDurumu.Instance) live at the point of use, never cache the returned interface reference in a field across a Play-mode session boundary."
+    why: "A cached reference can point to an orphaned pre-reset instance after FoundationBootstrap.ResetAll() runs, silently missing all events from the canonical new instance — especially risky combined with Reload Scene disabled, where Awake() doesn't re-run. SCOPE NARROWED (ADR-0015, 2026-08-08): this hazard exists only for REPLACEMENT-reset facades. Under the in-place regime (all event-involved facades since ADR-0015) the backing instance is never replaced, so no orphaned instance can exist — caching a reference to a structurally never-replaced instance is safe and is done deliberately (e.g. ADR-0015's controller caching its machine, with an inline citation of this pattern). The rule remains binding for any facade not documented as never-replaced."
+    adr: docs/architecture/adr-0001-in-memory-static-service-pattern.md
+    added: 2026-08-05
+    revised: "2026-08-08 - ADR-0015: scope narrowed to replacement-reset facades; never-replaced-instance carve-out recorded" 
+
+  - pattern: ugui_canvas_usage
+    status: active
+    description: "No UGUI (Canvas, Image, TextMeshProUGUI, etc.) component anywhere in the project, including any future menu/settings/pause screen. UI Toolkit is the exclusive UI framework."
+    why: "Avoids two parallel UI stacks for what is (and is expected to remain) a small UI surface; matches Unity 6's own current-best-practice recommendation for new projects with zero countervailing cost on a greenfield codebase with no existing UGUI investment."
+    adr: docs/architecture/adr-0002-ui-framework-ui-toolkit.md
+    added: 2026-08-05
+
+  - pattern: interactable_in_persistent_scene
+    status: active
+    description: "IInteractable implementers must not live in a persistent, never-unloaded scene (the pattern ADR-0002/ADR-0003 use for UI/Player)."
+    why: "InteractableRegistry's live list is self-correcting only because every IInteractable's OnDisable fires when its scene is torn down at session end — an interactable in a persistent scene would never deregister, silently breaking that assumption and leaking stale entries indefinitely."
+    adr: docs/architecture/adr-0004-interactableregistry-foundation-ownership.md
+    added: 2026-08-05
+
+  - pattern: session_surviving_cache_keyed_on_native_engine_counter
+    status: active
+    description: "A cache or invalidation check keyed on a native Unity counter that resets every Play session (Time.frameCount, Time.time, etc.) must not be left as a plain static field with no reset hook — it must register a minimal ResetOnLoad() in FoundationBootstrap.ResetAll() (ADR-0001), even if the underlying data it caches is itself self-correcting and needs no reset of its own."
+    why: "With Domain Reload disabled, such a field survives across Play sessions while the native counter it's compared against resets to near-zero — if a later session's counter value collides with the stale cached value, the cache is incorrectly treated as still valid and returns stale (possibly destroyed-object-referencing) data. Discovered as a live, not theoretical, bug in InteractableRegistry's frame-snapshot cache during ADR-0004's engine-specialist validation."
+    adr: docs/architecture/adr-0004-interactableregistry-foundation-ownership.md
+    added: 2026-08-05
+
+  - pattern: overlapping_shift_zone_volume_boxes
+    status: active
+    description: "Two ShiftZones' Volume-trigger box Bounds must not overlap in the same scene, even if they share zero lights. Minimum zone-center spacing is BoxHalfExtentMin_A + BoxHalfExtentMin_B (~20-40m per the GDD's own worked examples)."
+    why: "All ShiftZones share one VolumeProfile asset. If two zones' boxes overlap, both Volumes can be simultaneously weighted, and URP composites multiple weighted local Volumes referencing the same profile as sequential over-Lerp, not averaging — non-linear, screen-wide grade amplification invisible to a designer reviewing only light assignments. Reachable even with correctly-non-shared lights because the Box Collider Safety Margin formula deliberately oversizes the trigger box well beyond the light-affected radius. Discovered during ADR-0005's engine-specialist validation; the prototype spike only tested a single isolated zone."
+    adr: docs/architecture/adr-0005-isik-volume-rendering-architecture.md
+    added: 2026-08-05
+
+  - pattern: constructor_subscribing_foundation_service_reset_before_event_source
+    status: active
+    description: "In FoundationBootstrap.ResetAll() (ADR-0001), a Foundation service that subscribes to another Foundation service's event inside its own constructor/static field initializer must never be ordered before that event source's own ResetOnLoad() call."
+    why: "Generalizes a live bug found and fixed in ADR-0001's original ResetAll() ordering (ADR-0006, 2026-08-06): Gece/Oturum Durumu's constructor subscription to Işık/Volume's event bound to a stale, about-to-be-replaced instance when reset first. HAZARD GEOMETRY REVISED (ADR-0015, 2026-08-08): under the in-place regime, constructor subscriptions bind once per process to never-replaced instances and survive every reset — the original stale-binding hazard is unreachable for all current services, and ResetAll() ordering is data-only. The LIVE residual hazard is the mirror image: a future REPLACEMENT-reset facade constructor-subscribing to an in-place event source would re-subscribe on every reset (per-session accumulation, handler firing N+1 times after N resets) AND leave each discarded instance's handler permanently pinned. Any future facade added to ResetAll() must therefore either be in-place itself or must not constructor-subscribe to in-place sources."
+    adr: docs/architecture/adr-0006-session-state-service-and-round-counter-ownership.md
+    added: 2026-08-06
+    revised: "2026-08-08 - ADR-0015: hazard geometry updated for the in-place regime (old stale-binding form unreachable; accumulation form is the live residual)" 
+
+  - pattern: engine_asset_api_call_in_foundation_constructor
+    status: active
+    description: "A Foundation static service's constructor or ResetOnLoad() must never directly call an engine asset-loading API (Addressables, Resources, AssetDatabase, or any other synchronous/async asset resolution call). Any such load must be deferred to first real gameplay use instead."
+    why: "FoundationBootstrap.ResetAll() (ADR-0001) fires via [RuntimeInitializeOnLoadMethod(SubsystemRegistration)] — the earliest point in Unity's boot sequence, before general engine/subsystem readiness (including Addressables' own initialization) is guaranteed. Discovered during ADR-0007's authoring: the first draft loaded a config ScriptableObject (ClueRegistry) eagerly in a Foundation service's constructor, which would have been this project's first-ever engine-API call from that code path, with unverified timing safety. Fixed by deferring the load to the service's first real event-handler invocation (a point in the session guaranteed to be well past boot) — see foundation_service_config_asset_loading (api_decisions) for the resulting pattern."
+    adr: docs/architecture/adr-0007-clue-tracking-architecture.md
+    added: 2026-08-06
+
+  - pattern: constructor_time_subscription_to_scenetransitionmanager
+    status: active
+    description: "No Foundation service may reference SceneTransitionManager.Instance (read a property, subscribe to OnTransitionStateChanged, call a method) from its own constructor or ResetOnLoad(). Any such usage must be deferred to first real gameplay use instead."
+    why: "Seviye/Sahne Geçişi (ADR-0008) is the one Foundation service that is a MonoBehaviour in a persistent scene, not a plain static-facade class reset by FoundationBootstrap.ResetAll(). Its Instance is set by that scene's own Awake(), which runs well after FoundationBootstrap.ResetAll()'s SubsystemRegistration-time execution — so a plain-static-service constructor referencing SceneTransitionManager.Instance at that point would find it null, unlike every other Foundation service's Instance, which IS guaranteed constructed by the time ResetAll() returns. Discovered while drafting ADR-0008, load-bearing for the not-yet-written Audio Architecture ADR (#9), whose Adaptif Ses Sistemi must subscribe to OnTransitionStateChanged lazily because of this rule."
+    adr: docs/architecture/adr-0008-scene-transition-state-machine.md
+    added: 2026-08-06
+
+  - pattern: broadcast_transition_event_consumed_without_identity_filter
+    status: active
+    description: "A consumer of SceneTransitionManager.OnTransitionStateChanged must never assume 'the first event received after subscribing' identifies its own transition. The event carries no scene/transition identity (TransitionState, TransitionType only) — a consumer must additionally check something that actually identifies the transition as its own (e.g. gameObject.scene == SceneManager.GetActiveScene() for a scene-local subscriber) before acting on a Complete event."
+    why: "PreloadHardCut (ADR-0008) advances _hardCutPreloadState independently of CurrentState/OnTransitionStateChanged, so a scene can be fully loaded (Awake/OnEnable already run, subscription already active) while sitting inactive in the background, arbitrarily long before its real swap — during which unrelated SOFT transitions keep firing their own Complete events freely. Discovered as a live BLOCKING bug in ADR-0012's original draft (unity-specialist review, 2026-08-07): DialogueSceneController evaluated on the first unrelated elevator SOFT transition's Complete while the psychiatry scene sat PreloadHardCut'd in the background, reproducing the exact 'evaluated before the scene is genuinely active' bug the mechanism existed to prevent. Any future consumer of this event (not just Diyalog/Anlatı İçeriği) is equally exposed unless it applies an identity filter."
+    adr: docs/architecture/adr-0012-dialogue-callback-selection-timing.md
+    added: 2026-08-07
+
+  - pattern: wholesale_state_replacement_for_event_exposing_facade
+    status: active
+    description: "An ADR-0001-pattern static facade whose interface exposes C# events (forwarded onto a backing instance's event fields) must reset via an in-place ResetOnLoad() that clears fields on the SAME backing instance — never by replacing the backing instance/field with a new object."
+    why: "Facade events forward subscriptions directly onto the backing instance's own event fields (add/remove accessors). Replacing the instance on reset silently orphans every already-subscribed MonoBehaviour — subscriptions stay bound to the discarded old instance and never fire again, with no error. Reachable exactly in the 'Reload Scene: Off' scenario ADR-0001/0003/0008/0010 all document. Discovered during ADR-0011's unity-specialist review (ElevatorSystem's original reset). REVISED example clause (ADR-0015, 2026-08-08): the original text cited 'GeceOturumDurumu's original shape' as an events-free facade where replacement remains fine — inaccurate even at registration (IGeceOturumDurumuState has exposed OnTriggerFired/OnTriggerSettled since ADR-0001's worked example), and GeceOturumDurumu is now the flagship in-place conversion. Post-ADR-0015, ALL event-involved facades (exposing events OR constructor-subscribing to another facade's events) reset in place; a truly event-free pure-state facade (e.g. AdaptifSesSistemi, DiyalogAnlatiIcerigi... which also resets in place by ADR-0012's choice) MAY use replacement, but in-place is the project default."
+    adr: docs/architecture/adr-0011-elevator-state-machine.md
+    added: 2026-08-07
+    revised: "2026-08-08 - ADR-0015: example clause corrected (old value preserved in why text); all-facades in-place regime recorded" 
 
 # Example:
 #

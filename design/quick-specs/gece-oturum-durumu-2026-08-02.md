@@ -130,7 +130,7 @@ Quick Spec önceden bir Dependencies bölümü hiç taşımıyordu.)*
 
 **Kendisine bağımlı olanlar**:
 - **Anı-Tetikleyici Etkileşim** — `FiredTriggerIds`'e yazar
-  (`OnHoldComplete()`'te), `Awake()`'te okur (Committed-restore)
+  (`OnHoldComplete()`'te, `AddFiredTrigger` internal yoluyla — ADR-0014), `OnEnable()` başında okur (Committed-restore — ADR-0014, 2026-08-08: `Awake()`'ten sync edildi, QQ-07/`scene_object_state_restore_timing`)
 - **Işık/Volume Durum Sistemi** — `PersistentShiftIds`'i okur (sahne
   yeniden yüklemede Persistent-restore için)
 - **Asansör/Kat-Erişim Sistemi** — `IsSessionActive`'i okur

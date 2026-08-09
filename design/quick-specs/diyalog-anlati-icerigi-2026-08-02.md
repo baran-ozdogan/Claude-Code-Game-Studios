@@ -26,6 +26,32 @@ tempo sınırını uygular.
 - **Seçim mantığı**: Sahne başladığında, `CallbackPool`'daki her callback
   için `IsClueKnown(clueId)` sorgulanır. Bilinen `clueId`'lere sahip
   callback'ler aday listesine girer.
+  **"Sahne başladığında" tam olarak ne zaman — Seviye/Sahne Geçişi'nin
+  preload'una karşı netleştirildi (design-review, 2026-08-04 — üçüncü
+  tur full re-verification bulgusu, eklendi, kritik bulgu)**: Bu ifade
+  önceden belirsizdi — `Awake`/`Start` (sahne preload sırasında, hedef
+  sahne henüz aktif olmadan çalışır) mı, yoksa sahne fiilen aktif/görünür
+  olduktan (Seviye/Sahne Geçişi'nin `Swapping` adımından sonra) sonra mı?
+  Bu ayrım kritik: Sahne Kesmeli Anlatı'nın doygunluk tarafı, son
+  tetikleyicinin `PreloadHardCut` eşiğini (`FiredTriggerIds.Count ==
+  TotalConfiguredTriggerCountForNight - 1`) **son tetikleyici henüz
+  Held'e ulaşmadan** geçebilir — ve Seviye/Sahne Geçişi'nin kendi "Preload
+  tam tamamlanmalı" kuralı, hedef sahnenin tüm `Awake`/`Start`
+  maliyetlerinin **preload sırasında, `Swapping`'den önce** ödenmesini
+  garanti eder. Bu projenin kendi yerleşik deseni (`MemoryTriggerObject.Awake()`'te
+  `FiredTriggerIds` sorgulanması gibi) bir implementer'ı doğal olarak
+  `Awake`/`Start`'ta sorgulamaya yönlendirirdi — ki bu, saturation-timing
+  düzeltmesinin (bkz. `sahne-kesmeli-anlati-2026-08-02.md`) tam olarak
+  önlemeye çalıştığı sonucu (son tetikleyicinin ipucusu henüz Known
+  olmadan callback seçiminin tamamlanması) farklı bir mekanizmadan tekrar
+  üretirdi. **Düzeltme**: `IsClueKnown` sorgusu (ve tüm `CallbackPool`
+  değerlendirmesi) kasıtlı olarak `Awake`/`Start`'ta **çalıştırılmaz** —
+  sahnenin `SceneManager.GetActiveScene()` ile eşleştiği (Seviye/Sahne
+  Geçişi'nin `Swapping` adımından sonraki ilk kare) karede ertelenir.
+  Pratikte: sahne-lokal bir `MonoBehaviour`'ın `OnEnable`/`Start`'ı
+  yerine, aktif-sahne değişimini dinleyen (ya da basitçe bir kare
+  gecikmeli) bir tetikleyici kullanılır — kesin mekanizma implementasyon
+  aşamasında seçilir, ama **asla preload sırasında değil**.
 - **Tempo sınırı (Anlatı Durum GDD'sinin zorunlu gereksinimi)**: Aday
   listesi `MaxCallbacksPerScene` (Tuning Knob) değerini aşarsa, sadece
   yazar tarafından atanmış `Priority` sırasına göre ilk N tanesi
@@ -75,6 +101,13 @@ doğrulamıyordu.)*
 **Bağımlıdır**:
 - **Anlatı Durum/İpucu Takibi** — `IsClueKnown(clueId)` sorgusunu her
   `CallbackPool` girdisi için çağırır (bkz. Core Rules, "Seçim mantığı")
+- **Seviye/Sahne Geçişi** (dolaylı/zamanlama bağımlılığı — design-review,
+  2026-08-04 üçüncü tur bulgusuyla eklendi, bu Quick Spec önceden bunu
+  hiç listelemiyordu) — doğrudan API çağrısı yok, ama bu sistemin
+  `IsClueKnown` sorgusunun **ne zaman** çalıştırılacağı doğrudan
+  Seviye/Sahne Geçişi'nin preload/`Swapping` zamanlamasına bağlı (bkz.
+  Core Rules, "'Sahne başladığında' tam olarak ne zaman") — preload
+  sırasında değil, sahne fiilen aktif olduktan sonra çalıştırılmalı
 
 **Kendisine bağımlı olanlar**:
 - Yok — bu sistem sadece psikiyatri seansı sahnesinin kendi diyalog
@@ -108,6 +141,14 @@ bir madde miras bırakmıştı.)*
 
 ## Acceptance Criteria
 
+- [ ] **[design-review, 2026-08-04 — üçüncü tur full re-verification
+      bulgusu, eklendi, kritik bulgu]** GIVEN psikiyatri sahnesi
+      preload edilmiş (Seviye/Sahne Geçişi `Ready` durumunda, henüz
+      `Swapping` gerçekleşmemiş), WHEN sahnenin `Awake`/`Start`
+      metodları çalışır, THEN `IsClueKnown` sorgusu VE `CallbackPool`
+      değerlendirmesi **henüz çalıştırılmamıştır** — bu, sahne fiilen
+      aktif olana kadar ertelenir (bkz. Core Rules, "'Sahne başladığında'
+      tam olarak ne zaman")
 - [ ] GIVEN hiçbir ipucu bilinmiyor, WHEN sahne oynar, THEN sadece temel
       diyalog gösterilir, hata/eksik-içerik işareti yok
 - [ ] GIVEN aday callback sayısı `MaxCallbacksPerScene`'i aşıyor, WHEN

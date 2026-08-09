@@ -19,38 +19,190 @@
 #             /story-readiness (validate TR-ID exists and is active)
 #
 # ID FORMAT: TR-[system-slug]-[NNN]
-#   system-slug = short slug matching the GDD system name
-#   NNN = three-digit zero-padded sequence per system, starting at 001
+#
+# PROVENANCE NOTE (initial population, 2026-08-09): the registry was found
+# empty by /architecture-review 2026-08-09 although architecture.md and the
+# 15 Accepted ADRs already cited these TR-IDs in narrative text. This
+# population was derived from the ADRs' "GDD Requirements Addressed" tables
+# and architecture.md's per-system TR ranges. IDs explicitly cited by number
+# in architecture.md/ADRs (e.g. TR-isik-011, TR-ses-004/012/016, TR-fpc-004,
+# TR-sahne-gecisi-004/006, TR-anlati-006, TR-etkilesim-007/008,
+# TR-gorev-004/005, TR-ani-tetik-002/003, TR-diyalog-002/004, TR-oturum-001,
+# TR-ses-008, TR-anlati-001, TR-isik-019) keep their cited meanings at their
+# cited numbers; all other numbers were assigned in this pass and are now
+# canonical. Future runs match by requirement text per the rules above.
 #
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
-version: 1
-last_updated: ""
+version: 2
+last_updated: "2026-08-09"
 
-requirements: []
+requirements:
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+  # ── birinci-sahis-kontrolcu (FPC) ─────────────────────────────────────
+  - { id: TR-fpc-001, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "IPlayerState arayüzü tam alan listesiyle: EyeCamera, Velocity, IsGrounded, MovementLocked, IsCarrying, IsLocked, MovementLockChanged", created: 2026-08-09, status: active }
+  - { id: TR-fpc-002, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Referans sayımlı RequestMovementLock(requester, scope)/ReleaseMovementLock(requester), MovementLockScope { Full, MoveOnly }", created: 2026-08-09, status: active }
+  - { id: TR-fpc-003, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Eşzamanlı N kilit sahibi; etkin kapsam her zaman en kısıtlayıcı olan (most-restrictive-wins)", created: 2026-08-09, status: active }
+  - { id: TR-fpc-004, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Yaklaşma-yavaşlama (approach_slow_taper) formülünün d değişkeni için InteractableRegistry okunur (Foundation'a relocate edildi — ADR-0004)", created: 2026-08-09, status: active }
+  - { id: TR-fpc-005, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Hareket kilidi asla oyuncu girdisiyle serbest bırakılmaz — yalnızca kilidi alan requester bırakabilir", created: 2026-08-09, status: active }
+  - { id: TR-fpc-006, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Aynı requester'dan Release'siz ikinci aynı-kapsam Request güvenli no-op", created: 2026-08-09, status: active }
+  - { id: TR-fpc-007, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Tek Release(requester) o requester'ın tüm kilit girdilerini temizler; çapraz-kapsam durumda sticky most-restrictive (ADR-0003)", created: 2026-08-09, status: active }
+  - { id: TR-fpc-008, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "MovementLockChanged event'i yalnızca kilitli/kilitsiz durum gerçekten değişince fırlar", created: 2026-08-09, status: active }
+  - { id: TR-fpc-009, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "IsLocked ucuz (O(1)) ön-kontrol olarak her sistemce okunabilir", created: 2026-08-09, status: active }
+  - { id: TR-fpc-010, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Oyuncu GameObject'i sahne geçişlerinde asla yok edilip yeniden yaratılmaz — SoftTransitionAnchor'a repozisyonlanır (Bedenin Sürekliliği)", created: 2026-08-09, status: active }
+  - { id: TR-fpc-011, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "CharacterController tabanlı kinematik hareket; Rigidbody-tabanlı gameplay yok; kilitli step-offset/skin-width tuning'i", created: 2026-08-09, status: active }
+  - { id: TR-fpc-012, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Kamera pitch/bakış kontrolü; MoveOnly kilit altında Look serbest kalır", created: 2026-08-09, status: active }
+  - { id: TR-fpc-013, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "IsCarrying, Görev/Taşıma'dan SetCarrying(bool) ile aynalanır — dış sistemler setter'a asla doğrudan dokunmaz (mekanizma: ADR-0013 CarrySlotRigController)", created: 2026-08-09, status: active }
+  - { id: TR-fpc-014, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Paylaşılan mesafe-tabanlı head-bob/footstep faz akümülatörü — bob, ayak sesi ve carry-sway'in tek faz kaynağı", created: 2026-08-09, status: active }
+  - { id: TR-fpc-015, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Yeni Input System, tek 'Gameplay' action map; legacy Input.* kullanılmaz", created: 2026-08-09, status: active }
+  - { id: TR-fpc-016, system: fpc, gdd: design/gdd/birinci-sahis-kontrolcu.md, requirement: "Her MVP alanında en az 1 decoy IInteractable (taper kamuflajı, AC17) — build-time içerik doğrulamalı", created: 2026-08-09, status: active }
+
+  # ── isik-volume-durum-sistemi ─────────────────────────────────────────
+  - { id: TR-isik-001, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Bölge başına lokal Volume (isGlobal=false), tek paylaşılan VolumeProfile, blendDistance=0", created: 2026-08-09, status: active }
+  - { id: TR-isik-002, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Volume.weight doğrudan ShiftProgress'ten sürülür; tek yazıcı bu sistemin ticker'ı", created: 2026-08-09, status: active }
+  - { id: TR-isik-003, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "ShiftProgress = 3x²−2x³, her kare taze hesaplanır; interrupt'ta x delta yönü flip, pop'suz devam", created: 2026-08-09, status: active }
+  - { id: TR-isik-004, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Bölge durum makinesi: Dormant→Shifting-In→Held→Shifting-Out→Dormant; per-zone tek ticker coroutine", created: 2026-08-09, status: active }
+  - { id: TR-isik-005, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "TriggerShift(shiftId, config)/RevertShift idempotent — aktifken TriggerShift ve Dormant'ken RevertShift güvenli no-op", created: 2026-08-09, status: active }
+  - { id: TR-isik-006, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Işık dizisi (color/intensity) aynı ShiftProgress değeriyle lockstep lerp; asla desync olmaz", created: 2026-08-09, status: active }
+  - { id: TR-isik-007, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Referans verilen her Light Mode=Mixed olmalı (Baked sessiz başarısızlık); real-time gölgeli ışık odada 2-3 ile sınırlı", created: 2026-08-09, status: active }
+  - { id: TR-isik-008, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Box Collider Safety Margin formülü: BoxHalfExtentMin = R_exit + PlayerMaxSpeed×Duration + SafetyBuffer", created: 2026-08-09, status: active }
+  - { id: TR-isik-009, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "TriggerMode { Automatic, ManualOnly }; Automatic bölge Dormant'ken sürekli pozisyon-izler, R_trigger girişinde kendi kendini tetikler", created: 2026-08-09, status: active }
+  - { id: TR-isik-010, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "R_exit histerezisi — çıkış eşiği giriş eşiğinden ayrı", created: 2026-08-09, status: active }
+  - { id: TR-isik-011, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "SOFT co-residency: sahnesi aktif olmayan bölgede pozisyon-örnekleme donar, ama in-flight shift'in zaman-tabanlı x ilerlemesi asla donmaz", created: 2026-08-09, status: active }
+  - { id: TR-isik-012, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Persistent=true shift Held'de kalıcı, asla auto-revert; reload'da Gece/Oturum üzerinden restore", created: 2026-08-09, status: active }
+  - { id: TR-isik-013, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "IsShiftPersistent(shiftId) dar sorgusu (Gece/Oturum'un PersistentShiftIds yazımı için)", created: 2026-08-09, status: active }
+  - { id: TR-isik-014, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "ShiftConfig.StingerAudioRadius + GetStingerAudioRadius(shiftId); >0 edit-time doğrulamalı", created: 2026-08-09, status: active }
+  - { id: TR-isik-015, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "shiftId açık eşleştirme anahtarı Core Rule (MemoryTriggerDef↔zone eşleşmesi string match)", created: 2026-08-09, status: active }
+  - { id: TR-isik-016, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Edit-time build-blocking doğrulama: Baked-mode ışık reddi, bölgeler arası ışık paylaşım yasağı, box-overlap kontrolü (ADR-0005)", created: 2026-08-09, status: active }
+  - { id: TR-isik-017, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Yazım modeli post-process-only — baked lightmap seti değişimi yok", created: 2026-08-09, status: active }
+  - { id: TR-isik-018, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Tick-rate guard için FPC'nin PlayerMaxSpeed sabitini okur (intra-Foundation)", created: 2026-08-09, status: active }
+  - { id: TR-isik-019, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "OnShiftStateChanged her gerçek durum geçişinde tam bir kez fırlar — reload-restore'daki Persistent re-fire dahil tam bir kez", created: 2026-08-09, status: active }
+  - { id: TR-isik-020, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Zorunlu MVP içeriği: taşıma rotasında en az 1 TriggerMode=Automatic, Persistent=false, ipucu-taşımayan ortam shift bölgesi (Pillar 1 garantisi)", created: 2026-08-09, status: active }
+  - { id: TR-isik-021, system: isik, gdd: design/gdd/isik-volume-durum-sistemi.md, requirement: "Zorunlu Automatic bölgenin build-time içerik doğrulaması (AC21/AC22, IPreprocessBuildWithReport)", created: 2026-08-09, status: active }
+
+  # ── gece-oturum-durumu (quick spec) ───────────────────────────────────
+  - { id: TR-oturum-001, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "In-memory statik servis kalıcılığı: FiredTriggerIds/PersistentShiftIds/SettledTriggerIds sahne swap'ını atlatır, disk kalıcılığı yok (ADR-0001 deseni)", created: 2026-08-09, status: active }
+  - { id: TR-oturum-002, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "IsSessionActive + EndSession() — yalnızca Sahne Kesmeli Anlatı çağırır (konvansiyon, QQ-03), idempotent, geri dönüşsüz", created: 2026-08-09, status: active }
+  - { id: TR-oturum-003, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "FiredTriggerIds doğrudan yazım: Anı-Tetikleyici'nin OnHoldComplete'i AddFiredTrigger ile aynı karede ekler; OnTriggerFired ilk eklemede fırlar", created: 2026-08-09, status: active }
+  - { id: TR-oturum-004, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "PersistentShiftIds, OnShiftStateChanged(Shifting-In) aboneliğiyle yazılır (IsShiftPersistent sorgusuyla)", created: 2026-08-09, status: active }
+  - { id: TR-oturum-005, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "SettledTriggerIds, OnShiftStateChanged(Held)'de ve yalnızca id FiredTriggerIds'teyse yazılır; OnTriggerSettled fırlar", created: 2026-08-09, status: active }
+  - { id: TR-oturum-006, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "Oturum gerçekleri write-once-per-fact, gece içinde asla temizlenmez; CurrentNightNumber MVP'de 1 sabit", created: 2026-08-09, status: active }
+  - { id: TR-oturum-007, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "CurrentRoundIndex/TotalRoundCount depolaması Foundation'da (Feature→Foundation relocate); tek yazıcı Görev/Taşıma'nın SetRoundState'i, atomik çift-alan yazımı", created: 2026-08-09, status: active }
+  - { id: TR-oturum-008, system: oturum, gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md, requirement: "TotalConfiguredTriggerCountForNight alanı; gece-başı tek yazım (SetTotalConfiguredTriggerCountForNight), MemoryTriggerDef asset sayısıyla build-time eşitlik kontrolü (ADR-0014)", created: 2026-08-09, status: active }
+
+  # ── anlati-durum-ipucu-takibi ─────────────────────────────────────────
+  - { id: TR-anlati-001, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "KnownClueIds/SeenShiftIds statik singleton kalıcılığı (Gece/Oturum ile aynı desende, ADR-0001)", created: 2026-08-09, status: active }
+  - { id: TR-anlati-002, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "ClueDefinition { clueId, requiredShiftIds[] } — N:1, ALL-semantiği, sıra bağımsız tamamlanma", created: 2026-08-09, status: active }
+  - { id: TR-anlati-003, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "MarkClueKnown idempotent; OnClueKnown clue başına tam bir kez fırlar", created: 2026-08-09, status: active }
+  - { id: TR-anlati-004, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "IsClueKnown/GetKnownClueIds (IReadOnlyCollection<string>) sorgu yüzeyi; boş durumda null değil boş koleksiyon", created: 2026-08-09, status: active }
+  - { id: TR-anlati-005, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "OnShiftStateChanged'in yalnızca Held durumu işlenir; Persistent re-fire çift OnClueKnown üretmez", created: 2026-08-09, status: active }
+  - { id: TR-anlati-006, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "Işık/Volume aboneliği first-access zamanında (Awake/OnEnable değil) — sahne yaşam döngüsünden bağımsız", created: 2026-08-09, status: active }
+  - { id: TR-anlati-007, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "API hiçbir sıralama/zaman damgası verisi açmaz — kasıtlı (Pillar 1/5)", created: 2026-08-09, status: active }
+  - { id: TR-anlati-008, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "Edit-time doğrulama: boş requiredShiftIds + çift clueId build-blocking; orphaned shiftId Editor-only uyarı (ClueConsistencyValidator)", created: 2026-08-09, status: active }
+
+  # ── seviye-sahne-gecisi ───────────────────────────────────────────────
+  - { id: TR-sahne-gecisi-001, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "SOFT ve HARD CUT tek paylaşılan durum makinesinden geçer: Idle→Preloading→Ready→Swapping→Complete→Idle + Failed", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-002, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "RequestSoftTransition/RequestHardCut/PreloadHardCut sözleşmesi; onComplete/onFailed karşılıklı dışlayıcı — geçiş başına tam biri fırlar", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-003, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "SOFT: additive co-residency; oyuncu hedef sahnenin SoftTransitionAnchor'ına repozisyonlanır, görünür kesinti sıfır", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-004, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "Sıfır-kare swap: SWAP_FRAME_EPSILON ≤1 kare (RequestHardCut→aktif sahne değişimi) VE tam 0 tamamen-siyah render karesi (binary garanti)", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-005, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "Swap/unload ayrımı: UnloadSceneAsync Complete'ten 0.5-2s sonra ertelenmiş, arka planda, Idle'ı bloklamaz", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-006, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "PreloadHardCut gerçek %100 LoadSceneAsync tamamlanmasını bekler (allowSceneActivation=false/%90 deseni yasak) — hedef sahnenin Awake/Start maliyeti swap öncesi ödenir", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-007, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "HARD CUT preload ilerlemesi CurrentState'ten ayrı izlenir (_hardCutPreloadState) — SOFT sürerken arka planda ilerleyebilir; tekrar çağrı (in-flight ve post-Ready aynı-sahne) no-op", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-008, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "Asimetrik çakışma kuralı: aktif SOFT sırasında HARD CUT tek-slot kuyruklanır ve Idle'da otomatik fırlar; SOFT asla kuyruklanmaz — OnSoftTransitionRejected yalnızca istek anında senkron fırlar", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-009, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "Failed, onFailed fırladıktan hemen sonra otomatik Idle'a döner; ardından yeni istekler normal kabul edilir", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-010, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "onComplete/onFailed callback istisnaları yöneticiden asla dışarı sızmaz; durum makinesi her koşulda Idle'a ulaşır", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-011, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "OnTransitionStateChanged(newState, type) — TransitionType { Soft, Hard } parametresi (N6 düzeltmesi: SOFT geçişler CutSting tetiklemez)", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-012, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "HardCutConfig.Abrupt taşınır ama yorumlanmaz; GetCurrentHardCutAbrupt() dar sorgusu", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-013, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "RenderSettings senkronu SetActiveScene anında per-scene SceneEnvironmentSettings okumasıyla; baked lightmap verisi sahne başına kalır, asla birleştirilmez", created: 2026-08-09, status: active }
+  - { id: TR-sahne-gecisi-014, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "Hareket-kilidi yaşam döngüsü çağıranın sorumluluğu — bu sistem RequestMovementLock/Release'e asla dokunmaz", created: 2026-08-09, status: active }
+
+  # ── adaptif-ses-sistemi ───────────────────────────────────────────────
+  - { id: TR-ses-001, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "4 mixer grubu (Ambiance/Stinger/CutSting/SFX); statik gain-staging + brickwall limiter — dinamik ducking/snapshot yok (Pillar 2)", created: 2026-08-09, status: active }
+  - { id: TR-ses-002, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "AmbientZoneVolume — adlandırılmış bölge başına trigger collider, girişte ZoneChanged(zoneId), Start'ta bir-kerelik overlap kontrolü", created: 2026-08-09, status: active }
+  - { id: TR-ses-003, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Alan başına 2-3 diegetik ambiyans katmanı; ambient_crossfade formülü (A/B ping-pong)", created: 2026-08-09, status: active }
+  - { id: TR-ses-004, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "AmbientZoneVolume co-residency guard: sahnesi aktif değilse tick/ZoneChanged işlemez; ertelenmiş ilk-tick overlap kontrolü", created: 2026-08-09, status: active }
+  - { id: TR-ses-005, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Round-tabanlı 3. gerilim katmanı; tension_gain formülü (round sayaçları Gece/Oturum'dan poll edilir) + TotalRoundCount≤1 guard", created: 2026-08-09, status: active }
+  - { id: TR-ses-006, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Stinger çift tetik yolu: Persistent shift'te Shifting-In (erken, ışıkla eşzamanlı) + Held (normal); her ikisi IsShiftPersistent kapılı", created: 2026-08-09, status: active }
+  - { id: TR-ses-007, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Stinger havuzu 3-4 kaynak; shiftId-başına Cooldown havuz-uygunluğundan bağımsız (boşalan kaynak başka shiftId'ye hemen uygun)", created: 2026-08-09, status: active }
+  - { id: TR-ses-008, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "HeldSessionAlreadyPlayed write-once oturum guard'ı — reload re-fire'da stinger tekrar çalmaz (ADR-0001 deseni)", created: 2026-08-09, status: active }
+  - { id: TR-ses-009, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Stinger uzamsallaştırması bölge merkezinden, stinger_falloff GetStingerAudioRadius'tan türetilir", created: 2026-08-09, status: active }
+  - { id: TR-ses-010, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "CutSting yalnızca type==Hard && Abrupt==true'da; SOFT/asansör geçişleri asla tetiklemez (AC13a/13b)", created: 2026-08-09, status: active }
+  - { id: TR-ses-011, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Abrupt=true: önce anlık mute sonra CutSting (CutSting abrupt-stop kuralından muaf, AC13c); Abrupt=false: ambient_crossfade ile sessizliğe, CutSting çalmaz", created: 2026-08-09, status: active }
+  - { id: TR-ses-012, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Ayak sesi hacmi FPC'nin faz akümülatöründen inline okunur — bağımsız polling/Velocity aboneliği yok, race yok", created: 2026-08-09, status: active }
+  - { id: TR-ses-013, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "PlayFootstep(speed) tek giriş noktası; footstep_volume=speed/1.6, 4-6 klip tekrar-korumalı seçim, ±%5 pitch", created: 2026-08-09, status: active }
+  - { id: TR-ses-014, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Guard temizliği: Shifting-Out/Dormant'ta HeldSessionAlreadyPlayed silinir (Persistent'ten bağımsız)", created: 2026-08-09, status: active }
+  - { id: TR-ses-015, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Havuz tükenmesi: stinger sessizce düşürülür, hata yok", created: 2026-08-09, status: active }
+  - { id: TR-ses-016, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Stinger'a özel non-diegetik kapalı altyazı — klip penceresine senkron, koşulsuz gösterim, diyalog altyazısından görsel ayrım (mekanizma: ADR-0009 addendum; metin+stil: /ux-design, AC14b)", created: 2026-08-09, status: active }
+  - { id: TR-ses-017, system: ses, gdd: design/gdd/adaptif-ses-sistemi.md, requirement: "Görev/Taşıma'nın pickup/delivery/jostle SFX kaynakları 'SFX' mixer grubuna yönlenir (SfxGroup read-only erişimi)", created: 2026-08-09, status: active }
+
+  # ── etkilesim-sistemi ─────────────────────────────────────────────────
+  - { id: TR-etkilesim-001, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "IInteractable sözleşmesi tam üye listesiyle (Type, HoldDuration, CanInteract, PromptText, SuppressDefaultHoldFill, focus/hold callback'leri) — Foundation'da yaşar (ADR-0004)", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-002, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "InteractableRegistry: OnEnable'da Register/OnDisable'da Deregister; iterasyon kare-başı snapshot üzerinden, asla canlı koleksiyon", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-003, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "SphereCast odak tespiti: 0.05m yarıçap, 2.0m menzil, EyeCamera'dan her kare; CanInteract kapısı", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-004, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "Idle→Focused→Holding durum makinesi; Instant (OnInteract, Focused kalır) vs Hold tipleri", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-005, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "hold_progress kesin lineer (easing yok); iptal kontrolü her zaman progress güncellemesinden önce; HoldDuration<=0 bölmeden önce kontrol (anında tamamlanır)", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-006, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "Crosshair/prompt UI %100 screen-space (Pillar 1 muafiyeti); Idle↔Focused yalnızca opacity/scale, durum değişiminde günceller (her karede değil)", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-007, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "IsLocked ön-kontrolü: kilit başka sistemdeyken Hold girişimi OnHoldBlocked ile reddedilir, durum değişmez (soft-lock önleme)", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-008, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "En yakın hit.distance kazanır; eşitlikte en düşük collider InstanceID tie-break", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-009, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "Varsayılan Hold-fill göstergesi sistemin kendi t'sinden sürülür, kesin lineer; SuppressDefaultHoldFill opt-out (AC14/AC14a)", created: 2026-08-09, status: active }
+  - { id: TR-etkilesim-010, system: etkilesim, gdd: design/gdd/etkilesim-sistemi.md, requirement: "Hold girişinde RequestMovementLock(MoveOnly)/çıkışında Release; Focused hedef geçersizleşirse (CanInteract=false / registry'den düşerse) Focused/Idle çıkışı (ADR-0014 re-poll revizyonu)", created: 2026-08-09, status: active }
+
+  # ── asansor-kat-erisim-sistemi ────────────────────────────────────────
+  - { id: TR-asansor-001, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Kabin durum makinesi: Idle→Called→DoorsOpening→DoorsOpen→DoorsClosing→Waiting; Waiting yalnızca geçiş sonucuyla terk edilir", created: 2026-08-09, status: active }
+  - { id: TR-asansor-002, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Çağrı düğmesi: trigger-zone + doğrudan Interact okuma — IInteractable/crosshair KULLANILMAZ (otelin kendi donanımı)", created: 2026-08-09, status: active }
+  - { id: TR-asansor-003, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "IsSessionActive yalnızca basış anında okunur, sekans ortasında asla poll edilmez", created: 2026-08-09, status: active }
+  - { id: TR-asansor-004, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Meşgulken ikinci basış saf no-op; meşgul kabin diğer katın düğmesini de kilitler (sahnesi yüklü olmasa bile — paylaşılan cross-scene durum, AC12)", created: 2026-08-09, status: active }
+  - { id: TR-asansor-005, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Biniş kontrolü yalnızca DoorsClosing'in tamamlandığı tam anda yapılır; binilmemişse Idle'a iner, geçiş istenmez", created: 2026-08-09, status: active }
+  - { id: TR-asansor-006, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Yolculukta MoveOnly kilit (Look serbest); kilidi alan aynı nesne onComplete/onFailed'de bırakır", created: 2026-08-09, status: active }
+  - { id: TR-asansor-007, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "RequestSoftTransition entegrasyonu; senkron OnSoftTransitionRejected'da Waiting'e hiç girilmez, kabin origin DoorsOpening'e döner; onFailed birebir aynı tepki", created: 2026-08-09, status: active }
+  - { id: TR-asansor-008, system: asansor, gdd: design/gdd/asansor-kat-erisim-sistemi.md, requirement: "Salt kozmetik hareket (platform fiziği/Move deltası yok — Waiting'de shake/hum); otomatik dönüş yolculuğu yok, her yolculuk geçerli basışla başlar (ADR-0011 kararı)", created: 2026-08-09, status: active }
+
+  # ── diyalog-anlati-icerigi (quick spec) ───────────────────────────────
+  - { id: TR-diyalog-001, system: diyalog, gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md, requirement: "DialogueSceneConfig: sabit taban diyalog + clueId-Known kapılı CallbackPool (veri-güdümlü asset)", created: 2026-08-09, status: active }
+  - { id: TR-diyalog-002, system: diyalog, gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md, requirement: "Callback seçimi Awake/Start'a DEĞİL gerçek sahne-aktif anına ertelenir (kendi swap'ının Complete'i + aktif-sahne kimlik filtresi — saturation-timing bug'ının ikinci mekanizmayla tekrarını önler)", created: 2026-08-09, status: active }
+  - { id: TR-diyalog-003, system: diyalog, gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md, requirement: "Priority-sıralı MaxCallbacksPerScene sınırı (eşitlikte yazar sırası korunur); elenen adaylar used işaretlenmez; sıfır aday = yalnız taban diyalog, hata değil", created: 2026-08-09, status: active }
+  - { id: TR-diyalog-004, system: diyalog, gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md, requirement: "UsedCallbackIds gece-başına tekrar-önleme guard'ı, statik servis kalıcılığı (ADR-0001); gece-ötesi kalıcılık Çoklu Gece kapsamına açıkça ertelendi", created: 2026-08-09, status: active }
+  - { id: TR-diyalog-005, system: diyalog, gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md, requirement: "Build-time tutarlılık: tek-sahneli gecede MaxCallbacksPerScene ≥ gecenin toplam ipucu sayısı (IPreprocessBuildWithReport)", created: 2026-08-09, status: active }
+
+  # ── gorev-tasima-dongusu ──────────────────────────────────────────────
+  - { id: TR-gorev-001, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "TaskList 3-5 CarryRound, round başına 1..N eşya; slot kapasitesi N (2-4) — tamamen veri-güdümlü (TaskListDef/CarryItemDef)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-002, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Instant pickup IInteractable üzerinden; odaklanabilirlik = aktif round ∧ toplanmamış ∧ oturum aktif", created: 2026-08-09, status: active }
+  - { id: TR-gorev-003, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Slotlar doluyken eşya odaklanabilir kalır, 'Eller Dolu' prompt'u görünür, TryPickUp reddeder (AC3 — ADR-0013 revizyonu)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-004, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Round/slot/CollectedItemIds durumu statik serviste, depo↔balo salonu swap'ını atlatır (Kalıcılık, ADR-0001 deseni)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-005, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Depo-reload restore: CarryItemPickup, OnEnable başında (Register'dan önce) CollectedItemIds/aktif-round kontrolüyle kendini deaktive eder — toplanmış nesne post-restore snapshot'ta asla görünmez (QQ-07)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-006, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Round tamamlanma = round'un TÜM eşyaları dünyadan gitmiş ∧ slotlar boş; kısmi teslimat (M<N) round'u açık bırakır", created: 2026-08-09, status: active }
+  - { id: TR-gorev-007, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Teslimat otomatik, düğmesiz trigger-zone; idempotent — 0 taşınırken no-op, çift tetikleme güvenli (AC12)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-008, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Round N tamamlanma ile N+1 mantıksal aktivasyonu aynı karede, yield'siz; fiziksel kayıt depo yüklemesinde deterministik (ADR-0013 split — AC8/AC9a)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-009, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "SetCarrying(true) tam bir kez 0→1'de, SetCarrying(false) tam bir kez 1→0'da (AC4/AC5)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-010, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "OnTaskListCompleted gece başına tam bir kez (AC7)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-011, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "OnFinalRoundStarted gece başına tam bir kez — 1-round'luk gece dahil (AC17)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-012, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "HasCarriedInFinalRound + OnFinalRoundItemPickedUp: son round aktifken ilk pickup'ta write-once, asla sıfırlanmaz (AC18)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-013, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "IsFinalRoundActive AllRoundsComplete'te de true kalır, asla resetlenmez", created: 2026-08-09, status: active }
+  - { id: TR-gorev-014, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Round sayaçları her round geçişinde Gece/Oturum'a SetRoundState ile yazılır (tek yetkili yazıcı bu sistem — AC19)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-015, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Havuzlanmış slot temsilleri (instantiate/destroy yok); Highlight(round) belirginlik eğrisi + roundCount≤1 guard; slot okunabilirliği asla etkilenmez (AC14)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-016, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Carry-sway FPC'nin mesafe-tabanlı faz akümülatöründen okur (bağımsız timer yasak); Animator/blend-tree yok (AC15 yapısal test)", created: 2026-08-09, status: active }
+  - { id: TR-gorev-017, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Jostle SFX round-bağımsız (AC16): yön-değişim eşiği + min-aralık guard'ı; SFX mixer grubuna yönlenir", created: 2026-08-09, status: active }
+  - { id: TR-gorev-018, system: gorev, gdd: design/gdd/gorev-tasima-dongusu.md, requirement: "Build-blocking doğrulama: round sayısı 3-5, round başına 1..N eşya, N=0 reddi, benzersiz itemId, sahne-vs-TaskListDef eşya sayısı çapraz kontrolü; runtime clamping asla; oturum-pasifken sessiz red + round akışı donar (AC1/AC10/AC11)", created: 2026-08-09, status: active }
+
+  # ── ani-tetikleyici-etkilesim ─────────────────────────────────────────
+  - { id: TR-ani-tetik-001, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Sabit otel nesneleri IInteractable.Hold uygular; HoldDuration içerik-atanmış 0.6-1.5s alt-aralığı", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-002, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Committed-restore sorgusu kayıttan ÖNCE: OnEnable başında HasFired kontrolü (Awake'ten revize — QQ-07/ADR-0013 deseni, stay-visible varyantı: nesne görünür kalır, asla register olmaz)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-003, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Committed durumu oturum-kalıcı — FiredTriggerIds üzerinden (asset'e asla yazılmaz); tek yönlü Unfired→Committed", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-004, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "OnHoldComplete: TriggerShift(shiftId, shiftConfig) tam bir kez, ek guard'sız + AddFiredTrigger aynı adımda/aynı karede", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-005, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "OnHoldCancelled tam no-op ('hiçbir şey olmamıştır'); OnHoldProgress kasıtlı kullanılmaz (per-object easing yok)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-006, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Persistent=true zorunlu ('artık geri alamam' garantisi buna dayanır, edit-time-kilitli); RevertShift asla çağrılmaz (AC6 CI grep/lint BLOCKING)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-007, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Anı-tetikleyici bölgeler TriggerMode=ManualOnly (proximity auto-fire yasak — rıza öncülü); iki-adımlı edit-time doğrulama (asset scan + sahne scan)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-008, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "SuppressDefaultHoldFill=true — Hold sırasında sıfır görsel geri bildirim garantisi (Player Fantasy)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-009, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Committed nesne görünür kalır (dekor), CanInteract=false ile oyundan emekli olur; sahne unload'ına kadar registry'de inert kalır (ADR-0004 kuralı korunur)", created: 2026-08-09, status: active }
+  - { id: TR-ani-tetik-010, system: ani-tetik, gdd: design/gdd/ani-tetikleyici-etkilesim.md, requirement: "Build-blocking doğrulama seti: çift shiftId, Persistent≠true, StingerAudioRadius≤0, TriggerMode sahne-scan'i, trigger-sayısı eşitliği, yerleştirilmemiş def erişilebilirlik kontrolü", created: 2026-08-09, status: active }
+
+  # ── sahne-kesmeli-anlati (quick spec) ─────────────────────────────────
+  - { id: TR-sahne-kesme-001, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "İki bağımsız bitiş sinyali OR'da: (a) görev tamamlama, (b) anı-tetikleyici doygunluğu; ilk gelen kazanır, HasTriggeredThisNight ile gece başına tek tetik", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-002, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Doygunluk = SettledTriggerIds.Count==TotalConfiguredTriggerCountForNight ∧ IsFinalRoundActive ∧ HasCarriedInFinalRound (üç-bayrak kapısı, Settled sayılır — Fired değil)", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-003, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Doygunluk tam üç event'te yeniden değerlendirilir: OnTriggerSettled, OnFinalRoundStarted, OnFinalRoundItemPickedUp — OnTriggerFired asla değerlendirme tetiği değil", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-004, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Görev yolu in-flight erteleme: FiredCount>SettledCount iken tamamlanma beklemeye alınır, eşitleyen settle'da iner", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-005, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Eşitlik önceliği: aynı değerlendirme her iki koşulu da true bulursa (b) doygunluk kazanır", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-006, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Ton/ajans dallanması: doygunluk Abrupt=true + Full kilit; görev-tamamlama Abrupt=false + MoveOnly — iki bitiş asla aynı Abrupt'ı paylaşmaz", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-007, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Eager preload: görev-tarafı son round aktivasyonunda, tetikleyici-tarafı Fired==Total−1 ∧ son round'da; çift çağrı güvenli (SceneTransitionManager no-op'u)", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-008, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "onComplete: EndSession + kilit bırakma tam bir kez; onFailed: yalnız kilit bırakılır, oturum sonlanmaz (retry yok — gece tasarım gereği kurtarılmaz, ADR-0015)", created: 2026-08-09, status: active }
+  - { id: TR-sahne-kesme-009, system: sahne-kesme, gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md, requirement: "Gece-başı orkestrasyonu: SetTotalConfiguredTriggerCountForNight + StartNight, depo sahnesinin nesneleri aktive olmadan ÖNCE tamamlanır (yapısal boot sözleşmesi — ADR-0015)", created: 2026-08-09, status: active }

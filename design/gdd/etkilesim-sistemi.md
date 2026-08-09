@@ -443,16 +443,22 @@ doğrudan bu GDD'ye değil, o UX spec'e referans vermeli.
 
 ## Open Questions
 
-1. **`InteractableRegistry` sahiplik/dosya konumu netleşmedi.**
-   `systems-designer` bunu bir sahiplik boşluğu olarak işaretledi — registry
-   bu GDD'de tanımlanıyor ama hem bu sistem hem Birinci Şahıs Kontrolcü
-   tarafından okunuyor. Paylaşılan/Foundation script konumunda mı
-   yaşamalı, yoksa bu sistemin kendi dosyasında mı? **Owner**:
-   unity-specialist (mimari karar). **Hedef çözüm**: implementasyondan
-   önce.
-2. **SphereCast oklüzyon/engelleme kontrolü tanımlanmadı.** Mevcut Core
-   Rules, cam gibi görsel-olarak-şeffaf-ama-fiziksel-engelleyici bir
-   yüzeyin arkasındaki bir nesneye SphereCast'in çarpıp çarpmayacağını
-   belirtmiyor — layer mask'in hangi katmanları içerdiği/hariç tuttuğu
-   netleşmedi. **Owner**: unity-specialist. **Hedef çözüm**: dev-story
-   implementasyonundan önce.
+1. ~~**`InteractableRegistry` sahiplik/dosya konumu netleşmedi.**~~
+   **ÇÖZÜLDÜ — ADR-0004 (2026-08-05; bu senkron notu 2026-08-09
+   `/architecture-review` follow-up'ında eklendi, ADR-0010'un kendi
+   Consequences bölümünün "bu GDD düzeltmesi hâlâ borçlu" kaydını
+   kapatır)**: `IInteractable` arayüzü ve `InteractableRegistry`,
+   Foundation-katmanı paylaşılan sözleşme olarak konumlandı
+   (`architecture.md` System Layer Map'in Core→Foundation relokasyonu);
+   Etkileşim Sistemi davranışsal sahip olarak kalır, registry'yi
+   Foundation'dan *tüketir*. Bkz.
+   `docs/architecture/adr-0004-interactableregistry-foundation-ownership.md`.
+2. ~~**SphereCast oklüzyon/engelleme kontrolü tanımlanmadı.**~~
+   **ÇÖZÜLDÜ — ADR-0010 (2026-08-07; senkron notu 2026-08-09)**:
+   SphereCast, birleşik `Interactable` + `Environment` LayerMask'ine
+   karşı çalışır; katmandan bağımsız en-yakın-çarpma sonucu belirler —
+   `Environment` katmanındaki katı bir collider (cam dahil), arkasındaki
+   gerçek bir `IInteractable`'ı doğru şekilde bloklar. Görsel şeffaflık
+   ilgisizdir, yalnızca collider varlığı sayılır. Bkz.
+   `docs/architecture/adr-0010-interaction-state-machine.md`, Decision
+   "Resolving Open Question #2".

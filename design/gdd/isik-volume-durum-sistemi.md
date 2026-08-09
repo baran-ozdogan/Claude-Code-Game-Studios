@@ -228,6 +228,29 @@ tamamlayan asıl parça Adaptif Ses Sistemi'dir; bu sistemin işi sadece "bir
   aynı mekanizma) bir kontrol daha eklenir — sahne taramasında hiçbir
   `TriggerMode=Automatic` bölge bulunmazsa build engellenir. Bu, madde 5'in
   içerik yazımı sırasında sessizce unutulmasını yapısal olarak engeller.
+  **İçerik-yazım kalibrasyonu gerekiyor (design-review, 2026-08-04 —
+  ikinci tur full re-verification bulgusu)**: Bu, aynı 3 küçük MVP
+  alanına yerleştirilmesi gereken **üçüncü** bağımsız "X'i zorunlu rotaya
+  yerleştir" gereksinimi (diğer ikisi: `birinci-sahis-kontrolcu.md`
+  AC17'nin dekor/decoy nesneleri, ve 2-3 anı-tetikleyicinin kendisi).
+  Hiçbir doküman üçünü birlikte değerlendirmiyor — decoy'lar kamuflaj
+  için "ayırt edilemez" olmalı, bu `Automatic` bölge ise kendi başına
+  görünür bir ışık kayması (kamuflajdan farklı bir sinyal türü) ve
+  sadece "en az 1/3 alan" zorunluluğu, hangi alanın bunu alacağını level
+  designer'a bırakıyor — bu da üç alan arasında kasıtsız bir tonal
+  asimetri riski taşır (iki alan tamamen "sabit", biri "güvenilmez"
+  olabilir, bu bir tasarım kararı olarak hiç işaretlenmeden). Ayrıca
+  tekrar-tetiklenebilir (`Persistent=false`) olduğundan, oyuncu zorunlu
+  rotayı gece boyunca (3-5 round) tekrar tekrar geçtikçe bu bölge aynı
+  şekilde tekrar tekrar tetiklenip geri dönecek — bu, "kayma = önemli
+  bir şey" okumasına oyuncuyu alıştırmak yerine "kaymalar önemsiz arka
+  plan dokusu" alışkanlığı kazandırma riski taşır (habituation), ki bu
+  gerçek anı-tetikleyicilerin etkisini zayıflatabilir. Bu üç mekanizma
+  (decoy oranı, kamuflaj paylaşımı, bu bölgenin tekrar sıklığı) ayrı
+  ayrı değil, tek bir level-design/tuning geçişinde birlikte
+  kalibre edilmeli. Sahip: level design aşaması / `/asset-spec` sonrası
+  bir tuning geçişi. Bu belge sadece gereksinimi kilitler, kesin sayı/
+  sıklık/alan dağılımını değil.
 - **Kalıcılık escape hatch'i**: `ShiftConfig`'te bir `Persistent` bayrağı —
   normal shift'ler geri döner, ama açıkça işaretlenmiş belirli finale-özel
   tetikleyiciler kalıcı kalabilir (oturumun geri kalanı boyunca

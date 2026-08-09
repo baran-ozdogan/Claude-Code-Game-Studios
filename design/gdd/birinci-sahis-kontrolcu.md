@@ -132,19 +132,28 @@ sarmalanmış bir `Move()` çağrısı kullanır (çakışan `.Move()` çağrıl
   biri yanlış sırada bırakırsa diğerini bozmamalı.
   **Kilit kapsamı — açık parametre (design-review, 2026-08-03 —
   `/review-all-gdds` bulgusu, eklendi, kritik bulgu)**: Önceki taslakta
-  `requester` bare bir identity'ydi, kapsam parametresi yoktu — ama üç
-  farklı çağıran üç farklı davranış bekliyordu (Sahne Kesmeli Anlatı:
-  Move+Look donuk, kamera dışarıdan sürülür; Asansör: sadece Move donuk,
-  Look serbest; Etkileşim: sadece Move donuk, Look serbest — kendi
-  Hold-iptal Edge Case'i oyuncunun bakışını çevirebilmesini
-  gerektiriyor). Düzeltme: `enum MovementLockScope { Full, MoveOnly }`.
-  `Full` (varsayılan) — hem `Move` hem `Look` donar, kamera dışarıdan
-  sürülebilir (cutscene/Sahne Kesmeli Anlatı). `MoveOnly` — sadece
-  `Move` donar, `Look` oyuncu kontrolünde kalır (Asansör, Etkileşim'in
-  Hold'ları). **Birden fazla aktif kilit varsa, efektif kapsam en
-  kısıtlayıcı olanıdır** (herhangi biri `Full` istiyorsa, `Look` da
-  donar — referans sayımı `Move` için zaten geçerli olan "en az bir
-  istekçi varsa kilitli" mantığının `Look` için genellemesi).
+  `requester` bare bir identity'ydi, kapsam parametresi yoktu — ama
+  farklı çağıranlar farklı davranış bekliyordu (Asansör: sadece Move
+  donuk, Look serbest; Etkileşim: sadece Move donuk, Look serbest — kendi
+  Hold-iptal Edge Case'i oyuncunun bakışını çevirebilmesini gerektiriyor;
+  Sahne Kesmeli Anlatı: **duruma göre değişir**, bkz. aşağıdaki not).
+  Düzeltme: `enum MovementLockScope { Full, MoveOnly }`. `Full`
+  (varsayılan) — hem `Move` hem `Look` donar, kamera dışarıdan
+  sürülebilir. `MoveOnly` — sadece `Move` donar, `Look` oyuncu
+  kontrolünde kalır (Asansör, Etkileşim'in Hold'ları). **Birden fazla
+  aktif kilit varsa, efektif kapsam en kısıtlayıcı olanıdır** (herhangi
+  biri `Full` istiyorsa, `Look` da donar — referans sayımı `Move` için
+  zaten geçerli olan "en az bir istekçi varsa kilitli" mantığının `Look`
+  için genellemesi).
+  **Sahne Kesmeli Anlatı artık iki farklı kapsam kullanıyor (design-review,
+  2026-08-04 — ikinci tur full re-verification bulgusuyla eklendi)**:
+  Doygunluk bitişi (`Abrupt=true`) `Full` çağırır (değişmedi — oyuncunun
+  iradesi dışında bir an, kamera da dışarıdan sürülmeli); görev-tamamlama
+  bitişi (`Abrupt=false`) artık `MoveOnly` çağırır (Look serbest kalır —
+  bkz. `sahne-kesmeli-anlati-2026-08-02.md` Core Rules, "İki bitişin
+  farklı tonu"). Önceki taslakta ikisi de koşulsuz `Full` çağırıyordu,
+  bu da "sakin bir teslim anı" fantazisiyle "oyuncunun iradesi tamamen
+  elinden alınır" mekanizmasını eşleştiriyordu.
   **`IsLocked`**: yeni salt-okunur bool, "şu an herhangi bir istekçi
   kilidi tutuyor mu" sorusuna cevap verir — Etkileşim'in kendi mutual-
   exclusion kontrolü (`RequestMovementLock` çağırmadan önce kilidin
@@ -333,10 +342,13 @@ zaten retracted, Işık/Volume eksikti)*:
   güvenli `R_trigger` hesabı için okur (kısmi bağımlılık, salt-okunur
   sorgu — bkz. `isik-volume-durum-sistemi.md` Dependencies)
 - **Sahne Kesmeli Anlatı** *(design-review, 2026-08-03 — eklendi,
-  önceki taslakta bu listede hiç yoktu)* — `RequestMovementLock(this,
-  MovementLockScope.Full)`/`ReleaseMovementLock(this)` çağırır (HARD
-  CUT tetiklenmeden hemen önce — bkz.
-  `design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md` Core Rules)
+  önceki taslakta bu listede hiç yoktu; kapsam 2026-08-04 ikinci tur
+  full re-verification bulgusuyla iki değere ayrıldı)* — `RequestMovementLock(this,
+  scope)`/`ReleaseMovementLock(this)` çağırır (HARD CUT tetiklenmeden
+  hemen önce) — `scope=Full` doygunluk bitişinde, `scope=MoveOnly`
+  görev-tamamlama bitişinde (bkz.
+  `design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md` Core Rules,
+  "İki bitişin farklı tonu")
 - **Arkadaş Karakteri/NPC** (Vertical Slice, henüz tasarlanmadı) —
   muhtemelen `EyeCamera`/pozisyon verisini takip/diyalog tetikleme için
   kullanacak, kesin arayüz o GDD yazılınca netleşecek

@@ -197,17 +197,41 @@ tanıdıklığı taşır.
   söylüyordu, 2-5 saniye arayla değil. Düzeltme, `PersistentShiftIds`
   zamanlama boşluğunu kapatan aynı akıl yürütmeyi kullanır (bkz.
   `gece-oturum-durumu-2026-08-02.md` Core Rules): **`newState == Held`
-  hâlâ her zaman bir çalma-denemesi tetikler (değişmedi), VE ek olarak
-  `newState == Shifting-In` VE `IsShiftPersistent(shiftId) == true` de
-  artık bir çalma-denemesi tetikler** — ışığın kendi rampasıyla aynı
-  karede. Bu güvenlidir çünkü Persistent bir shift, Işık/Volume'un kendi
+  VE `IsShiftPersistent(shiftId) == true` bir çalma-denemesi tetikler**
+  (design-review, 2026-08-04 — ikinci tur full re-verification bulgusuyla
+  `IsShiftPersistent` koşulu eklendi, kritik bulgu — bkz. aşağıdaki not),
+  VE ek olarak `newState == Shifting-In` VE `IsShiftPersistent(shiftId) ==
+  true` de artık bir çalma-denemesi tetikler** — ışığın kendi rampasıyla
+  aynı karede. Bu güvenlidir çünkü Persistent bir shift, Işık/Volume'un kendi
   garantisi gereği her zaman `Held`'e ulaşır, asla geri dönmez (bkz.
   Işık/Volume Core Rules) — erken çalma hiçbir zaman "sonunda hiç
   gerçekleşmeyecek bir olay için" olmaz. `MemoryTriggerDef`'e bağlı her
   shift zaten zorunlu olarak `Persistent=true` olduğundan (bkz.
   `ani-tetikleyici-etkilesim.md` Core Rules), bu erken yol anı-tetikleyici
-  stinger'ının **her zaman** aldığı yoldur. Aynı aktivasyonun ~3s sonra
-  gelen `Held` çalma-denemesi (VE Işık/Volume'un reload-restore
+  stinger'ının **her zaman** aldığı yoldur.
+  **`IsShiftPersistent` koşulu `Held` dalına da eklendi (design-review,
+  2026-08-04 — ikinci tur full re-verification bulgusu, en kritik bulgu,
+  kullanıcı kararıyla çözüldü)**: Önceki taslak `Held`'i **koşulsuz**
+  bir çalma-denemesi sayıyordu — hangi kaynaktan geldiğine bakmaksızın.
+  Bu, `isik-volume-durum-sistemi.md`'ye eklenen zorunlu `Automatic`
+  ambient bölge (bkz. o dosyanın Core Rules'ı, "MVP içerik gereksinimi")
+  ile çakıştı: o bölge kasıtlı olarak `Persistent=false` (reversible,
+  hiçbir ipucu taşımayan, "daha zayıf bir sinyal" olması gereken pasif
+  bir kayma) — ama koşulsuz `Held` kuralı altında, o bölge her `Held`'e
+  ulaştığında **aynı** "tanıdık ama yersiz" anı-tetikleyici stinger'ını
+  çalardı; üstelik `Persistent=false` olduğundan `HeldSessionAlreadyPlayed`
+  her `Shifting-Out`'ta temizlenir, yani bölge oturum boyunca (zorunlu
+  taşıma rotası üzerinde, tekrar tekrar geçilen) her yeniden-tetiklenmede
+  stinger'ı **tekrar tekrar** çalardı — projenin özenle koruduğu, tek ve
+  anlamlı "ilişkiden kalma bir ses" imasını değersizleştirip sıradan bir
+  ambiyans gürültüsüne indirgerdi. Düzeltme: stinger mekanizmasının
+  tamamı artık `IsShiftPersistent(shiftId)==true`'ya bağlı — bu,
+  `MemoryTriggerDef`-bağlı shift'ler için davranışı değiştirmez (zaten
+  her zaman `Persistent=true`), ama `Automatic`/reversible ambient
+  bölgeler için stinger'ı yapısal olarak devre dışı bırakır. Yeni bir
+  alan/flag icat edilmedi — proje zaten `Persistent` bayrağını bu ayrımı
+  yapmak için kullanılabilir bir sinyal olarak taşıyordu.
+  Aynı aktivasyonun ~3s sonra gelen `Held` çalma-denemesi (VE Işık/Volume'un reload-restore
   Edge Case'inin fırlattığı `Held` re-fire'ı) `HeldSessionAlreadyPlayed`
   guard'ı tarafından no-op'a düşürülür (aşağıya bkz.) — iki tetikleyici
   yolu aynı guard'ı paylaşır, çift çalma riski yoktur. Reversible
@@ -376,13 +400,18 @@ tanıdıklığı taşır.
 ### Interactions with Other Systems
 
 - **Işık/Volume Durum Sistemi**: `OnShiftStateChanged`'e abone olunur —
-  **`Held` VE `Shifting-In` (Persistent shift'ler için) işlenir**
-  (design-review, 2026-08-03 — stinger/ışık zamanlama düzeltmesiyle
-  güncellendi, bkz. Core Rules "Anı-Tetikleyici Stinger" — önceki
-  taslak sadece `Held` diyordu), `zoneCenter` ikinci bir sorgu
-  yapılmadan doğrudan kullanılır; `IsShiftPersistent(shiftId)` sorgusu
-  çağrılır (stinger'ın erken mi geç mi çalacağına karar vermek için,
-  design-review 2026-08-03 eklendi); **stinger ses-düşüşü için artık
+  **`Held` VE `Shifting-In`, ikisi de sadece `IsShiftPersistent(shiftId)==true`
+  ise işlenir** (design-review, 2026-08-03 — stinger/ışık zamanlama
+  düzeltmesiyle `Shifting-In` eklendi; `Held` dalına `IsShiftPersistent`
+  koşulu 2026-08-04 ikinci tur full re-verification bulgusuyla eklendi —
+  bkz. Core Rules "Anı-Tetikleyici Stinger" — önceki taslak `Held`'i
+  koşulsuz işliyordu, bu da zorunlu `Automatic` ambient bölgenin
+  stinger'ı yanlışlıkla tekrar tekrar tetiklemesine yol açardı), `zoneCenter`
+  ikinci bir sorgu yapılmadan doğrudan kullanılır; `IsShiftPersistent(shiftId)`
+  sorgusu çağrılır (hem stinger'ın erken mi geç mi çalacağına karar
+  vermek için hem de artık çalıp çalmayacağına karar vermek için,
+  design-review 2026-08-03 eklendi, kapsamı 2026-08-04'te genişletildi);
+  **stinger ses-düşüşü için artık
   `radius` değil, `GetStingerAudioRadius(shiftId)` sorgusu çağrılır**
   (design-review, 2026-08-03 — verification N1 bulgusu, eklendi — bkz. Formulas
   "stinger_falloff" ve `isik-volume-durum-sistemi.md`'nin kendi
@@ -573,12 +602,15 @@ The `stinger_falloff` formula is defined as (design-review, 2026-08-03 — unity
 
 **Bağımlıdır**:
 - **Işık/Volume Durum Sistemi** — `OnShiftStateChanged` event'ine abone
-  olur (`Held` VE `Shifting-In`, bkz. Core Rules — design-review,
-  2026-08-03 stinger/ışık zamanlama düzeltmesiyle güncellendi);
-  `GetStingerAudioRadius(shiftId)` sorgusunu çağırır (design-review,
-  2026-08-03 — verification N1 bulgusu, eklendi); `IsShiftPersistent(shiftId)`
-  sorgusunu çağırır (design-review, 2026-08-03 — stinger/ışık zamanlama
-  düzeltmesiyle eklendi)
+  olur (`Held` VE `Shifting-In`, ikisi de sadece `IsShiftPersistent(shiftId)==true`
+  ise stinger çalma-denemesi tetikler, bkz. Core Rules — design-review,
+  2026-08-03 stinger/ışık zamanlama düzeltmesiyle güncellendi, `Held`
+  dalına `IsShiftPersistent` koşulu 2026-08-04 ikinci tur bulgusuyla
+  eklendi); `GetStingerAudioRadius(shiftId)` sorgusunu çağırır
+  (design-review, 2026-08-03 — verification N1 bulgusu, eklendi);
+  `IsShiftPersistent(shiftId)` sorgusunu çağırır (design-review,
+  2026-08-03 — stinger/ışık zamanlama düzeltmesiyle eklendi, kapsamı
+  2026-08-04'te `Held` dalını da içerecek şekilde genişletildi)
 - **Birinci Şahıs Kontrolcü** — `PlayFootstep(float speed)` çağrılarını
   alır (FPC'nin stride-phase accumulator'ından)
 - **Seviye/Sahne Geçişi** *(design-review, 2026-08-03 — `/review-all-gdds`
@@ -765,16 +797,29 @@ edilmeli.
    çağırır, **WHEN** volüm hesaplanır, **THEN**
    `footstep_volume=0.84375`, ve ses sistemi taşıma durumuna göre dallanma
    yapmaz — sadece `speed` okunur.
-6. **GIVEN** bir `shiftId` için `Idle` durumundaki bir stinger, VE
-   `IsShiftPersistent(shiftId)=false`, VE `HeldSessionAlreadyPlayed` bu
-   `shiftId`'yi içermiyor, **WHEN** `OnShiftStateChanged`, `newState=Held`
-   ile fırlar, **THEN** stinger `Playing`'e geçer, havuzdan bir kaynak
-   alır, `spatialBlend=1` ayarlar, `zoneCenter`'a konumlandırır, VE
-   `shiftId` `HeldSessionAlreadyPlayed`'e eklenir. *(design-review,
-   2026-08-03: "VE shiftId eklenir" kısmı eklendi, aşağıdaki AC6a'nın
-   önkoşulu; `IsShiftPersistent=false` koşulu 2026-08-03 stinger/ışık
-   zamanlama düzeltmesiyle eklendi — Persistent shift'ler için asıl
-   çalma yolu artık AC6c'dir.)*
+6. **[design-review, 2026-08-04 — ikinci tur full re-verification
+   bulgusuyla `IsShiftPersistent(shiftId)=false` önkoşulu `=true`'ya
+   çevrildi — bkz. aşağıdaki not]** **GIVEN** bir `shiftId` için `Idle`
+   durumundaki bir stinger, VE `IsShiftPersistent(shiftId)=true`, VE
+   `HeldSessionAlreadyPlayed` bu `shiftId`'yi içermiyor, **WHEN**
+   `OnShiftStateChanged`, `newState=Held` ile fırlar, **THEN** stinger
+   `Playing`'e geçer, havuzdan bir kaynak alır, `spatialBlend=1` ayarlar,
+   `zoneCenter`'a konumlandırır, VE `shiftId` `HeldSessionAlreadyPlayed`'e
+   eklenir. *(design-review, 2026-08-03: "VE shiftId eklenir" kısmı
+   eklendi, aşağıdaki AC6a'nın önkoşulu. Önkoşul geçmişi: 2026-08-03
+   stinger/ışık zamanlama düzeltmesinde bu AC bilinçli olarak
+   `IsShiftPersistent=false` (Persistent shift'ler için asıl çalma yolu
+   AC6c) test ediyordu — ama bu, `Held`'in **koşulsuz** her zaman bir
+   çalma-denemesi olduğu varsayımına dayanıyordu. 2026-08-04'te
+   `isik-volume-durum-sistemi.md`'ye eklenen zorunlu `Automatic` (kasıtlı
+   `Persistent=false`) ambient bölge bu varsayımı gerçek bir hataya
+   çevirdi — bkz. Core Rules, "`IsShiftPersistent` koşulu `Held` dalına
+   da eklendi". Şimdi `Held` dalı da `IsShiftPersistent=true` gerektiriyor,
+   yani bu AC artık AC6c'nin test ettiği erken-çalma yolunun **doğal
+   devamını** (aynı Persistent shift, ~3s sonra gelen normal `Held`
+   çalma-denemesi) test ediyor, ayrı bir "Persistent olmayan Held" yolunu
+   değil — o yol artık aşağıdaki AC7'de "asla çalmaz" olarak test
+   ediliyor.)*
 6a. **GIVEN** bir `shiftId`, `HeldSessionAlreadyPlayed`'de zaten var
    (ör. bir Persistent shift AC6c yoluyla zaten çalmış, ya da bu
    oturumda daha önce Held'e ulaşmış bir Persistent shift'in sahnesi
@@ -814,13 +859,20 @@ edilmeli.
    sadece Persistent shift'lere özgüdür, onlar hiçbir zaman Held'den
    çıkmadığı için.)*
 7. **GIVEN** `Idle` durumundaki bir stinger, **WHEN**
-   `OnShiftStateChanged`, `newState != Held` **VE (`newState != Shifting-In`
-   YA DA `IsShiftPersistent(shiftId) == false`)** ile fırlar (design-review,
-   2026-08-04 — verification bulgusu, koşul daraltıldı: önceki hali sadece
-   `newState != Held` diyordu, bu da AC6c'nin `Shifting-In`+Persistent
-   erken-çalma yoluyla doğrudan çelişiyordu), **THEN** event
-   göz ardı edilir, stinger `Idle`'da kalır (kaynak alınmaz, çalma
-   olmaz).
+   `IsShiftPersistent(shiftId) == false` iken `OnShiftStateChanged` HERHANGİ
+   bir `newState` (`Held` dahil) ile fırlar, YA DA `IsShiftPersistent(shiftId)
+   == true` iken `newState` `Held`/`Shifting-In` dışında bir değerle
+   fırlar (design-review, 2026-08-04 — ikinci tur full re-verification
+   bulgusuyla koşul yeniden yazıldı: önceki hali `newState != Held VE
+   (newState != Shifting-In YA DA IsShiftPersistent==false)` diyordu —
+   bu, `Held` dalının artık `IsShiftPersistent` gerektirdiğini
+   yansıtmıyordu, yani `Persistent=false` bir shift `Held`'e ulaştığında
+   bu AC'ye göre hâlâ çalması gerekiyormuş gibi okunuyordu, Core
+   Rules'taki düzeltmeyle çelişerek), **THEN** event göz ardı edilir,
+   stinger `Idle`'da kalır (kaynak alınmaz, çalma olmaz). **Bu AC artık
+   zorunlu `Automatic` ambient bölgenin (her zaman `Persistent=false`)
+   `Held`'e ulaştığı normal durumu da kapsıyor** — o bölge bu sistemin
+   stinger'ını hiçbir zaman tetiklemez, bkz. Core Rules.
 8. **GIVEN** `Playing` durumundaki bir stinger, **WHEN** klibi biter,
    **THEN** ~1s (Tuning Knob aralığı 0.5–2s) süreyle `Cooldown`'a geçer,
    sonra `Idle`'a döner.

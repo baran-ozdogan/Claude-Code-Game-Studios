@@ -1,13 +1,21 @@
 # Anı-Tetikleyici Etkileşim (Memory-Trigger Interaction)
 
-> **Status**: Needs Revision (bkz. `design/gdd/gdd-cross-review-2026-08-04.md`)
-> — 2026-08-04 verification turu bu dosyada yeni blocking bulgular
-> buldu: `TriggerMode` edit-time validasyonu yapısal olarak uygulanamaz
-> (`MemoryTriggerDef`'in bağlı olduğu bölgeye referansı yok — bu bir
-> tasarım kararı gerektiriyor, henüz çözülmedi), Etkileşim'in Hold
-> Player Fantasy'siyle çelişki, ve mevcut turda düzeltilen birkaç bayat
-> referans (OnClueKnown ×2, rejection-semantics argümanı). Bu Status
-> önceki `Approved`'dan geri alındı.
+> **Status**: Needs Revision (bkz. `design/gdd/gdd-cross-review-2026-08-04-verification.md`)
+> — 2026-08-04'ün ilk turu bu dosyada blocking bulgular bulmuştu:
+> `TriggerMode` edit-time validasyonu, Etkileşim'in Hold Player
+> Fantasy'siyle çelişki, ve birkaç bayat referans (OnClueKnown ×2,
+> rejection-semantics argümanı). **İkisi de aynı gün çözüldü** (bkz. Core
+> Rules — `TriggerMode` kontrolü artık iki adımlı asset+sahne taraması
+> olarak somutlaştırıldı; Hold çelişkisi `SuppressDefaultHoldFill`
+> mekanizmasıyla kapandı, bkz. Visual/Audio Requirements) — bu header
+> 2026-08-04'ün ikinci (full re-verification) turuna kadar hiç
+> güncellenmemişti, aynı sınıf header-staleness hatası (design-review,
+> 2026-08-04 ikinci tur bulgusuyla düzeltildi). Status hâlâ `Needs
+> Revision` olarak bırakıldı çünkü bu dosyada ayrıca iki bayat
+> çapraz-referans daha bulunup düzeltildi (Dependencies ve Open
+> Questions'taki `FiredTriggerIds`→`SettledTriggerIds` güncellemeleri,
+> bkz. o bölümler) — tam bir sonraki `/review-all-gdds` turu temiz
+> çıkana kadar Approved'a dönülmüyor, bu projenin kendi disiplini gereği.
 > **Author**: user + agents
 > **Last Updated**: 2026-08-04
 > **Implements Pillar**: Pillar 1 (Öznel Gerçeklik)
@@ -125,11 +133,16 @@ kullanılır.
   yüklendiğinde (ör. asansörle kat değişimi, bu oturum içinde en sıradan
   yol) nesnenin sessizce **Unfired**'a sıfırlanması ve tekrar
   tutulabilir hale gelmesi demekti, "artık geri alamam" garantisini en
-  sık karşılaşılan yolda kırıyordu. Düzeltme: `MemoryTriggerObject.Awake()`,
-  kendi `shiftId`'sinin Gece/Oturum Durumu'nun `FiredTriggerIds`'inde
-  olup olmadığını sorgular; zaten varsa nesne **Unfired**'a hiç
-  girmeden doğrudan **Committed** durumunda başlar (`CanInteract=false`,
-  hiç prompt sunulmaz). `OnHoldComplete()` çağrıldığında, `TriggerShift`
+  sık karşılaşılan yolda kırıyordu. Düzeltme: `MemoryTriggerObject`, kendi `OnEnable()`'ının **en
+  başında** (`Register` çağrısından önce, aynı gövde içinde — ADR-0014,
+  2026-08-08: önceki "`Awake()`" ifadesi ADR-0013'ün
+  `scene_object_state_restore_timing` desenine sync edildi, QQ-07 —
+  "Reload Scene: Off" ayarında `Awake` yeniden çalışmazken `OnEnable`
+  çalışır) kendi `shiftId`'sinin Gece/Oturum Durumu'nun
+  `FiredTriggerIds`'inde olup olmadığını sorgular; zaten varsa nesne
+  **Unfired**'a hiç girmeden doğrudan **Committed** durumunda başlar
+  (`CanInteract=false`, hiç prompt sunulmaz, `Register`'a hiç ulaşılmaz
+  — nesne görünür kalır ama registry'ye hiç girmez). `OnHoldComplete()` çağrıldığında, `TriggerShift`
   çağrısıyla aynı adımda, bu sistem Gece/Oturum Durumu'nu `shiftId`'yi
   `FiredTriggerIds`'e eklemesi için bilgilendirir. Bu yeni bir davranış
   icat etmiyor — `gece-oturum-durumu-2026-08-02.md`'nin kendi Acceptance
@@ -244,7 +257,7 @@ kullanılır.
 | Durum | Giriş | Çıkış |
 |---|---|---|
 | **Unfired** | Spawn/yükleme (Gece/Oturum Durumu'nun `FiredTriggerIds`'inde bu `shiftId` YOKSA); `CanInteract=true`; Etkileşim'in Idle→Focused→Holding döngüsü altında normal çalışır | `OnHoldCancelled` → Unfired'da kalır; `OnHoldComplete` → **Committed** |
-| **Committed** | `TriggerShift` bir kez çağrıldı **VEYA** `Awake()`'te Gece/Oturum Durumu'nun `FiredTriggerIds`'i bu `shiftId`'yi zaten içeriyor (sahne yeniden yükleme restore'u — design-review, 2026-08-02); `CanInteract=false`; artık hiçbir prompt/focus mümkün değil | Terminal — oturumun geri kalanı boyunca kalıcı, sahne yeniden yüklemelerinde dahil |
+| **Committed** | `TriggerShift` bir kez çağrıldı **VEYA** `OnEnable()` başında (`Register`'dan önce — ADR-0014, 2026-08-08: `Awake()`'ten sync edildi, bkz. Core Rules) Gece/Oturum Durumu'nun `FiredTriggerIds`'i bu `shiftId`'yi zaten içeriyor (sahne yeniden yükleme restore'u — design-review, 2026-08-02); `CanInteract=false`; artık hiçbir prompt/focus mümkün değil (ADR-0010'un Focused-dal `CanInteract` yeniden-sorgusu, ADR-0014 revizyonu, bunu commit'ten bir kare sonra da garanti eder) | Terminal — oturumun geri kalanı boyunca kalıcı, sahne yeniden yüklemelerinde dahil |
 
 ### Interactions with Other Systems
 
@@ -255,9 +268,12 @@ kullanılır.
 - **Işık/Volume Durum Sistemi**: `TriggerShift(shiftId, shiftConfig)`'i
   çağırır; `RevertShift` hiç çağırılmaz; `shiftConfig.Persistent`
   her zaman `true`.
-- **Gece/Oturum Durumu (design-review, 2026-08-02 — eklendi)**: `Awake()`'te
-  `FiredTriggerIds`'i sorgular (Committed-restore için); `OnHoldComplete()`'te
-  `FiredTriggerIds`'e kendi `shiftId`'sini eklettirir. Bkz. Core Rules ve
+- **Gece/Oturum Durumu (design-review, 2026-08-02 — eklendi; ADR-0014,
+  2026-08-08 — restore zamanlaması `OnEnable()` başına sync edildi)**:
+  `OnEnable()` başında `FiredTriggerIds`'i sorgular (Committed-restore
+  için, `Register`'dan önce); `OnHoldComplete()`'te
+  `GeceOturumDurumu.InternalInstance.AddFiredTrigger(shiftId)` ile
+  `FiredTriggerIds`'e kendi `shiftId`'sini ekler. Bkz. Core Rules ve
   Dependencies.
 - **Adaptif Ses Sistemi**: Doğrudan çağrı YOK — stinger, Işık/Volume'un
   `OnShiftStateChanged`'ine zaten bağımsız abone (design-review,
@@ -353,8 +369,10 @@ Rules), yani burada yeni bir formula yok.
   unity-specialist bulgusu, eklendi)**: Bu, önceden bu GDD'de hiç
   ele alınmayan ama en sıradan oynanış yoluydu (ör. asansörle kat
   değişimi, aynı kata dönüş). Nesne yeni bir `MonoBehaviour` instance'ı
-  olarak yeniden `Awake()` olur; Core Rules'taki Gece/Oturum Durumu
-  sorgusu sayesinde `FiredTriggerIds`'te kendi `shiftId`'si bulunduğundan
+  olarak yeniden etkinleşir ve `OnEnable()`'ının başındaki (ADR-0014,
+  2026-08-09 senkron — önceki "`Awake()`" ifadesi, Core Rules'taki
+  restore-zamanlaması düzeltmesiyle tutarlı hale getirildi) Gece/Oturum
+  Durumu sorgusu sayesinde `FiredTriggerIds`'te kendi `shiftId`'si bulunduğundan
   doğrudan **Committed**'a başlar (`CanInteract=false`, `Unfired`'a hiç
   girmez, prompt hiç sunulmaz). Bu kontrol olmadan (önceki taslak),
   nesne sessizce **Unfired**'a sıfırlanır ve tekrar tutulabilir hale
@@ -384,8 +402,10 @@ Rules), yani burada yeni bir formula yok.
   çağırır (`RevertShift` hiç çağrılmaz)
 - **Gece/Oturum Durumu** (design-review, 2026-08-02 — eklendi; kısmi,
   Işık/Volume'un bu sistemle olan kısmi bağımlılığıyla aynı desende) —
-  `Awake()`'te `FiredTriggerIds`'i Committed-restore için sorgular;
-  `OnHoldComplete()`'te kendi `shiftId`'sini `FiredTriggerIds`'e
+  `OnEnable()`'ının başında (Register'dan önce — ADR-0014, 2026-08-09
+  senkron: önceki "`Awake()`'te" ifadesi restore-zamanlaması
+  düzeltmesiyle güncellendi) `FiredTriggerIds`'i Committed-restore için
+  sorgular; `OnHoldComplete()`'te kendi `shiftId`'sini `FiredTriggerIds`'e
   eklettirir. Bu, yeni bir sözleşme icat etmiyor —
   `gece-oturum-durumu-2026-08-02.md`'nin kendi Acceptance Criteria'sı bu
   yazma sorumluluğunu zaten bu sisteme atfediyordu (bkz. Core Rules,
@@ -412,11 +432,13 @@ Gece/Oturum Durumu'nun yeni kısmi bağımlılığını) artık yansıtacak
   taşıyordu)*: `sahne-kesmeli-anlati-2026-08-02.md` (aynı gün
   tamamlandı) bu sisteme **doğrudan bağımlı değil** — kendi "anı-
   tetikleyici doygunluğu" bitiş sinyalini **Gece/Oturum Durumu'nun
-  `FiredTriggerIds.Count`** toplamı üzerinden okuyor (design-review,
-  2026-08-04 — verification bulgusuyla düzeltildi: bu satır hâlâ eski
-  `OnClueKnown`/`GetKnownClueIds().Count` sinyalini söylüyordu — saturation
-  sinyali 2026-08-03'te Anlatı Durum'dan Gece/Oturum'a taşındı, bkz.
-  `sahne-kesmeli-anlati-2026-08-02.md` Core Rules), bu sistemin
+  `SettledTriggerIds.Count`** toplamı üzerinden okuyor (design-review,
+  2026-08-04 ikinci tur full re-verification bulgusuyla düzeltildi: bu
+  satır hâlâ 2026-08-04'ün ilk turunda geçerli olan `FiredTriggerIds.Count`
+  sinyalini söylüyordu — aynı gün ilerleyen saatlerde saturation-timing
+  düzeltmesiyle `SettledTriggerIds.Count`'a taşındı, ama bu satır o
+  değişikliği hiç yakalamamıştı; bkz. `sahne-kesmeli-anlati-2026-08-02.md`
+  ve `gece-oturum-durumu-2026-08-02.md` Core Rules), bu sistemin
   `OnShiftStateChanged`'ine ya da yeni bir sinyaline hiç ihtiyaç duymadan
   (bu sistemin kendi `OnHoldComplete()`'i zaten `FiredTriggerIds`'i
   dolduruyor, bkz. Dependencies yukarıda). Açık soru bu bağımlı için
@@ -612,7 +634,10 @@ içerik olarak yazılır.
 10. **GIVEN** daha önce Committed olmuş bir `MemoryTriggerObject`'in
     bulunduğu sahne oturum içinde yeniden yüklenir (Gece/Oturum
     Durumu'nun `FiredTriggerIds`'i bu `shiftId`'yi zaten içeriyor),
-    **WHEN** nesne yeniden `Awake()` olur, **THEN** `Unfired`'a hiç
+    **WHEN** nesne yeniden etkinleşir ve `OnEnable()`'ının başındaki
+    restore sorgusu çalışır (ADR-0014, 2026-08-09 senkron — önceki
+    "yeniden `Awake()` olur" ifadesi restore-zamanlaması düzeltmesiyle
+    güncellendi), **THEN** `Unfired`'a hiç
     girmeden doğrudan **Committed** durumunda başlar (`CanInteract=false`,
     hiç prompt sunulmaz, ikinci bir `TriggerShift` çağrısı yapılmaz).
     *(design-review, 2026-08-02 — unity-specialist bulgusu; bkz. Core
@@ -656,11 +681,12 @@ Requirements'ın kendi "Ek görsel ipucu yok" ilkesiyle doğrudan çelişirdi
   **Sahne Kesmeli Anlatı için bu soru artık kapalı**: aynı gün
   tamamlanan `sahne-kesmeli-anlati-2026-08-02.md`, bu sisteme hiç
   bağımlı olmadan, kendi bitiş sinyalini **Gece/Oturum Durumu'nun
-  `FiredTriggerIds.Count`** toplamı üzerinden okuyarak bu belirsizliği
-  çözdü (design-review, 2026-08-04 — verification bulgusuyla düzeltildi,
+  `SettledTriggerIds.Count`** toplamı üzerinden okuyarak bu belirsizliği
+  çözdü (design-review, 2026-08-04 ikinci tur bulgusuyla düzeltildi —
   bkz. yukarıdaki Dependencies notu — saturation sinyali 2026-08-03'te
-  Anlatı Durum'dan Gece/Oturum'a taşındı) — ne `OnShiftStateChanged`'e
-  abone oluyor ne de bu sistemden yeni bir sinyale ihtiyaç duyuyor (bkz.
+  Anlatı Durum'dan Gece/Oturum'a, 2026-08-04'te de `FiredTriggerIds`'ten
+  `SettledTriggerIds`'e taşındı) — ne `OnShiftStateChanged`'e abone
+  oluyor ne de bu sistemden yeni bir sinyale ihtiyaç duyuyor (bkz.
   Dependencies).
 - **HoldDuration'ın hissedilen süresi test edilmedi (design-review,
   2026-08-02 — game-designer bulgusu)**: 0.6–1.5sn'lik Tuning Knob

@@ -1,16 +1,20 @@
 # Görev/Taşıma Döngüsü (Task/Carry Loop)
 
-> **Status**: Needs Revision (bkz. `design/gdd/gdd-cross-review-2026-08-04.md`)
-> — 2026-08-04 verification turu, önceki "additive, Approved'ı geçersiz
-> kılmıyor" değerlendirmesini geri aldı: `OnFinalRoundStarted`'ın
-> `IsFinalRoundActive`'i round *aktivasyonunda* değerlendirmesi (round
-> *ilerlemesinde* değil), Sahne Kesmeli Anlatı ile birleşince son round'u
-> hiç oynatmadan geceyi bitirebiliyor — bu bir tasarım kararı gerektiriyor,
-> henüz çözülmedi. Ayrıca gecenin round-bazlı gerilim birikiminin hiçbir
-> sistemde tanımlı olmadığı bulundu (`game-concept.md`'nin vaadi
-> karşılıksız) — bu da ayrı bir tasarım kararı. Mekanik düzeltmeler
+> **Status**: Needs Revision (bkz. `design/gdd/gdd-cross-review-2026-08-04-verification.md`)
+> — 2026-08-04'ün ilk turu iki tasarım kararı gerektiren madde bulmuştu:
+> `OnFinalRoundStarted`'ın son round'u hiç oynatmadan geceyi bitirebilmesi,
+> ve gecenin round-bazlı gerilim birikiminin hiçbir sistemde tanımlı
+> olmaması. **İkisi de aynı gün çözüldü** (bkz. Core Rules —
+> `HasCarriedInFinalRound`/`OnFinalRoundItemPickedUp` birincisini kapatır;
+> `CurrentRoundIndex`/`TotalRoundCount`, Adaptif Ses'in `tension_gain`
+> formülünü besleyerek ikincisini kapatır) — bu header 2026-08-04'ün
+> ikinci (full re-verification) turuna kadar hiç güncellenmemişti, aynı
+> sınıf header-staleness hatası (design-review, 2026-08-04 ikinci tur
+> bulgusuyla düzeltildi). Status hâlâ `Needs Revision` olarak bırakıldı —
+> tam bir sonraki `/review-all-gdds` turu temiz çıkana kadar Approved'a
+> dönülmüyor, bu projenin kendi disiplini gereği. Mekanik düzeltmeler
 > (bayat etiketler, var olmayan "ducking" referansı, tek yönlü
-> bağımlılıklar) bu turda kapatıldı.
+> bağımlılıklar) 2026-08-04'ün ilk turunda kapatılmıştı.
 > **Author**: user + agents
 > **Last Updated**: 2026-08-04
 > **Implements Pillar**: Pillar 3 (Görev Gerçekliği)
@@ -108,8 +112,17 @@ gerçekliğini üretiyor.
   olur, sıradaki round'lar henüz spawn edilmemiş/deaktif kalır (registry'ye
   hiç girmezler).
 - **Alma**: Her eşya `CarryItemPickup : IInteractable`, `Type=Instant`.
-  `CanInteract` = (dolu slot < N) AND (eşya aktif round'a ait). Slotlar
-  dolduğunda `CanInteract=false`, `PromptText` "Eller Dolu" gösterir.
+  `CanInteract` = (eşya aktif round'a ait) AND (henüz toplanmamış) AND
+  (`IsSessionActive`) — **slot-doluluk `CanInteract`'e dahil DEĞİL
+  (ADR-0013, 2026-08-08 — kullanıcı kararıyla revize edildi)**: Etkileşim
+  Sistemi'nin pipeline'ında (ADR-0010) `CanInteract=false` bir nesne hiç
+  focus alamaz ve prompt yalnızca focus'lu nesne için gösterilir — bu
+  satırın önceki hali ("slotlar dolduğunda `CanInteract=false` VE prompt
+  'Eller Dolu' gösterir") kendi içinde çelişkiliydi, prompt hiç
+  görünemezdi. Revize davranış: slotlar doluyken eşya focus'lanabilir
+  kalır, `PromptText` "Eller Dolu" gösterir, alım `TryPickUp` içinde
+  sessizce reddedilir (state değişmez) — oyuncuya görünen davranış
+  tasarım niyetiyle birebir aynı.
   `OnInteract()`: eşya `SetActive(false)` olur (registry'den `OnDisable`
   ile otomatik çıkar, Etkileşim Sistemi'nin zaten tanımladığı
   snapshot-iterasyon deseni sayesinde güvenli), dolu-slot +1; sayaç 0→1'de
@@ -159,10 +172,16 @@ gerçekliğini üretiyor.
   **her yüklendiğinde** (ilk yükleme VEYA asansörle geri dönüş sonrası
   reload — bkz. Dependencies notu, depo sahnesi gerçekten unload/reload
   olur, item GameObject'leri sahne-yazılı varsayılan (aktif) duruma
-  döner), her `CarryItemPickup` kendi `Awake()`'inde (yani `OnEnable`/
-  registry-kaydından **ÖNCE**) kendi item-id'sinin `CollectedItemIds`
-  kümesinde olup olmadığını kontrol eder; oradaysa `SetActive(false)`
-  çağrılır ve nesne `InteractableRegistry`'ye hiç girmez. Bu, oyuncunun
+  döner), her `CarryItemPickup` kendi `OnEnable()`'ının **en başında**
+  (`Register` çağrısından önce, aynı gövde içinde — ADR-0013, 2026-08-08:
+  önceki "`Awake()`'inde" ifadesi revize edildi, çünkü "Reload Scene:
+  Off" Editor ayarında `Awake` hayatta kalan nesnelerde yeniden
+  çalışmazken `FoundationBootstrap.ResetAll()` `CollectedItemIds`'i
+  temizler — QQ-07; `OnEnable` o senaryoda yeniden ateşlenir) kendi
+  item-id'sinin `CollectedItemIds` kümesinde olup olmadığını kontrol
+  eder; oradaysa `SetActive(false)` çağrılır ve nesne
+  `InteractableRegistry`'ye hiç girmez (`Register` satırına hiç
+  ulaşılmaz). Bu, oyuncunun
   depoya dönüp zaten teslim ettiği eşyaları yeniden toplanabilir
   görmesini (ve slot sayısını "hackleyerek" round'u bozmasını) yapısal
   olarak imkânsız kılar.
@@ -232,6 +251,20 @@ gerçekliğini üretiyor.
 | **Delivering** | Tüm taşınan eşyalar otomatik teslim edilir | Slotlar boşalır, `SetCarrying(false)` → **RoundComplete** |
 | **RoundComplete** | Son round mu kontrol edilir | Değilse → **Idle** (yeni round aktive); ise → **AllRoundsComplete** |
 | **AllRoundsComplete** | `OnTaskListCompleted` fırlatılır | Terminal (gece sonu sinyali dış sisteme devredilir) |
+
+> **`IsFinalRoundActive`'in `AllRoundsComplete`'teki değeri (design-review,
+> 2026-08-04 — üçüncü tur full re-verification bulgusu, eklendi, kritik
+> bulgu)**: Bu sorgu hiçbir yerde `AllRoundsComplete`'e ulaşıldığında
+> sıfırlanmıyor/`false` yapılmıyor — son round zaten aktifken
+> `AllRoundsComplete`'e geçildiği için, `IsFinalRoundActive` **`true`
+> kalmaya devam eder** (round makinesi hiçbir noktada onu geri almaz,
+> bu sistemin `Highlight`/round-sayaçları gibi diğer "bir kez yazılır,
+> hiç temizlenmez" alanlarıyla aynı desen). Bu, Sahne Kesmeli Anlatı'nın
+> iki bitiş koşulunun (a: görev tamamlama, b: doygunluk) aynı anda
+> sağlanabilir olduğu senaryoyu (oyuncu son teslimatı yaparken son
+> tetikleyici de tam o sırada Held'e ulaşırsa) gerçek/ulaşılabilir kılar
+> — bkz. `sahne-kesmeli-anlati-2026-08-02.md` Core Rules, "İki koşul
+> aynı anda sağlanırsa" için eklenen açık öncelik kuralı.
 
 > **Not (design-review, 2026-08-02)**: Önceki taslakta ayrı **InTransit**
 > ve **Carrying (Balo)** satırları vardı, Asansör'ün `Waiting`/`DoorsOpen`
@@ -312,8 +345,10 @@ gerektirmiyor/ima etmiyor.
   `TaskList`/`CarryRound` asset'lerini tarayıp herhangi biri N>limit, 0
   item, ya da N=0 içeriyorsa **build'i durdurur** — yalnızca
   `OnValidate` CI build'ini geçirmez, ikisi birlikte gerekli. N=0 veya
-  0-item'lı round özellikle tehlikelidir: N=0, `CanInteract = (dolu
-  slot < N)` ifadesini kalıcı olarak `false` yapar (hard soft-lock, Idle
+  0-item'lı round özellikle tehlikelidir: N=0, her alım denemesini
+  kalıcı olarak reddettirir (`TryPickUp` slot-dolu reddine hiç
+  çıkılamayan bir durumda takılır — ADR-0013'ün revize `CanInteract`
+  semantiğinde ifade güncellendi, sonuç aynı: hard soft-lock, Idle
   durumundan asla çıkılamaz); 0-item'lı bir round ise girer girmez
   round-complete koşulunu (slot==0 VE roundun tüm itemleri dünyada yok)
   trivial şekilde sağlar — aşağıdaki "round N tamamlanma ile round N+1
@@ -551,8 +586,10 @@ kurulmuştu, bu GDD onu tamamlıyor).
   prompt'u yalnızca bloklanmış bir deneme anındaki **reaktif** onay
   katmanıdır, ayrı bir proaktif HUD/ses ipucu eklenmedi (kasıtlı — "sıfır
   ekran-uzayı HUD" ilkesiyle tutarlı).
-- **"Eller Dolu" prompt'u** (Core Rules'da zaten tanımlı, `CanInteract=false`
-  durumunda) tek metin tabanlı dokunuş noktasıdır — ek bir UI parçası değil,
+- **"Eller Dolu" prompt'u** (Core Rules'da zaten tanımlı — slotlar
+  doluyken, eşya focus'lanabilir kalırken gösterilir; ADR-0013'ün revize
+  semantiği, önceki "`CanInteract=false` durumunda" ifadesi ADR-0010'un
+  focus kapısı altında imkânsızdı) tek metin tabanlı dokunuş noktasıdır — ek bir UI parçası değil,
   Etkileşim Sistemi'nin zaten sahip olduğu prompt mekanizmasının bir
   kullanımı.
 - **Slot okunabilirliği round-bazlı ışık sönmesinden muaf**: Visual
@@ -605,10 +642,13 @@ kurulmuştu, bu GDD onu tamamlıyor).
    girmiş, **WHEN** oyuncu etkileşime girer, **THEN** dünya öğesi deaktive
    olur, slot sayısı 1 artar; bu round'daki ilk öğeyse `SetCarrying(true)`
    tetiklenir.
-3. **GIVEN** oyuncu zaten N/N slot dolu (**Eller Dolu**), **WHEN**
-   oyuncu aktif rounddan bir öğeyle etkileşime girmeye çalışır, **THEN**
-   `CanInteract` `false` döner, hiçbir state değişikliği olmaz,
-   `PromptText` "Eller Dolu" gösterir.
+3. **[ADR-0013, 2026-08-08 — revize edildi: önceki hali `CanInteract
+   false` + prompt'un aynı anda olmasını istiyordu, ADR-0010'un focus
+   kapısı altında imkânsız]** **GIVEN** oyuncu zaten N/N slot dolu
+   (**Eller Dolu**), **WHEN** oyuncu aktif rounddan bir öğeye bakar ve
+   etkileşime girmeye çalışır, **THEN** öğe focus'lanabilir kalır
+   (`CanInteract=true`), `PromptText` "Eller Dolu" gösterir, alım
+   `TryPickUp` içinde reddedilir, hiçbir state değişikliği olmaz.
 4. **GIVEN** oyuncu zaten ≥1 öğe taşıyor (`IsCarrying=true`), **WHEN**
    2. veya sonraki bir öğeyi alır, **THEN** `SetCarrying(true)` TEKRAR
    çağrılmaz — yalnızca 0→1 geçişinde bir kez tetiklenir.
@@ -620,10 +660,17 @@ kurulmuştu, bu GDD onu tamamlıyor).
    "complete" sayılır; koşullardan biri eksikse round complete SAYILMAZ.
 7. **GIVEN** görev kuyruğu boş VE slotlar boş, **WHEN** son kontrol
    çalışır, **THEN** `OnTaskListCompleted` bir kez tetiklenir.
-8. **GIVEN** round N tamamlanma kontrolü aynı karede yapılıyor, **WHEN**
-   round N complete olarak işaretlenir, **THEN** round N+1 öğeleri
-   `InteractableRegistry`'ye AYNI karede, kontrolden hemen sonra register
-   edilir; arada yield yoktur.
+8. **[ADR-0013, 2026-08-08 — kapsam notu eklendi]** **GIVEN** round N
+   tamamlanma kontrolü aynı karede yapılıyor, **WHEN** round N complete
+   olarak işaretlenir, **THEN** round N+1'in MANTIKSAL aktivasyonu
+   (index ilerlemesi, `CollectedItemIds` temizliği, `SetRoundState`
+   yazımı, `OnRoundActivated`) AYNI karede, kontrolden hemen sonra,
+   arada yield olmadan gerçekleşir. Fiziksel `InteractableRegistry`
+   kaydı ise depo sahnesinin bir sonraki yüklenişinde, `OnEnable`
+   restore'u ile deterministik olarak gerçekleşir — tamamlanma anında
+   depo sahnesi yüklü olmadığından aynı-kare fiziksel kayıt hedefi
+   mevcut değildir (bkz. ADR-0013, "Logical vs. physical round
+   activation"; bu AC'nin mock'lu formu AC9a'da test edilir).
 9a. **GIVEN** 3 round'luk bir `TaskList`, mock'lanmış pickup ve
    drop-off-zone-girişi sinyalleriyle (gerçek sahne/collider/asansör
    zamanlaması GEREKMEZ — bu sistem asansör state'ini hiç okumaz, bkz.
