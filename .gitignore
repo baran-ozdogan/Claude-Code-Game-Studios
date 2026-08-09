@@ -116,6 +116,10 @@ node_modules/
 credentials.json
 secrets.json
 
+# === Blender auto-backups (redundant copies of .blend) ===
+*.blend1
+*.blend2
+
 # === Large Binary Assets (use Git LFS instead) ===
 # Uncomment and configure with Git LFS for your project:
 # *.png
