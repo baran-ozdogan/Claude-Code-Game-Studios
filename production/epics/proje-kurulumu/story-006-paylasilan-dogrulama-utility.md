@@ -1,12 +1,12 @@
 # Story 006: Paylaşılan IPreprocessBuildWithReport doğrulama utility'si
 
 > **Epic**: Proje Kurulumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -53,10 +53,18 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/build_validation_harness_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/build_validation_harness_test.cs` (8 test)
+**Status**: [x] Created — EditMode 15/15 (CLI)
 
 ## Dependencies
 
 - Depends on: Story 002
 - Unlocks: anlati/isik/gorev/ani-tetik/diyalog/sahne-kesme epic'lerinin doğrulama story'leri; TR-fpc-016 decoy check'i
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 6/6 (`BuildValidationRunner : IPreprocessBuildWithReport` tek implementasyon, `callbackOrder=0`; `IBuildCheck`+`BuildCheckPhase`+`BuildCheckContext.Fail` deseni; iki faz `RunAll`'da ayrık, sahne-scan `IBuildSceneWalker` soyutlamasıyla `EditorBuildSettings.scenes` üzerinden; ihlal `BuildFailedException` + offending yol; 8'li throws/doesn't-throw harness testi fake'lerle; README + registry TODO listesi ADR referanslı)
+**Deviations**: ADVISORY — `BuildValidation.asmdef` (editor-only) eklendi: EditModeTests custom asmdef olduğundan Assembly-CSharp-Editor'a referans veremiyor, test edilebilirlik için zorunlu. Sahne açma `IBuildSceneWalker` arayüzü arkasında (AC-3'ün "hiçbir sahne açılmıyor" testi ancak böyle fake'lenebiliyor); production yolu `EditorBuildSceneWalker`.
+**Test Evidence**: EditMode 15/15 CLI (`build_validation_harness_test.cs` 8 test)
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
