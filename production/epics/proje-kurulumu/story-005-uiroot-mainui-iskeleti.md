@@ -1,12 +1,12 @@
 # Story 005: UIRoot + MainUI.uxml iskeleti
 
 > **Epic**: Proje Kurulumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: UI
 > **Estimate**: S (~2h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -51,10 +51,18 @@
 
 ## Test Evidence
 
-**Story Type**: UI → `production/qa/evidence/uiroot-iskelet-evidence.md` (ekran görüntüleri + Debugger ağacı) + stale-Instance PlayMode testi
-**Status**: [ ] Not yet created
+**Story Type**: UI → `production/qa/evidence/uiroot-iskelet-evidence.md` + stale-Instance PlayMode testi (`uiroot_stale_instance_test.cs`, 2 UnityTest)
+**Status**: [x] Created — PlayMode 6/6 CLI; evidence'ta manuel görsel satırları (1080p/1440p) kullanıcı imzası bekliyor (ADVISORY)
 
 ## Dependencies
 
 - Depends on: Story 004
 - Unlocks: etkilesim (Core), adaptif-ses caption story'si, diyalog altyazı story'si; gate koşulu #2 (`hud.md`)
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 5/5 — AC-4'ün görsel yarısı ADVISORY manuel imza bekliyor (evidence tablosu). (`UIRoot` ADR-0010'un birebir şekli, UI sahnesi kökünde, `_uiDocument` SerializeField wire'lı; `MainUI.uxml` 4 adlı öğe + inline `display:none` başlangıç; `MainUI.uss` önekli iskelet + a11y §2a/2b placeholder'ları; `MainPanelSettings` ScaleWithScreenSize 1920×1080 + tema TSS; stale-Instance iki-oturum testi geçiyor)
+**Deviations**: ADVISORY — başlangıç gizliliği USS'e ek olarak UXML inline `style="display: none"` ile de yazıldı ve test resolvedStyle'ı poll'luyor (stil çözümlemesi asenkron; ilk koşular bu yüzden kırmızıydı). Gate koşulu #2 kapatıldı: `design/ux/hud.md` yazıldı. `Story005UISetup.cs` tek seferlik (silinebilir; `ProjectInitSetup.cs`/`Story004SceneSetup.cs` ile birlikte temizlik adayı).
+**Test Evidence**: PlayMode 6/6 CLI + `production/qa/evidence/uiroot-iskelet-evidence.md`
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)

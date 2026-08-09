@@ -1,0 +1,61 @@
+/* MainUI.uss — iskelet (Story 005).
+   Önek konvansiyonu (ADR-0002 shared-UXML mitigasyonu): her sahip sistem
+   yalnız kendi önekiyle sınıf tanımlar — etkilesim-*, ses-*, diyalog-*.
+   Bu story'de her öğe görünmez başlar (display: none) — davranış ve gerçek
+   görsel değerler sahip epic'lerinde gelir.
+
+   a11y taban belirteçleri (design/ux/accessibility-requirements.md §2a/2b —
+   placeholder, sahip epic'leri doldurur):
+   §2a font tabanı: caption/subtitle min ~24px @1080p referansında; kullanıcı
+       ölçeklemesi ADR-0009/0012 kapsamında USS variable'a taşınacak.
+   §2b konumlar: caption üst-orta (ekranın üst ~%8 bandı), subtitle alt-orta
+       (alt ~%10 bandı) — çakışmazlar; crosshair her zaman ekran merkezi. */
+
+/* ── Etkileşim Sistemi ─────────────────────────────────────────────── */
+
+.etkilesim-crosshair-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    align-items: center;
+    justify-content: center;
+    /* başlangıç gizliliği UXML'de inline (batch-testedilebilirlik) — sahip epic'i açar */
+}
+
+.etkilesim-crosshair {
+    /* art-bible §4.4/§7.5 kilitli değerler (opasite/scale/outline) etkilesim
+       epic'inde C# tarafından sürülür — USS'te transition YOK (ADR-0002). */
+    width: 8px;
+    height: 8px;
+}
+
+.etkilesim-hold-fill-ring {
+    /* t-güdümlü dolum ADR-0010'un C# yolu; strictly linear — USS easing yasak. */
+    width: 32px;
+    height: 32px;
+}
+
+/* ── Adaptif Ses Sistemi ───────────────────────────────────────────── */
+
+.ses-stinger-caption {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    translate: -50% 0;
+    -unity-text-align: middle-center;
+    font-size: 24px; /* a11y §2a taban — ADR-0009 caption story'si kesinleştirir */
+    /* başlangıç gizliliği UXML'de inline (batch-testedilebilirlik) — sahip epic'i açar */
+}
+
+/* ── Diyalog/Anlatı İçeriği ────────────────────────────────────────── */
+
+.diyalog-dialogue-subtitle {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    translate: -50% 0;
+    -unity-text-align: middle-center;
+    font-size: 24px; /* a11y §2a taban — ADR-0012 altyazı story'si kesinleştirir */
+    /* başlangıç gizliliği UXML'de inline (batch-testedilebilirlik) — sahip epic'i açar */
+}

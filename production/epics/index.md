@@ -7,7 +7,7 @@
 
 | Epic | Layer | System | GDD | Governing ADRs | Stories | Status |
 |------|-------|--------|-----|----------------|---------|--------|
-| [Proje Kurulumu](proje-kurulumu/EPIC.md) | Foundation | Cross-cutting altyapı | — | ADR-0001, 0002 | **6 stories** | Ready |
+| [Proje Kurulumu](proje-kurulumu/EPIC.md) | Foundation | Cross-cutting altyapı | — | ADR-0001, 0002 | **6 stories** | **Complete (2026-08-09)** |
 | [InteractableRegistry](interactable-registry/EPIC.md) | Foundation | InteractableRegistry | etkilesim-sistemi.md | ADR-0004 | Not yet created | Ready |
 | [Birinci Şahıs Kontrolcü](birinci-sahis-kontrolcu/EPIC.md) | Foundation | FPC | birinci-sahis-kontrolcu.md | ADR-0003 | Not yet created | Ready |
 | [Işık/Volume Durum Sistemi](isik-volume-durum-sistemi/EPIC.md) | Foundation | Işık/Volume | isik-volume-durum-sistemi.md | ADR-0005 (+addendum) | Not yet created | Ready |

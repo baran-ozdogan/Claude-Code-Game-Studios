@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="MainUI.uss" />
+
+    <!-- Etkileşim Sistemi'nin alt-ağacı (davranış: etkilesim epic'i, ADR-0010) -->
+    <ui:VisualElement name="crosshair-container" class="etkilesim-crosshair-container" style="display: none;">
+        <ui:VisualElement name="crosshair" class="etkilesim-crosshair" />
+        <ui:VisualElement name="hold-fill-ring" class="etkilesim-hold-fill-ring" />
+    </ui:VisualElement>
+
+    <!-- Adaptif Ses Sistemi'nin öğesi (davranış: ses epic'i, ADR-0009) -->
+    <ui:Label name="stinger-caption" class="ses-stinger-caption" text="" style="display: none;" />
+
+    <!-- Diyalog/Anlatı İçeriği'nin öğesi (davranış: diyalog epic'i, ADR-0012) -->
+    <ui:Label name="dialogue-subtitle" class="diyalog-dialogue-subtitle" text="" style="display: none;" />
+</ui:UXML>
