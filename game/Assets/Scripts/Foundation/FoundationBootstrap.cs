@@ -62,7 +62,7 @@ internal static class FoundationBootstrap
     private static readonly ResetEntry[] _resetSequence =
     {
         // TODO(epic:interactable-registry):      new ResetEntry("InteractableRegistry",    InteractableRegistry.ResetOnLoad),    // no upstream dependency
-        // TODO(epic:isik-volume-durum-sistemi):  new ResetEntry("IsikVolumeDurumSistemi",  IsikVolumeDurumSistemi.ResetOnLoad),  // exposes OnShiftStateChanged, subscribes to nothing; IN-PLACE (persistent MonoBehaviour + constructor subscribers)
+        new ResetEntry("IsikVolumeDurumSistemi", IsikVolumeDurumSistemi.ResetOnLoad), // exposes OnShiftStateChanged, subscribes to nothing; IN-PLACE (persistent MonoBehaviour + constructor subscribers) — isik-volume Story 001
         new ResetEntry("GeceOturumDurumu", GeceOturumDurumu.ResetOnLoad), // constructor-subscribes to Işık/Volume OnShiftStateChanged (binds once per process, ADR-0015; wiring: gece-oturum Story 004)
         // TODO(epic:anlati-durum-ipucu-takibi):  new ResetEntry("AnlatiDurumIpucuTakibi",  AnlatiDurumIpucuTakibi.ResetOnLoad),  // constructor-subscribes to Işık/Volume OnShiftStateChanged
         // TODO(epic:adaptif-ses-sistemi):        new ResetEntry("AdaptifSesSistemi",       AdaptifSesSistemi.ResetOnLoad),       // pure state (HeldSessionAlreadyPlayed) — playback lives in AdaptifSesController (ADR-0009)

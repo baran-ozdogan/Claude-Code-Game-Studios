@@ -1,12 +1,12 @@
 # Story 004: Işık/Volume aboneliği (gerçek wiring)
 
 > **Epic**: Gece/Oturum Durumu
-> **Status**: Ready — ⚠ cross-epic dependency (aşağıya bakın)
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -56,9 +56,16 @@
 ## Test Evidence
 
 **Story Type**: Integration → `game/Assets/Tests/PlayMode/gece_oturum_subscription_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 2 UnityTest, PlayMode süiti 9/9 (2026-08-09)
 
 ## Dependencies
 
-- Depends on: Story 003; **isik-volume-durum-sistemi epic'i — facade/event story'si (henüz yazılmadı)**
+- Depends on: Story 003; isik-volume-durum-sistemi Story 001 (Complete 2026-08-09 — facade/event/IsShiftPersistent)
 - Unlocks: sahne-kesmeli-anlati epic'inin doygunluk story'si; isik-volume Persistent-restore story'si
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 4/4 passing (AC-2 isik-volume Story 001'in değişikliğiyle önceden kapanmıştı — sıra testi güncel)
+**Deviations**: None. Uygulama notu: AC-4'ün çift-işleme durumu handler idempotent olduğu için davranışsal olarak görünmez — testin yük taşıyan kontrolü, field-like event'in backing alanından reflection'la abone sayımı (test içinde uyarı yorumuyla işaretli). LP önerileriyle [SetUp] reset'i eklendi (tam izolasyon).
+**Test Evidence**: Integration — `game/Assets/Tests/PlayMode/gece_oturum_subscription_test.cs` (2 UnityTest); süit EditMode 39/39, PlayMode 9/9
+**Code Review**: Complete — LP-CODE-REVIEW: APPROVE, QL-TEST-COVERAGE: ADEQUATE (full mod, general-purpose subagent gate'leri; iki LP önerisi kapanıştan önce uygulandı ve PlayMode yeniden koşuldu)

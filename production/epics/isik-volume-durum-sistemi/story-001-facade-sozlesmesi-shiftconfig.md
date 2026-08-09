@@ -1,12 +1,12 @@
 # Story 001: Facade sözleşmesi + ShiftConfig (addendum)
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -57,9 +57,16 @@
 ## Test Evidence
 
 **Story Type**: Logic → `game/Assets/Tests/EditMode/isik_volume_facade_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 8 test, EditMode süiti 39/39 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: proje-kurulumu Story 003 (DONE); gece-oturum Story 001 (DONE — sıra testi ortak)
 - Unlocks: Story 002/003; **gece-oturum Story 004**
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 7/7 passing (deferred yok — hepsi otomatik doğrulandı; EditMode 39/39, PlayMode 7/7 lokal CLI)
+**Deviations**: Story-onaylı iki sapma temiz uygulandı: (1) routing `IShiftZoneHandle` internal arayüzü üzerinden — Engine Notes'un beş üyesine kayıt anahtarı için `ShiftId` eklendi (addendum'un "add by shiftId" semantiği gereği); (2) duplicate register = son-kazanır + LogWarning, bayat handle'ın Deregister'ı güncel kaydı silemez. ADVISORY (Story 003 geçişine devredildi): null-shiftId guard'ları ve reset→re-register round-trip'i testsiz; `IIsikVolumeState.IsShiftActive` XML doc eksik; `RegisterZone` null-ShiftId guard'sız (sahiplik Story 003'ün build-time doğrulamasında).
+**Test Evidence**: Logic — `game/Assets/Tests/EditMode/isik_volume_facade_test.cs` (8 test) + `foundation_bootstrap_order_test.cs` AC-6 güncellemesi
+**Code Review**: Complete — LP-CODE-REVIEW: APPROVE, QL-TEST-COVERAGE: ADEQUATE (full mod; gate'ler general-purpose subagent'larla koşuldu — önceki oturumların "subagent yok" kayıtlı-skip emsalinin yerine geçen ilk gerçek gate koşusu)
