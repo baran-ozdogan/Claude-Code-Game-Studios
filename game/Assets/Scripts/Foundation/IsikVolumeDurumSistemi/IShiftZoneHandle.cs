@@ -11,7 +11,11 @@ internal interface IShiftZoneHandle
     /// <summary>Bölgenin açık eşleştirme anahtarı (TR-isik-015) — kayıt bu id ile yapılır.</summary>
     string ShiftId { get; }
 
-    /// <summary>Yeni geçiş başlattıysa true; bölge zaten aktifse false (no-op, config değişmez).</summary>
+    /// <summary>
+    /// Yeni geçiş başlattıysa true; Shifting-In/Held'de false (no-op, config
+    /// değişmez — GDD AC6). Shifting-Out aktif AMA true dalıdır: mevcut x'ten
+    /// yön-flip (AC7).
+    /// </summary>
     bool TriggerShift(ShiftConfig config);
 
     /// <summary>Dormant'ken sessiz no-op; aktifken yönü tersine çevirir.</summary>

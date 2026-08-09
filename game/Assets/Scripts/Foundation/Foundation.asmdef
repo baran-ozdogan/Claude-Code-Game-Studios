@@ -1,7 +1,9 @@
 {
     "name": "Foundation",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

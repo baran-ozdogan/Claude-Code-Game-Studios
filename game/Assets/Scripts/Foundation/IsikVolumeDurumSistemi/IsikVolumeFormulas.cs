@@ -41,6 +41,15 @@ public static class IsikVolumeFormulas
     public static float ClampMemoryIntensityMultiplier(float multiplier) =>
         Mathf.Clamp(multiplier, 0f, MemoryIntensityCeiling);
 
+    /// <summary>
+    /// MemoryIntensityMultiplier guard'ının MUTLAK-değer formu (ZoneLight per-light
+    /// mutlak hedef taşır, ADR şekli): memoryIntensity ∈ [0, baseIntensity×0.999].
+    /// Alt sınır negatif LightIntensity'yi (GDD AC14a), üst sınır erişilebilirlik
+    /// parlaklık-düşüşü garantisini korur — mem ≥ base çarpan ≥ 1.0'a denk gelirdi.
+    /// </summary>
+    public static float ClampMemoryIntensity(float memoryIntensity, float baseIntensity) =>
+        Mathf.Clamp(memoryIntensity, 0f, Mathf.Max(0f, baseIntensity) * MemoryIntensityCeiling);
+
     /// <summary>R_trigger guard'ı: ≥ RADIUS_EPSILON — 0, asla girilemeyen sessiz ölü bölge üretirdi.</summary>
     public static float ClampTriggerRadius(float rTrigger) =>
         Mathf.Max(ProjectEpsilon.RADIUS_EPSILON, rTrigger);

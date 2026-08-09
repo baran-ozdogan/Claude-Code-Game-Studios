@@ -1,10 +1,25 @@
 # Session State — Active
 
+## Session Extract — /story-done isik-volume Story 003, 2026-08-09
+- Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 3/6)
+- Gate'ler İKİSİ DE aksiyonluydu, hepsi kapanış öncesi giderildi: **LP CONCERNS** — AC14a runtime clamp'i mutlak-değer sapmasında düşmüştü, `ClampMemoryIntensity(mem, base)` mutlak-form guard'ıyla geri geldi (ApplyProgress); Dormant-event reentrancy fix'i (_tickCoroutine=null event'ten ÖNCE); doc netleştirmeleri. **QL GAPS** — 3 test birebir eklendi: orta-In Revert (Held atlanır, In→Out→Dormant), tam-tur-sonrası coroutine restart, disable/re-enable ticker kurtarma; + Held no-op dönüş assert'i, + AC14a dejenere-girdi testi.
+- Süit: **EditMode 53/53, PlayMode 18/18**.
+- İleri bayraklar (story Completion Notes'ta): Story 005 — Out→In flip config koruması/Persistent kaybı; Story 006 — _zoneCenter OnValidate-bake drift build-check'i; ADR addendum IShiftZoneHandle yorumu (lead-architect).
+- Next: Story 004 (Automatic izleme/histerezis/co-residency/OnDestroy) YA DA 005/006 — üçünün de kilidi açık. Story 003 değişiklikleri commit'lenmedi (talimat bekliyor).
+
+## Session Extract — /dev-story isik-volume Story 003, 2026-08-09
+- Story: `production/epics/isik-volume-durum-sistemi/story-003-shiftzone-ticker-lockstep.md` — ShiftZone + ticker + lockstep (Status hâlâ Ready; /story-done bekliyor)
+- Files changed: `Foundation/IsikVolumeDurumSistemi/ZoneLight.cs` (YENİ — ADR sketch birebir; intensity per-light MUTLAK, GDD'nin config-çarpanına eşdeğerlik notu yorumda), `ShiftZone.cs` (YENİ — IShiftZoneHandle impl; per-zone tek coroutine, Volume.weight tek yazıcı, Story 002 makinesi coroutine'i sürer; sözleşme matrisi AC6-11; zoneCenter fallback TransformPoint ile fizik-bağımsız; OnEnable/OnDisable register + disable'da coroutine referans hijyeni + re-enable'da aktif bölge ticker'ı geri alır), `Foundation.asmdef` + `PlayModeTests.asmdef` (+Unity.RenderPipelines.Core.Runtime — Volume/VolumeProfile için), `Tests/PlayMode/isik_volume_shiftzone_test.cs` (YENİ, 6 UnityTest)
+- Debug bulgusu (ileride lazım): test bekleyişinde `Mathf.Approximately(weight, 1)` smoothstep 1'e YAKLAŞIRKEN (x<1, Held fırlamadan) erken çıkıyor → Revert Held'i atlıyor (davranış GDD'ye uygun, test niyeti tam turdu). Uçlar clamp'li/tam olduğundan bekleyiş KESİN eşitlikle yazılmalı. İlk koşu bu yüzden 14/15'ti; düzeltme sonrası 15/15.
+- Süit: **EditMode 53/53, PlayMode 15/15**. Blockers: None.
+- Next: `/story-done production/epics/isik-volume-durum-sistemi/story-003-shiftzone-ticker-lockstep.md` → kapanınca Story 004/005/006'nın kilidi açılır. Commit yok (talimat bekliyor).
+
 ## Session Extract — /story-done isik-volume Story 002, 2026-08-09
 - Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 2/6)
 - Gate'ler: QL ADEQUATE, LP APPROVE (full mod, general-purpose subagent'lar). Reviewer önerileri kapanış öncesi uygulandı (+3 test, toleranslı Color assert, bağımsız MemoryIntensityCeiling=0.999) — süit **EditMode 53/53**, PlayMode 9/9.
 - Advisory kayıtları story Completion Notes'ta: Mathf/Color harf-sapması (özde uyumlu); BoxHalfExtentMin girdi guard'ları Story 003/006'ya ileri bayrak.
-- Next: Story 003 (`story-003-shiftzone-ticker-lockstep.md` — gerçek ShiftZone; kilidi 002 açtı). Story 002 değişiklikleri commit'lenmedi (kullanıcı talimatı bekliyor).
+- Next: Story 003 (`story-003-shiftzone-ticker-lockstep.md` — gerçek ShiftZone; kilidi 002 açtı).
+- **GÜN KAPANIŞI**: Story 002 commit `0cdee31` push'lu, **CI YEŞİL (run 31313794091)**. Günün bilançosu: 3 story Complete (isik-volume 001+002, gece-oturum 004 → gece-oturum epic'i 4/4), 5 commit push'lu (story işleri + birikmiş 15 ADR/docs + Blender asset'leri), tüm CI koşuları yeşil. Süit: EditMode 53/53, PlayMode 9/9. **Bir sonraki oturumun net giriş noktası: /dev-story production/epics/isik-volume-durum-sistemi/story-003-shiftzone-ticker-lockstep.md**
 
 ## Session Extract — /dev-story isik-volume Story 002, 2026-08-09
 - Story: `production/epics/isik-volume-durum-sistemi/story-002-shift-progress-cekirdegi.md` — Shift progress çekirdeği + guard rail'ler (Status hâlâ Ready; /story-done bekliyor)

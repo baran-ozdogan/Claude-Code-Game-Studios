@@ -1,12 +1,12 @@
 # Story 003: ShiftZone + ticker + lockstep
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: M (~3-4h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -56,9 +56,17 @@
 ## Test Evidence
 
 **Story Type**: Integration → `game/Assets/Tests/PlayMode/isik_volume_shiftzone_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 9 UnityTest, PlayMode süiti 18/18 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: Story 001, Story 002
 - Unlocks: Story 004, Story 005, Story 006
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 6/6 passing (EditMode 53/53, PlayMode 18/18 lokal CLI)
+**Deviations**: (1) ZoneLight per-light MUTLAK memoryIntensity (ADR Key Interfaces şekli; GDD'nin config-çarpanına matematiksel eşdeğer, memI = baseI × M — başlık yorumunda belgeli). LP bulgusuyla guard eşdeğerliği de geri getirildi: `ClampMemoryIntensity(mem, base)` mutlak-form guard'ı, ApplyProgress'te (GDD AC14a). (2) zoneCenter fallback `TransformPoint(box.center)` — bounds.center ile aynı nokta, fizik senkronu beklenmeden (AC14c-pre okuma tarzı, testte eşdeğerlik assert'li). (3) Asmdef'lere Unity.RenderPipelines.Core.Runtime eklendi.
+**İleri bayraklar**: Story 005 — Out→In flip'te config bilinçli korunuyor (Persistent'lı yeni config benimsenmez; kodda işaretli), yeniden değerlendirilecek. Story 006 — _zoneCenter'ın OnValidate world-space bake'inin taşınmış objede bayatlaması için drift build-check'i. ADR addendum'ın IShiftZoneHandle yorumu AC7 dalını basitleştiriyor (metin düzeltmesi lead-architect kararı).
+**Test Evidence**: Integration — `game/Assets/Tests/PlayMode/isik_volume_shiftzone_test.cs` (9 UnityTest). Debug notu: bekleme yardımcılarında Approximately yerine KESİN eşitlik (uçlar clamp'li/tam; Approximately Held-öncesi erken çıkıp geçiş kaçırtıyor — ilk koşu 14/15 bu yüzdendi).
+**Code Review**: Complete — LP-CODE-REVIEW: CONCERNS→tümü giderildi (AC14a clamp, reentrancy, doc'lar); QL-TEST-COVERAGE: GAPS→üç test birebir eklendi (orta-In Revert, cycle-sonrası restart, disable/re-enable kurtarma). Full mod, general-purpose subagent gate'leri.
