@@ -46,4 +46,15 @@ public sealed class ShiftProgressMachine
     {
         X = Mathf.Clamp01(X + _direction * (deltaTime / IsikVolumeFormulas.ClampDuration(duration)));
     }
+
+    /// <summary>
+    /// Reload-restore İSTİSNASI (Story 005): tam-Shifted duruma tek adımda kur
+    /// (x=1, yön in). Shifting-In rampası bilinçli atlanır — normal akışta ASLA
+    /// çağrılmaz; tek çağıran ShiftZone'un OnEnable Persistent restore yolu.
+    /// </summary>
+    internal void RestoreShifted()
+    {
+        X = 1f;
+        _direction = 1f;
+    }
 }

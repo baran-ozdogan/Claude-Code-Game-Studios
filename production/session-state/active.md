@@ -1,5 +1,18 @@
 # Session State — Active
 
+## Session Extract — /story-done isik-volume Story 005, 2026-08-09
+- Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 5/6 — kalan TEK story: 006 build-blocking doğrulamalar)
+- Gate'ler: **LP APPROVE** (RevertShift Persistent-Held guard'ı üç gerekçeyle doğru bulundu; Persistent Held coroutine'i artık terminal — yield break, LP önerisi), **QL GAPS→kapatıldı** (restore+TriggerShift null-config invariant'ı; ResetAll oturum-sınırı; mid-In revert + reload diriltme davranış sabitlemesi).
+- Süit: **EditMode 53/53, PlayMode 32/32**. CI: dc2bcec (Story 004) YEŞİL (run 31325733289).
+- İleri bayraklar (Completion Notes'ta): ADR/GDD backlog — GOD Shifting-In yazımı vs Held revert-kilidi asimetrisi (diriltme semantiği); Adaptif Ses — restore edilen bölgede GetStingerAudioRadius=0, tüketici event payload R_trigger'ını kullanmalı.
+- Next: Story 006 (`story-006-build-blocking-dogrulamalar.md`) — epic'in son story'si. Story 005 değişiklikleri commit'lenmedi (talimat bekliyor).
+
+## Session Extract — /dev-story isik-volume Story 005, 2026-08-09
+- Story: `production/epics/isik-volume-durum-sistemi/story-005-persistent-semantigi-restore.md` — Persistent semantiği + reload restore (Status hâlâ Ready; /story-done bekliyor)
+- Files changed: `ShiftProgressMachine.cs` (+RestoreShifted internal istisnası — x=1/yön in, tek çağıran restore yolu), `ShiftZone.cs` (Held R_exit kontrolü !IsShiftPersistent kapılı [GDD AC4]; RevertShift Persistent Held'de no-op [TR-isik-012 "oturum boyunca atlanır" okuması — dış çağrılar dahil, reviewer değerlendirsin]; RestorePersistentStateIfNeeded OnEnable-TOP Register'dan önce [QQ-07]: GOD.IsPersistent → doğrudan Held-Persistent + weight=1 + TEK Held event'i, coroutine yok, tek-kare; StingerAudioRadius restore edilmez — doc'ta gerekçeli), `Tests/PlayMode/isik_volume_persistent_restore_test.cs` (YENİ, 3 UnityTest — AC-3 GOD kaydını elle enjekte etmez, GERÇEK abonelik wiring'iyle yazdırır: iki epic'in uçtan uca entegrasyon kanıtı)
+- Süit: **EditMode 53/53, PlayMode 30/30**. Blockers: None.
+- Next: `/story-done production/epics/isik-volume-durum-sistemi/story-005-persistent-semantigi-restore.md` → kalan tek story 006 (build-blocking doğrulamalar). Commit yok (talimat bekliyor). CI: dc2bcec koşusu arka planda izleniyor.
+
 ## Session Extract — /story-done isik-volume Story 004, 2026-08-09
 - Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 4/6 — kalan: 005 Persistent/restore, 006 build-check'ler)
 - Gate'ler ikisi de aksiyonluydu, kapanış öncesi giderildi: **LP CONCERNS** — GERÇEK bug: component-level disable (enabled=false) coroutine'i durdurmuyor (Unity yalnız GO deaktivasyonunda durdurur) → OnDisable'a açık StopCoroutine + regresyon testi; + _lights null-guard, OnDestroy doc notu. **QL GAPS** — 3 test: OnDestroy Out→Dormant dalı, donmuş-ÇIKIŞ-tespiti assert'i (co-residency yarım 3), null-sampler.

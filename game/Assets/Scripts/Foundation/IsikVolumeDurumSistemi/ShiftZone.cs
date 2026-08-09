@@ -84,6 +84,11 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
 
     private void OnEnable()
     {
+        // Restore sorgusu OnEnable'ın EN BAŞINDA, Register'dan önce (QQ-07 /
+        // scene_object_state_restore_timing deseni — Awake değil: Reload Scene
+        // OFF, Awake re-run'larını bastırır).
+        RestorePersistentStateIfNeeded();
+
         IsikVolumeDurumSistemi.InternalInstance.RegisterZone(this);
 
         // Automatic bölge Dormant'ta da izler → coroutine hemen başlar (ADR).
@@ -184,6 +189,14 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
             return; // AC9 — hata yok, event yok
         }
 
+        // Persistent kalıcılık escape hatch'i (GDD AC4, TR-isik-012): Shifting-Out
+        // oturumun geri kalanı boyunca ATLANIR — kaynağı ne olursa olsun (histerezis
+        // zaten Held dalında kapılı; bu guard dış çağrıları da kapsar).
+        if (IsShiftPersistent && _state == ShiftState.Held)
+        {
+            return;
+        }
+
         _machine.BeginShiftOut();
         TransitionTo(ShiftState.ShiftingOut);
     }
@@ -252,9 +265,18 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
                     break;
 
                 case ShiftState.Held:
+                    // Persistent Held TERMİNALDİR — hiçbir yol Held'den çıkaramaz
+                    // (histerezis kapılı, RevertShift guard'lı) → coroutine'i boşta
+                    // döndürmek anlamsız, biter (hem canlı-tetiklenen hem restore
+                    // edilen kalıcı bölge için tutarlı sıfır maliyet).
+                    if (IsShiftPersistent)
+                    {
+                        _tickCoroutine = null;
+                        yield break;
+                    }
+
                     // R_exit histerezisi (TR-isik-010) — çıkış eşiği girişten ayrı;
                     // R_trigger-R_exit bandındaki gidiş-geliş Held'i bozmaz (AC3b).
-                    // Persistent'ın "bu kontrol hiç koşmaz" kuralı Story 005'te.
                     if (positionSamplingAllowed
                         && !IsInside(IsikVolumeFormulas.ExitRadius(_rTrigger, _kHysteresis)))
                     {
@@ -315,6 +337,38 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
 
         _state = newState;
         IsikVolumeDurumSistemi.InternalInstance.RaiseShiftStateChanged(_shiftId, newState, _zoneCenter, _rTrigger);
+    }
+
+    /// <summary>
+    /// Reload restore (GDD AC17 kapanışı, TR-isik-012): sahne yüklemesinde
+    /// Gece/Oturum'un oturum-gerçeği bu shiftId'yi Persistent diyorsa bölge
+    /// Dormant + Shifting-In'i TAMAMEN atlayıp doğrudan Held-Persistent +
+    /// ShiftProgress=1 başlar; yükleme sonrası OnShiftStateChanged(Held) TAM BİR
+    /// KEZ fırlar (ses senkronu). Tek-kare, allocation'sız; Shifting-In
+    /// coroutine'i KOŞTURULMAZ (manifest forbidden). Instance canlı dereference.
+    /// Not: StingerAudioRadius restore edilmez (config referansı oturum-gerçeği
+    /// değil) — restore sonrası sorgu 0 döner; ses tüketicisi event payload'ındaki
+    /// R_trigger'ı kullanır (GDD "Event genişlemesi"). Ayrıca: restore event'i
+    /// Register'dan ÖNCE fırlar — handler içinde facade'a IsShiftActive
+    /// cross-query'si Dormant-default döner; abone payload'a güvenmeli
+    /// (OnDestroy'daki bilinen desenle aynı).
+    /// </summary>
+    private void RestorePersistentStateIfNeeded()
+    {
+        if (_state != ShiftState.Dormant)
+        {
+            return; // yalnız taze yüklenmiş bölge restore eder (re-enable değil)
+        }
+
+        if (!GeceOturumDurumu.Instance.IsPersistent(_shiftId))
+        {
+            return; // normal Dormant başlangıç, event yok
+        }
+
+        IsShiftPersistent = true;
+        _machine.RestoreShifted();
+        ApplyProgress(1f);
+        TransitionTo(ShiftState.Held); // tek event: Held (Shifting-In hiç fırlamaz)
     }
 
     private void ResolveZoneCenterFallback()

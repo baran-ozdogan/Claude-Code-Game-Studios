@@ -1,12 +1,12 @@
 # Story 005: Persistent semantiği + reload restore
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -54,9 +54,17 @@
 ## Test Evidence
 
 **Story Type**: Integration → `game/Assets/Tests/PlayMode/isik_volume_persistent_restore_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 5 UnityTest, PlayMode süiti 32/32 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: Story 004 (R_exit yolunun Persistent kapısı onun üstüne yazılır)
 - Unlocks: sahne-kesmeli/adaptif-ses epic'lerinin tüketici story'leri
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 5/5 passing (EditMode 53/53, PlayMode 32/32 lokal CLI); GDD'nin ertelenmiş AC17'si kapandı
+**Deviations**: (1) Dış `RevertShift` de Persistent Held'de no-op — story AC'leri yalnız R_exit'i sayıyordu; LP üç gerekçeyle onayladı (GDD AC4'ün oturum-değişmezi ifadesi, manifest'in gameplay `RevertShift` CI-ban'ı, restore edilen bölgenin null-`_activeConfig` NRE koruması). (2) Persistent Held coroutine'i bitirir (terminal durum — LP önerisi, canlı/restore tutarlı). (3) AC-3 testi GOD kaydını elle enjekte etmek yerine GERÇEK abonelik wiring'iyle yazdırır (story metnine göre upgrade — QA lead teyitli). (4) StingerAudioRadius restore edilmez (GOD yalnız bool saklar) — restore sonrası sorgu 0; **Adaptif Ses epic'ine bayrak: tüketici event payload'ındaki R_trigger'ı kullanmalı.**
+**ADR/GDD backlog bayrağı**: GOD gerçeği Shifting-In'de yazılır, revert kilidi Held'de — mid-In revert edilen persistent bölge reload'da Held dirilir; mevcut davranış `PersistentConfig_RevertMidShiftIn_...` testiyle sabitlendi, kural değişirse test bilinçli güncellenir (LP review gözlemi).
+**Test Evidence**: Integration — `game/Assets/Tests/PlayMode/isik_volume_persistent_restore_test.cs` (5 UnityTest)
+**Code Review**: Complete — LP-CODE-REVIEW: APPROVE, QL-TEST-COVERAGE: GAPS→3 test eklendi (full mod, general-purpose subagent gate'leri)
