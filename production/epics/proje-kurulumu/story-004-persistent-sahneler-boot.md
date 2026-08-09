@@ -1,12 +1,12 @@
 # Story 004: Persistent sahneler + boot yükleyici
 
 > **Epic**: Proje Kurulumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: M (~3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -55,10 +55,18 @@
 
 ## Test Evidence
 
-**Story Type**: Integration → `game/Assets/Tests/PlayMode/boot_persistent_scenes_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Integration → `game/Assets/Tests/PlayMode/boot_persistent_scenes_test.cs` (3 UnityTest)
+**Status**: [x] Created — PlayMode 4/4 hem normal hem **Reload Domain+Scene OFF** (options=3) profillerinde (CLI)
 
 ## Dependencies
 
 - Depends on: Story 002 (test altyapısı), Story 003 (ResetAll zamanlama referansı)
 - Unlocks: Story 005; FPC ve sahne-gecisi epic'leri
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 6/6 (UI/Player/Foundation sahneleri iskelet kökleriyle; Build Settings yalnız 3 persistent sahne, UI ilk — "level sahneleri işaretsiz kalır" politikası boot script yorumunda; `PersistentSceneBootLoader` UI kökünde, UI→Player→Foundation sıralı-awaited coroutine; depot yüklemesi YOK, ADR-0015 sözleşmesi açık yorumla; integration testleri 3'lü; iki-oturum kalıbı simüle + gerçek Reload-OFF profil CLI kanıtı)
+**Deviations**: ADVISORY — testler test-runner'ın kendi sahnesinde koştuğu için "sceneCount==3" iddiası "3 persistent + test sahnesi" olarak uyarlandı (yorumda belgeli). **Gerçek bug bulundu ve düzeltildi**: UI sahnesinin Start-boot'u ile test-boot'u yarışınca sahneler çift yükleniyordu — boot artık uçuştaki async yüklemeyi bekleyip ikinci yükleme yapmıyor (`TryFindScene` canlı liste taraması; ilk koşu 2/4 kırmızıydı, düzeltme sonrası 4/4). `Story004SceneSetup.cs` tek seferlik editör script'i (silinebilir).
+**Test Evidence**: PlayMode 4/4 × 2 profil (normal + options=3)
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
