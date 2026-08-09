@@ -1,12 +1,12 @@
 # Story 002: Shift progress çekirdeği + guard rail'ler (saf)
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -56,9 +56,16 @@
 ## Test Evidence
 
 **Story Type**: Logic → `game/Assets/Tests/EditMode/isik_volume_progress_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 14 test, EditMode süiti 53/53 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: Story 001 (ShiftState/ShiftConfig tipleri)
 - Unlocks: Story 003
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 6/6 passing (tüm sayısal beklentiler GDD Formulas örneklerinden — QA lead cross-check'li)
+**Deviations**: ADVISORY — (1) `Mathf`/`Color` kullanımı Engine Notes'un "Saf C#, Unity API yok" harfine aykırı, özünde uyumlu (deterministik struct/statik, MonoBehaviour/sahne yok, [Test]-only; `Color` AC-5 lerp-çifti sözleşmesinin gereği). (2) `MemoryIntensityCeiling` = 0.999 bağımsız sabit (GDD "<1.0" için sayı vermiyordu; hysteresis'ten BİLEREK türetilmedi — retune bağımsızlığı yorumda). İleri bayrak: `BoxHalfExtentMin`'in `SafetyBuffer`/`rExit` girdi guard'ları wiring/validation sahasında (Story 003/006) ele alınacak.
+**Test Evidence**: Logic — `game/Assets/Tests/EditMode/isik_volume_progress_test.cs` (14 test); süit EditMode 53/53, PlayMode 9/9
+**Code Review**: Complete — LP-CODE-REVIEW: APPROVE, QL-TEST-COVERAGE: ADEQUATE (full mod; reviewer önerileri kapanış öncesi uygulandı: başlangıç-durumu + guard-kompozisyon + negatif-girdi testleri, toleranslı Color assert'leri, bağımsız tavan sabiti)

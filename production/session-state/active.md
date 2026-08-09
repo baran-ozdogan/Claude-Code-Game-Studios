@@ -1,5 +1,18 @@
 # Session State — Active
 
+## Session Extract — /story-done isik-volume Story 002, 2026-08-09
+- Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 2/6)
+- Gate'ler: QL ADEQUATE, LP APPROVE (full mod, general-purpose subagent'lar). Reviewer önerileri kapanış öncesi uygulandı (+3 test, toleranslı Color assert, bağımsız MemoryIntensityCeiling=0.999) — süit **EditMode 53/53**, PlayMode 9/9.
+- Advisory kayıtları story Completion Notes'ta: Mathf/Color harf-sapması (özde uyumlu); BoxHalfExtentMin girdi guard'ları Story 003/006'ya ileri bayrak.
+- Next: Story 003 (`story-003-shiftzone-ticker-lockstep.md` — gerçek ShiftZone; kilidi 002 açtı). Story 002 değişiklikleri commit'lenmedi (kullanıcı talimatı bekliyor).
+
+## Session Extract — /dev-story isik-volume Story 002, 2026-08-09
+- Story: `production/epics/isik-volume-durum-sistemi/story-002-shift-progress-cekirdegi.md` — Shift progress çekirdeği + guard rail'ler (Status hâlâ Ready; /story-done bekliyor)
+- Files changed: `Foundation/ProjectEpsilon.cs` (YENİ — proje geneli 3 epsilon sabitinin tek evi, Foundation kökü), `Foundation/IsikVolumeDurumSistemi/ShiftProgressMachine.cs` (YENİ — koşan durum yalnız x, taze 3x²−2x³, pop'suz yön flip), `IsikVolumeFormulas.cs` (YENİ — 4 guard + ExitRadius/BoxHalfExtentMin/LightColor/LightIntensity), `Tests/EditMode/isik_volume_progress_test.cs` (YENİ, 12 test — sayılar GDD Formulas örneklerinden)
+- Süit: **EditMode 51/51** (PlayMode değişmedi — 9/9 önceki koşudan). Blockers: None.
+- Ayrıca: push sonrası CI koşusu 31312997652 (fc664cd) **YEŞİL** — üç commit (story işleri + birikmiş docs + asset'ler) doğrulandı.
+- Next: `/story-done production/epics/isik-volume-durum-sistemi/story-002-shift-progress-cekirdegi.md` → sonra Story 003 (ShiftZone ticker — kilidi 002 açar).
+
 ## Session Extract — /story-done gece-oturum Story 004 → **GECE-OTURUM EPIC'İ TAMAM (4/4)**, 2026-08-09
 - Verdict: COMPLETE
 - Story: `production/epics/gece-oturum-durumu/story-004-isik-volume-aboneligi.md` → **Status: Complete**; `production/epics/index.md` → Gece/Oturum Durumu **Complete (2026-08-09)**
