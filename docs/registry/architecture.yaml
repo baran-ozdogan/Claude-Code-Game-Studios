@@ -29,8 +29,8 @@
 #   All forbidden patterns: Grep pattern="^  - pattern:" (forbidden_patterns section)
 #   Superseded entries:     Grep pattern="status: superseded"
 
-version: 1
-last_updated: ""
+version: 2
+last_updated: "2026-08-05"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +43,51 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: session_active_flag
+    status: active
+    owner_system: session-state
+    adr: docs/architecture/adr-0003-session-state.md
+    interface: "SessionState.IsSessionActive (read-only bool); write only via SessionState.EndSession(), idempotent no-op if already false"
+    write_access: session-state-only
+    referenced_by:
+      - docs/architecture/adr-0003-session-state.md
+    added: 2026-08-05
+    revised: ""
+
+  - state: memory_trigger_bookkeeping
+    status: active
+    owner_system: session-state
+    adr: docs/architecture/adr-0003-session-state.md
+    interface: "SessionState.FiredTriggerIds / SettledTriggerIds (IReadOnlySet<string>), PersistentShiftIds (IReadOnlyDictionary<string,bool>); FiredTriggerIds written only via RecordTriggerFired(shiftId) [idempotent, fires OnTriggerFired only on first add], SettledTriggerIds/PersistentShiftIds written only internally from the ILightingVolumeQuery.OnShiftStateChanged handler"
+    write_access: session-state-only
+    referenced_by:
+      - docs/architecture/adr-0003-session-state.md
+      - docs/architecture/adr-0005-lighting-volume-state.md   # reads PersistentShiftIds (read-only) at zone Awake() for Persistent-restore-on-scene-load
+    added: 2026-08-05
+    revised: "2026-08-05 (added lighting-volume as a reader, per ADR-0005 — read-only, no change to write_access)"
+
+  - state: known_clue_state
+    status: active
+    owner_system: narrative-state
+    adr: docs/architecture/adr-0004-narrative-state.md
+    interface: "NarrativeState.GetKnownClueIds() (IReadOnlyCollection<string>), IsClueKnown(clueId) (read-only bool query); internal SeenShiftIds never exposed. Written only via MarkClueKnown(clueId) [idempotent, fires OnClueKnown only on Unknown→Known] or internally from the ILightingVolumeQuery.OnShiftStateChanged handler (Held-only)"
+    write_access: narrative-state-only
+    referenced_by:
+      - docs/architecture/adr-0004-narrative-state.md
+    added: 2026-08-05
+    revised: ""
+
+  - state: held_session_already_played
+    status: active
+    owner_system: adaptive-audio
+    adr: docs/architecture/adr-0006-adaptive-audio.md
+    interface: "AdaptiveAudioState internal HashSet<string> (not publicly exposed) — guards exactly-once-per-session stinger playback across both the Shifting-In-early and Held-normal trigger paths. No external read/write API; purely internal to this system's own state machine."
+    write_access: adaptive-audio-only
+    referenced_by:
+      - docs/architecture/adr-0006-adaptive-audio.md
+    added: 2026-08-05
+    revised: ""
 
 # Example:
 #
@@ -71,7 +115,132 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: scene_transition_events
+    status: active
+    pattern: signal
+    producer: scene-transition-manager
+    consumers:
+      - elevator-floor-access      # ADR-0008, 2026-08-05: calls RequestSoftTransition via FoundationCompositionRoot.TransitionManager (pull-wired, SceneTransitionManager is itself static — no timing concern), does not subscribe
+      - cutscene-narrative         # future ADR: calls PreloadHardCut/RequestHardCut, does not subscribe
+      - adaptive-audio             # ADR-0006, 2026-08-05: subscribes via the narrower ISceneTransitionQuery (see below), filters type==Hard for HARD CUT Sting
+    adr: docs/architecture/adr-0001-scene-transition-manager.md
+    signal_signature: "OnTransitionStateChanged(TransitionState newState, TransitionType type) — full command surface is ISceneTransitionManager. ADR-0006 amendment added a narrower ISceneTransitionQuery { event OnTransitionStateChanged; bool GetCurrentHardCutAbrupt(); } for read-only consumers (adaptive-audio) that never call Preload/Request methods — same concrete SceneTransitionManager implements both interfaces."
+    referenced_by:
+      - docs/architecture/adr-0001-scene-transition-manager.md
+      - docs/architecture/adr-0006-adaptive-audio.md
+      - docs/architecture/adr-0008-elevator-floor-access.md
+    added: 2026-08-05
+    revised: "2026-08-05 (added ISceneTransitionQuery narrowing per ADR-0006; elevator-floor-access is now a real consumer, per ADR-0008)"
+
+  - contract: sfx_mixer_group
+    status: active
+    pattern: shared_resource
+    producer: adaptive-audio
+    consumers:
+      - carry-loop    # TBD — ADR not yet written; this entry BINDS that future ADR to route pickup/delivery/jostle sounds here
+    adr: docs/architecture/adr-0006-adaptive-audio.md
+    signal_signature: "Dedicated 'SFX' AudioMixer group, no dynamic processing, explicitly no ducking (project-wide 'no build-up/riser/crescendo' mixing philosophy) — future Carry Loop ADR routes its AudioSources' outputAudioMixerGroup here, does not define its own group"
+    referenced_by:
+      - docs/architecture/adr-0006-adaptive-audio.md
+    added: 2026-08-05
+    revised: ""
+
+  - contract: movement_lock_contract
+    status: active
+    pattern: direct_call
+    producer: first-person-controller
+    consumers:
+      - elevator-floor-access      # ADR-0008, 2026-08-05: RequestMovementLock(ElevatorLockToken.Instance, MoveOnly)/Release, via FoundationCompositionRoot.MovementLock (self-registered by PlayerController, not a direct reference)
+      - cutscene-narrative         # future ADR: RequestMovementLock(this, Full)/Release before HARD CUT
+      - interaction-system         # ADR-0007, 2026-08-05: RequestMovementLock(this, MoveOnly)/Release during Hold gestures, pre-checked via IsLocked (never a rejection path)
+    adr: docs/architecture/adr-0002-first-person-controller.md
+    signal_signature: "RequestMovementLock(object requester, MovementLockScope scope = Full) / ReleaseMovementLock(object requester) — Dictionary<object, MovementLockScope>-backed, most-restrictive-scope-wins"
+    referenced_by:
+      - docs/architecture/adr-0002-first-person-controller.md
+      - docs/architecture/adr-0007-interaction-system.md
+      - docs/architecture/adr-0008-elevator-floor-access.md
+    added: 2026-08-05
+    revised: "2026-08-05 (interaction-system is now a real consumer, per ADR-0007; elevator-floor-access is now a real consumer, per ADR-0008, reached via FoundationCompositionRoot.MovementLock rather than a direct PlayerController reference)"
+
+  - contract: flagged_object_registry
+    status: active
+    pattern: direct_call
+    producer: interaction-system   # RESOLVED by ADR-0007, 2026-08-05 — was TBD
+    consumers:
+      - first-person-controller    # calls NearestFlaggedDistance(position) for Formula 2's approach-slow taper
+    adr: docs/architecture/adr-0007-interaction-system.md   # producer ADR — implements via InteractableRegistryAdapter; see also adr-0002 (consumer)
+    signal_signature: "float NearestFlaggedDistance(Vector3 position) — IFlaggedObjectRegistry, returns float.PositiveInfinity if empty/unset. ADR-0007's InteractableRegistry stores (IInteractable,Transform) pairs — position lives in the registry, not the IInteractable contract. Wired via FoundationCompositionRoot.FlaggedObjectRegistry; PlayerController.Awake() adopts it only if its own injected field is still null (ADR-0002's DI/testability preserved)."
+    referenced_by:
+      - docs/architecture/adr-0002-first-person-controller.md
+      - docs/architecture/adr-0007-interaction-system.md
+    added: 2026-08-05
+    revised: "2026-08-05 (producer resolved by ADR-0007 — was TBD; wiring closed via FoundationCompositionRoot extension)"
+
+  - contract: player_state_query
+    status: active
+    pattern: shared_resource
+    producer: first-person-controller
+    consumers:
+      - interaction-system         # ADR-0007, 2026-08-05: EyeCamera (SphereCast source), IsLocked (Hold pre-check)
+      - elevator-floor-access      # ADR-0008, 2026-08-05: does NOT use IPlayerState directly -- reaches PlayerController only via the narrower ISceneTransitionAware/IPlayerTeleport slices, through FoundationCompositionRoot self-registration (see player_teleport contract below and movement_lock_contract above)
+      - carry-loop                 # future ADR: SetCarrying, IsCarrying
+      - adaptive-audio             # future ADR: Velocity via PlayFootstep
+      - lighting-volume            # future ADR: reads PlayerMaxSpeed constant
+      - cutscene-narrative         # future ADR
+    adr: docs/architecture/adr-0002-first-person-controller.md
+    signal_signature: "IPlayerState { EyeCamera, Velocity, IsGrounded, MovementLocked, IsCarrying, IsLocked, HoldsLock(requester), Interact, MovementLockChanged }"
+    referenced_by:
+      - docs/architecture/adr-0002-first-person-controller.md
+      - docs/architecture/adr-0007-interaction-system.md
+    added: 2026-08-05
+    revised: "2026-08-05 (clarified elevator-floor-access does not consume this contract directly, per ADR-0008 -- see player_teleport/movement_lock_contract instead)"
+
+  - contract: lighting_shift_state
+    status: active
+    pattern: signal
+    producer: lighting-volume-state   # RESOLVED by ADR-0005, 2026-08-05 — was TBD
+    consumers:
+      - session-state               # subscribes via SessionState.LightingQuery (ILightingVolumeQuery), own null-object default
+      - narrative-state              # subscribes via NarrativeState.LightingQuery (SEPARATE property, own null-object default — added by ADR-0004, 2026-08-05)
+      - adaptive-audio               # subscribes via AdaptiveAudioState.LightingQuery (SEPARATE property, own null-object default — added by ADR-0006, 2026-08-05)
+    adr: docs/architecture/adr-0005-lighting-volume-state.md   # producer ADR — implements ILightingVolumeQuery via LightingVolumeQueryAdapter; see also adr-0003/adr-0004/adr-0006 (consumers)
+    signal_signature: "ILightingVolumeQuery { event OnShiftStateChanged(string shiftId, ShiftState newState, Vector3 zoneCenter, float radius); bool IsShiftPersistent(string shiftId); } — WIRING MOVED (ADR-0006, 2026-08-05): a single shared LightingVolumeQueryAdapter instance is assigned to SessionState.LightingQuery, NarrativeState.LightingQuery, AND AdaptiveAudioState.LightingQuery from FoundationCompositionRoot.Wire() (see api_decisions.foundation_composition_root below) — no longer from ADR-0005's own bootstrap directly. All three properties are independent; assigning one does not satisfy the others."
+    referenced_by:
+      - docs/architecture/adr-0003-session-state.md
+      - docs/architecture/adr-0004-narrative-state.md
+      - docs/architecture/adr-0005-lighting-volume-state.md
+      - docs/architecture/adr-0006-adaptive-audio.md
+    added: 2026-08-05
+    revised: "2026-08-05 (adaptive-audio added as 3rd consumer per ADR-0006; wiring moved from ADR-0005's bootstrap to FoundationCompositionRoot)"
+
+  - contract: narrative_query_contract
+    status: active
+    pattern: direct_call
+    producer: narrative-state
+    consumers:
+      - dialogue-content   # TBD — ADR not yet written; this entry BINDS that future ADR to consume this contract
+    adr: docs/architecture/adr-0004-narrative-state.md
+    signal_signature: "MarkClueKnown(string clueId) [idempotent] / IsClueKnown(string clueId) [never throws, false for unknown] / GetKnownClueIds() [IReadOnlyCollection<string>, empty-but-never-null] / event OnClueKnown(string clueId) [fires once per Unknown→Known transition; late subscribers must reconcile via polling, events are not replayed]"
+    referenced_by:
+      - docs/architecture/adr-0004-narrative-state.md
+    added: 2026-08-05
+    revised: ""
+
+  - contract: player_teleport
+    status: active
+    pattern: direct_call
+    producer: first-person-controller
+    consumers:
+      - elevator-floor-access      # ADR-0008, 2026-08-05: Teleport(destination CabinInteriorAnchor.position/rotation) on RequestSoftTransition's onComplete
+      - cutscene-narrative         # future ADR: likely HARD CUT spawn-point placement, not yet authored
+    adr: docs/architecture/adr-0002-first-person-controller.md   # interface defined here (amendment, ADR-0008); PlayerController is the sole implementer
+    signal_signature: "IPlayerTeleport { void Teleport(Vector3 position, Quaternion rotation); } — deliberately SEPARATE from ISceneTransitionAware (movement_lock_contract) per Interface Segregation: a MovementLock holder must not automatically gain teleport authority. Disables CharacterController before the position write, resets vertical-velocity/grounded state, re-enables after."
+    referenced_by:
+      - docs/architecture/adr-0002-first-person-controller.md
+      - docs/architecture/adr-0008-elevator-floor-access.md
+    added: 2026-08-05
+    revised: ""
 
 # Example:
 #
@@ -131,7 +300,65 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: scene_loading
+    status: active
+    api: "SceneManager.LoadSceneAsync(mode: Additive) + SceneManager.SetActiveScene + SceneManager.UnloadSceneAsync"
+    not: "Addressables.LoadSceneAsync"     # explicitly rejected for scene loading specifically — see Alternative 2 in the ADR
+    adr: docs/architecture/adr-0001-scene-transition-manager.md
+    reason: "MVP's 3 fixed local scenes don't need Addressables catalog management; Addressables.LoadSceneAsync
+      wraps the same underlying SceneManager additive/active-scene semantics anyway, so it wouldn't remove
+      the RenderGraph multi-scene risk this ADR already has to address. Scoped to SCENE loading only — does
+      not set a project-wide stance on Addressables for other asset types (ScriptableObjects, prefabs),
+      which remains an open decision flagged in architecture-review-2026-08-05.md."
+    referenced_by:
+      - docs/architecture/adr-0001-scene-transition-manager.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: input_consumption
+    status: active
+    api: "Generated C# class (new PlayerControls()) + manual controls.Enable()/Disable() in OnEnable()/OnDisable()"
+    not: "PlayerInput component with Send Messages"     # stringly-typed, not unit-testable without a live GameObject/message pump
+    adr: docs/architecture/adr-0002-first-person-controller.md
+    reason: "Matches engine-reference's documented recommended pattern for Unity 6.3's Input System package.
+      Fully unit-testable in isolation (no live message pump needed), satisfying this project's
+      dependency-injection/testability coding standard. Applies project-wide to any system reading
+      the shared 'Gameplay' Input Actions map, not just the First-Person Controller."
+    referenced_by:
+      - docs/architecture/adr-0002-first-person-controller.md
+    added: 2026-08-05
+    revised: ""
+
+  - purpose: scene_object_self_registration
+    status: active
+    api: "MonoBehaviour registers itself into a static Dictionary<key, self> in Awake() (present for the object's whole lifetime, not gated on active state), unregisters in OnDestroy() guarded by a reference check (only remove if dict[key] == this) before removing"
+    not: "FindObjectsOfType/tag-based scene scan at call time; OnEnable/OnDisable-based registration when the lookup must be valid before Start() runs (e.g. for an editor/scene-load-time validator)"
+    adr: docs/architecture/adr-0005-lighting-volume-state.md
+    reason: "Rule-of-three pattern (TD-ADR finding, ADR-0005 review) — this project has now independently arrived at self-registering-MonoBehaviour-into-a-static-dictionary three times conceptually (this ADR's LightingTriggerZone/LightingVolumeState, the not-yet-written Interaction System's InteractableRegistry referenced across multiple GDDs, and implicitly similar patterns elsewhere). Registered as a reusable SHAPE, not tied to one interface: (1) registration hook is Awake() when any consumer needs the registry populated before Start() (e.g. a scene-load-time validator), OnEnable()/OnDisable() when the object is expected to be dynamically toggled at runtime and callers should stop dispatching to a disabled object; (2) unknown-key lookups return a documented safe default and never throw; (3) duplicate-key registration is caught at edit time (build-blocking validation), not silently overwritten at runtime; (4) unregistration in OnDestroy()/OnDisable() MUST be reference-checked (only remove if the dictionary's current value for that key is still this instance) to avoid a reload-timing race deleting a newer registration. The future Interaction System ADR should follow this same shape for InteractableRegistry rather than inventing a fourth variant independently. **Extended by ADR-0008** (2026-08-05, TD-ADR finding): a new sub-variant — a SINGLE slot (not a Dictionary<key, self>) for a true singleton MonoBehaviour (PlayerController self-registering into FoundationCompositionRoot.MovementLock/PlayerTeleport). Same four rules apply, with rule 4's reference-check applying to a plain property comparison (ReferenceEquals) instead of a dictionary entry, and OnEnable/OnDisable was chosen over Awake/OnDestroy specifically to get symmetric teardown safety (an Awake/OnDestroy-only registration would still leave the composition-root reference unsafe across a disable-without-destroy cycle, e.g. PlayMode test teardown) — this was the BLOCKING finding that replaced ADR-0008's originally-drafted raw property push."
+    referenced_by:
+      - docs/architecture/adr-0005-lighting-volume-state.md
+      - docs/architecture/adr-0007-interaction-system.md   # InteractableRegistry adopts the OnEnable/OnDisable branch this entry documents — dynamically-toggled objects (carry items SetActive(false) on pickup)
+      - docs/architecture/adr-0008-elevator-floor-access.md   # PlayerController self-registers into FoundationCompositionRoot -- new single-slot-singleton sub-variant, not a collection-based registry
+    added: 2026-08-05
+    revised: "2026-08-05 (ADR-0007's InteractableRegistry confirmed as the pattern's second real use case, using the OnEnable/OnDisable branch rather than Awake/OnDestroy; ADR-0008 adds a third use case and a new single-slot-singleton sub-variant)"
+
+  - purpose: foundation_composition_root
+    status: active
+    api: "FoundationCompositionRoot.Wire(), a single [RuntimeInitializeOnLoadMethod(BeforeSceneLoad)] static method that assigns ALL cross-static Foundation-layer wiring (injectable-interface-plus-null-object properties like SessionState.LightingQuery, AdaptiveAudioState.TransitionSource, etc.) in one deterministic place"
+    not: "Hand-patching whichever earlier ADR happened to define the interface first, once per new consumer (the pattern ADR-0003→ADR-0004→ADR-0005 followed for ILightingVolumeQuery before this entry existed — do not repeat it)"
+    adr: docs/architecture/adr-0006-adaptive-audio.md
+    reason: "TD-ADR finding (ADR-0006 review): by the time a third consumer (AdaptiveAudioState.LightingQuery) plus a structurally identical but unrelated assignment (AdaptiveAudioState.TransitionSource) needed wiring, repeatedly amending ADR-0005's bootstrap no longer scaled and incorrectly implied Lighting/Volume 'owns' wiring for systems unrelated to lighting. This class does not belong to any single system's ADR — it is specified in ADR-0006 because that is where the problem became undeniable. Every future ADR that introduces a new injectable-interface-plus-null-object cross-static dependency (following the api_decisions.scene_object_self_registration or ILightingVolumeQuery precedent) should add its assignment here and list itself in this entry's referenced_by, rather than amending ADR-0005 or ADR-0006 again. **Extended by ADR-0007** (2026-08-05) to cover a new sub-case: wiring a static-owned resource (FlaggedObjectRegistry) into a scene MonoBehaviour consumer (PlayerController) that itself uses constructor/Inspector injection — the composition root exposes a static property, and the MonoBehaviour adopts it in Awake() only if its own injected field is still unset, preserving that consumer's original DI/testability rather than forcing a single mechanism. **Extended by ADR-0008** (2026-08-05, TD-ADR finding) to cover the REVERSE direction: a static consumer (ElevatorState) needing a reference INTO a not-yet-existing MonoBehaviour singleton (PlayerController) — the exact 'two-way dependency' case this entry's ADR-0006 origin flagged as unsolved. A raw property push from PlayerController.Awake() was drafted first and REJECTED (BLOCKING, TD-ADR review): an interface-typed static reference to a destroyed UnityEngine.Object does not safely degrade to null (Unity's fake-null override does not engage through an interface reference), so a destroyed-and-not-torn-down PlayerController would throw MissingReferenceException on next access. Fixed by reusing api_decisions.scene_object_self_registration's convention instead (RegisterPlayer/UnregisterPlayer, called from PlayerController.OnEnable/OnDisable, reference-checked) — this is now the composition root's SECOND sub-case, alongside ADR-0007's adopt-if-unset: static-implemented dependencies are pull-wired in Wire(); MonoBehaviour-implemented dependencies self-register via OnEnable/OnDisable."
+    referenced_by:
+      - docs/architecture/adr-0003-session-state.md
+      - docs/architecture/adr-0004-narrative-state.md
+      - docs/architecture/adr-0005-lighting-volume-state.md
+      - docs/architecture/adr-0006-adaptive-audio.md
+      - docs/architecture/adr-0007-interaction-system.md
+      - docs/architecture/adr-0002-first-person-controller.md   # consumer side — PlayerController.Awake() adopt-if-unset fallback; PlayerController.OnEnable/OnDisable self-registration (ADR-0008)
+      - docs/architecture/adr-0008-elevator-floor-access.md   # adds TransitionManager/MovementLock/PlayerTeleport properties + the self-registration sub-case
+    added: 2026-08-05
+    revised: "2026-08-05 (ADR-0007 extended the pattern to cover MonoBehaviour consumers with pre-existing DI, via a static-property + adopt-if-unset sub-case; ADR-0008 extended it further with a self-registration sub-case for the reverse two-way-dependency direction, replacing a rejected raw-push alternative)"
 
 # Example:
 #
@@ -157,7 +384,17 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: assuming_static_batching_across_additive_scenes
+    status: active
+    description: "Do not assume Unity's static batching merges draw calls across additively loaded
+      scenes. It does not — batching is per-scene."
+    why: "This project's ~2000 draw-call budget (technical-preferences.md) is a project-wide assumption;
+      under the additive scene-transition architecture (ADR-0001), draw calls must be planned per-scene,
+      not against a combined-batching total, or the budget will be silently overrun during the 0.5-2s
+      window when two scenes are simultaneously resident."
+    adr: docs/architecture/adr-0001-scene-transition-manager.md
+    added: 2026-08-05
 
 # Example:
 #

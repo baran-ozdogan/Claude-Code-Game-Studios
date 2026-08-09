@@ -127,7 +127,11 @@ sarmalanmış bir `Move()` çağrısı kullanır (çakışan `.Move()` çağrıl
 **İçe alınan çağrılar**:
 - `RequestMovementLock(object requester, MovementLockScope scope = MovementLockScope.Full)` /
   `ReleaseMovementLock(object requester)` — **referans sayaçlı**
-  (`HashSet<object>`), bool değil; Asansör, Sahne Kesmeli Anlatı ve
+  (`Dictionary<object, MovementLockScope>`, düzeltildi — bkz. ADR-0002,
+  TD-ADR bulgusu 2026-08-05: bir `HashSet<object>` her istekçinin kendi
+  kapsamını saklayamaz, bu da aynı paragrafın "en kısıtlayıcı kazanır"
+  kuralını hesaplanamaz kılardı; dışa açık API imzası değişmedi, sadece
+  bu iç veri yapısı), bool değil; Asansör, Sahne Kesmeli Anlatı ve
   Etkileşim (basılı tutmalı etkileşimler) aynı anda kilit isteyebilir,
   biri yanlış sırada bırakırsa diğerini bozmamalı.
   **Kilit kapsamı — açık parametre (design-review, 2026-08-03 —

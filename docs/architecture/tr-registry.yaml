@@ -24,33 +24,4079 @@
 #
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
-version: 1
-last_updated: ""
+version: 2
+last_updated: "2026-08-05"
 
-requirements: []
+requirements:
+  - id: TR-scene-001
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Both SOFT and HARD CUT transitions use a single shared code path on Unity
+      additive scene loading via one `SceneTransitionManager`, differentiated only
+      by config data
+    created: "2026-08-05"
+    revised: ""
+    status: active
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+  - id: TR-scene-002
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Gameplay
+    requirement: >-
+      SOFT transitions keep source and target scenes simultaneously resident;
+      masking is diegetic, not fade-to-black UI
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-003
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `Preloading`→`Ready` always waits for genuine `LoadSceneAsync` completion,
+      independent of the SOFT minimum-duration tuning knob
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-004
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      HARD CUT preload externally triggered via `PreloadHardCut(toScene)`;
+      `RequestHardCut` swaps within the same frame — zero fade, 0 black frames
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-005
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `Swapping` state is solely `SceneManager.SetActiveScene(toScene)`;
+      `UnloadSceneAsync` deferred to after `Complete`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-006
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      `SWAP_FRAME_EPSILON = 1 frame (≤16.6ms)` tolerance constant; 0 black frames
+      is an epsilon-free invariant
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-007
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `PreloadHardCut` waits for 100% `LoadSceneAsync` completion with
+      `allowSceneActivation=true` — not the ~90% hold pattern
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-008
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      System never calls `RequestMovementLock`/`ReleaseMovementLock` — lock
+      ownership belongs to the calling system
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-009
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      Static batching does not merge across additively loaded scenes — draw call
+      budget allocated per-scene
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-010
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      Unity 6.3 RenderGraph API changes may affect multi-scene camera
+      stacking/lighting — technical spike flagged as needed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-011
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      Baked `LightmapData` stays per-scene, never merged across additively loaded
+      scenes
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-012
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Rendering
+    requirement: >-
+      Each area scene carries its own URP Volume profile; `RenderSettings` synced
+      via `SceneEnvironmentSettings` component on `SetActiveScene`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-013
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      State machine: `Idle`→`Preloading`→`Ready`→`Swapping`(zero-
+      frame)→`Complete`→`Idle`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-014
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `PreloadHardCut` pre-advances to `Ready`/holds; `RequestHardCut` triggers
+      only the zero-frame `Swapping` step
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-015
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Terminal `Failed` state for load failure; `onComplete`/`onFailed` invoked
+      exactly once
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-016
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `Failed` auto-transitions to `Idle` immediately after `onFailed` fires
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-017
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `RequestHardCut` during an active SOFT transition queues into one pending
+      slot, auto-fires when SOFT reaches `Idle`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-018
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Public API: `void PreloadHardCut(string toScene)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-019
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Public API: `void RequestSoftTransition(fromScene, toScene, config,
+      onComplete, onFailed)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-020
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Public API: `void RequestHardCut(toScene, config, onComplete, onFailed)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-021
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `HardCutConfig.Abrupt` (bool) carried but not interpreted by this system —
+      only listeners branch on it
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-022
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `bool GetCurrentHardCutAbrupt()` synchronous query; undefined if none
+      preloaded/active
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-023
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `onComplete`/`onFailed` mutually exclusive, exactly one fires once
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-024
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `TransitionState CurrentState` and `enum TransitionType { Soft, Hard }`
+      exposed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-025
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `event OnTransitionStateChanged(TransitionState, TransitionType)` — type
+      param disambiguates SOFT/HARD `Swapping`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-026
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `event OnSoftTransitionRejected(string reason)` fires on every rejection
+      with cause string
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-027
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `PreloadHardCut` progress tracked in internal `_hardCutPreloadState`,
+      independent of public `CurrentState`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-028
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Same-type repeat request while active is rejected as no-op with logged
+      warning — one active-transition slot per type
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-029
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `PreloadHardCut(sceneB)` during active `PreloadHardCut(sceneA)` is
+      rejected/no-op, not queued
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-030
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      `RequestHardCut` with no matching `Ready` preload falls back to synchronous-
+      wait, doesn't redirect
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-031
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Exceptions inside caller's `onComplete` caught internally and logged, never
+      leak; state machine still proceeds
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-032
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      SOFT request during active HARD CUT is rejected outright and NOT queued
+      (asymmetric vs. HARD-during-SOFT)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-033
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Gameplay
+    requirement: >-
+      Coordinate-frame contract: `SoftTransitionAnchor` marker shares local
+      offset/orientation with source cabin spawn point
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-034
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Architecture
+    requirement: >-
+      Player-position transfer is an instantaneous Transform copy per TR-
+      scene-033, not a blend
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-035
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Gameplay
+    requirement: >-
+      Tuning knob — SOFT transition minimum duration: 2-8s
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-036
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Persistence
+    requirement: >-
+      Tuning knob — old-scene unload delay: 0.5-2s post-swap
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-037
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Gameplay
+    requirement: >-
+      Tuning knob — HARD CUT preload window: 1-3s ahead of tension curve peak
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-038
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Audio
+    requirement: >-
+      Cross-system contract: Adaptive Audio subscribes to
+      `OnTransitionStateChanged`, fires HARD CUT sting only on `Swapping && Hard`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-scene-039
+    system: scene
+    gdd: design/gdd/seviye-sahne-gecisi.md
+    domain: Gameplay
+    requirement: >-
+      Cross-system contract: Elevator handles `onFailed` identically to
+      `OnSoftTransitionRejected` — returns to origin floor, releases lock
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-001
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      Movement uses CharacterController capsule collision; step offset/skin width
+      tuned to 4m×4m modular grid
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-002
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Gameplay
+    requirement: >-
+      Walk speed 1.6 m/s unloaded, 1.35 m/s carrying (via `SetCarrying(bool)`); no
+      sprint
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-003
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      Acceleration/deceleration ramps over ~0.15-0.25s via exponential smoothing,
+      not instant velocity change
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-004
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Gameplay
+    requirement: >-
+      Approach-slow taper: flagged `IInteractable` within 1.5m reduces target
+      speed to 70% at d=0, smoothstep-eased; camera shake unaffected
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-005
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      Formula 1 (Speed Smoothing): `v(t+Δt) = v_target +
+      (v(t)-v_target)×e^(-k·Δt)`, k=3/T_ramp, analytic solution
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-006
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Gameplay
+    requirement: >-
+      Formula 2 (Approach-Slow Taper): `x=clamp(d/1.5,0,1); ease(x)=x²(3-2x);
+      TaperMult=0.7+0.3×ease(x)`; d sourced from InteractableRegistry
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-007
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Rendering
+    requirement: >-
+      Formula 3 (Head-Bob Amplitude): `Amplitude(v,S)=A_max×(v/1.6)×(S/100)`;
+      shared stride-phase accumulator with footstep audio
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-008
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: UI
+    requirement: >-
+      Head-bob accessibility slider (0-100%, default ~40%) plus full disable
+      option
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-009
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Rendering
+    requirement: >-
+      Camera pitch clamped ±80°, yaw unbounded; no FOV kick/roll/post-process
+      camera effects owned here
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-010
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: UI
+    requirement: >-
+      FOV default 75-80°, adjustable 60-100°
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-011
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Input
+    requirement: >-
+      Mouse look sensitivity slider + invert-Y toggle
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-012
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      State machine: Idle↔Walking→Carrying→Locked; player input can never break a
+      movement lock
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-013
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Exposes `IPlayerState` (read-only): EyeCamera, Velocity, IsGrounded,
+      MovementLocked, IsCarrying, IsLocked, MovementLockChanged event;
+      CharacterController not exposed directly
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-014
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      `RequestMovementLock(requester, scope)`/`ReleaseMovementLock(requester)` —
+      reference-counted via `HashSet<object>`, not a bool
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-015
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      `MovementLockScope { Full, MoveOnly }`; most-restrictive-wins when multiple
+      locks active
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-016
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      `IsLocked` read-only bool reports whether ANY requester holds the lock,
+      distinct from ownership
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-017
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Gameplay
+    requirement: >-
+      `SetCarrying(bool)` accepted only from Task/Carrying Loop
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-018
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Interaction System raycasts via this system's EyeCamera; one-directional
+      dependency (FPC never reaches into Interaction)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-019
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Input
+    requirement: >-
+      Single "Gameplay" Input Actions map: Move, Look, Interact; gamepad secondary
+      binding; no remap UI for MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-020
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      On `RequestMovementLock` mid-walk, v_target pulled to 0 but Formula 1 still
+      governs deceleration curve
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-021
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Gameplay
+    requirement: >-
+      Multiple flagged objects in taper radius: d = minimum distance across all;
+      TaperMult continuous across nearest-object transitions
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-022
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      No Δt clamping — abnormally large Δt makes v(t) jump directly to v_target
+      next frame
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-023
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      CharacterController step offset kept below kit's smallest threshold height
+      (~2cm); taller thresholds modeled as slope ramps
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-024
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      Skin width ~10% of capsule radius; door-frame clear width ≥ (capsule
+      diameter + 2×skin width), tuned together
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-025
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      Convex 90° wall-junction corners chamfered by skin-width amount, or
+      frictionless physics material, to prevent snagging
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-026
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Physics
+    requirement: >-
+      `OnControllerColliderHit` early-exits unless hit layer is in an explicit
+      interest mask
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-027
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Elevator only calls `RequestMovementLock(this, MoveOnly)`/`Release...` — no
+      platform-delta injection needed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-028
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Audio
+    requirement: >-
+      Footstep audio: single generic material, random pitch ±5%, 4-6 samples;
+      volume scales with v(t)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-029
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Audio
+    requirement: >-
+      Breathing/effort loop tied to IsCarrying, fades ~1s on start/stop; not tied
+      to approach-slow taper
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-030
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Edit-time content validator fails build if no decoy `IInteractable`
+      registered per MVP scene
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-031
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Cross-layer read dependency: Formula 2's `d` reads InteractableRegistry
+      (owned by Interaction System) — open architectural question
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-032
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Light/Volume State reads this system's `PlayerMaxSpeed` (1.6 m/s) constant
+      read-only for R_trigger calculation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-033
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Cinematic Cutscene calls `RequestMovementLock(this, Full)`/`Release...`
+      immediately before a HARD CUT
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-fpc-034
+    system: fpc
+    gdd: design/gdd/birinci-sahis-kontrolcu.md
+    domain: Architecture
+    requirement: >-
+      Automated unit tests with mock Δt required to validate smoothing function
+      convergence bounds
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-001
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      In-memory singleton service — survives scene loads, no disk persistence in
+      MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-002
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Holds `bool IsSessionActive` — true at night start, false when psychiatry
+      cutscene begins
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-003
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Holds `int CurrentNightNumber` — fixed to 1 for MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-004
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Holds `HashSet<string> FiredTriggerIds` — fired-only tracking, distinct from
+      narrative "known" state
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-005
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Holds `Dictionary<string,bool> PersistentShiftIds` — recorded when a shift
+      becomes Held-Persistent
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-006
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Exposes `IsSessionActive` read-only for Elevator; makes no availability
+      decision itself
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-007
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      In-memory dictionary sufficient for `PersistentShiftIds` — no serialization
+      required in MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-008
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Subscribes to Işık/Volume's `OnShiftStateChanged(shiftId, newState,
+      zoneCenter, radius)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-009
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      On `Shifting-In`, calls `IsShiftPersistent(shiftId)` synchronously same
+      frame; records `PersistentShiftIds` immediately, doesn't wait for `Held`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-010
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      `OnShiftStateChanged` carries no `Persistent` field — hence the mandatory
+      separate `IsShiftPersistent` query
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-011
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      `void EndSession()` sets `IsSessionActive=false`; called only by Sahne
+      Kesmeli Anlatı's `onComplete`; no reverse transition in MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-012
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      `event Action<string> OnTriggerFired` fires same frame `shiftId` added to
+      `FiredTriggerIds`, on entry to `Shifting-In`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-013
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Holds `HashSet<string> SettledTriggerIds` + `event OnTriggerSettled`,
+      populated on `Held` for an already-fired `shiftId`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-014
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Night-end saturation must check `SettledTriggerIds.Count`, never
+      `FiredTriggerIds.Count` (fixes payoff-cutoff defect)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-015
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      `SettledTriggerIds.Count < FiredTriggerIds.Count` is expected transient
+      state during the ~3s ramp window
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-016
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Depended on by: Anı-Tetikleyici, Işık/Volume, Asansör, Görev/Taşıma, Sahne
+      Kesmeli — full dependency list
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-session-017
+    system: session
+    gdd: design/quick-specs/gece-oturum-durumu-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      All state resets to zero on game restart — no disk load in MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-001
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Core "known clue" state: `HashSet<string> KnownClueIds`, no
+      ordering/timestamp tracked
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-002
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      `ClueDefinition { clueId, requiredShiftIds[] }` — single project-level
+      registry, not per-scene copies
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-003
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      clueId→requiredShiftIds is N:1 with ALL semantics — Known only when
+      `SeenShiftIds ⊇ requiredShiftIds`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-004
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Edit-time validation blocks build for any `ClueDefinition` with empty
+      `requiredShiftIds` (prevents vacuous-truth bug)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-005
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      MVP: every list holds exactly 1 element, but schema must support N-element
+      lists for Full Vision
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-006
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      `HashSet<string> SeenShiftIds` distinct/independent from Gece/Oturum's
+      `FiredTriggerIds` — no cross-querying
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-007
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      `MarkClueKnown(clueId)` idempotent — no-op and no re-fire if already known
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-008
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Static/singleton scene-independent plain C# service, explicitly NOT
+      DontDestroyOnLoad; no disk persistence in MVP
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-009
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Persistence
+    requirement: >-
+      `ClueDefinition` records loaded from a single project-level registry, not
+      per-scene duplicated assets
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-010
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Edit-time validation rejects build on duplicate `clueId` across two
+      `ClueDefinition` records
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-011
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Must subscribe to `OnShiftStateChanged` at static-constructor/bootstrap
+      time, not scene-local `Awake`/`OnEnable`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-012
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      State machine per clueId strictly one-way Unknown→Known, non-reversible, no
+      intermediate state exposed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-013
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      API: `MarkClueKnown`, `IsClueKnown` (never throws), `GetKnownClueIds`
+      (empty-but-never-null)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-014
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      `event OnClueKnown(clueId)` fires exactly once, only on Unknown→Known
+      transition
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-015
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      RETRACTED: Sahne Kesmeli Anlatı no longer subscribes to `OnClueKnown` as of
+      2026-08-03
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-016
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      Subscribes to `OnShiftStateChanged`, processes only `Held` transitions;
+      `zoneCenter`/`radius` unused
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-017
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      Held-transition handler: add to `SeenShiftIds` → find matching
+      `ClueDefinition`s → `MarkClueKnown` if containment satisfied
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-018
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Must tolerate duplicate `Held` re-fires for `Persistent=true` shifts without
+      error or duplicate `OnClueKnown`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-019
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Persistence
+    requirement: >-
+      Cross-night persistence deferred to Çoklu Gece İlerlemesi; data model (2
+      flat HashSets) already serialization-suitable
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-020
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      `ClueConsistencyValidator.ValidateScene(sceneId)` on scene load — logs
+      orphaned (clueId, shiftId) pairs, non-blocking
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-021
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      No runtime clamping for empty `requiredShiftIds` — caught only by edit-time
+      validation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-022
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      Multiple `ClueDefinition`s may share a `shiftId`; single Held handler run
+      may complete 0, 1, or multiple clues
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-023
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Gameplay
+    requirement: >-
+      `MarkClueKnown` called directly performs no validation against prerequisites
+      — unconditional mark, indistinguishable from earned
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-024
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Duplicate shiftId entries within one `requiredShiftIds` list have no
+      functional effect (HashSet dedup)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-025
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      No ordering/timestamp recorded or exposed anywhere in the API — intentional
+      design constraint (Pillar 1/5)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-026
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Structural ownership boundary vs. Gece/Oturum Durumu — independent state
+      halves, must not query each other's data
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-027
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Late-subscriber gap: events not replayed — late subscribers must reconcile
+      via `GetKnownClueIds`/`IsClueKnown` at init
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-narrative-028
+    system: narrative
+    gdd: design/gdd/anlati-durum-ipucu-takibi.md
+    domain: Architecture
+    requirement: >-
+      Query contract for Diyalog/Anlatı İçeriği & Plot Twist: queryable at scene
+      start independent of event timing
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-001
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Each trigger zone has an independent `Volume` (isGlobal=false); all zones
+      share one Volume Profile asset; multiple zones may be Shifted simultaneously
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-002
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Zone box collider decoupled from R_trigger/R_exit — separate code-based
+      distance check, sampled once per tick
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-003
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `zoneCenter` required Vector3; defaults to box collider's world-space
+      bounds.center via Awake/OnValidate
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-004
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      `Volume.weight` set directly to `ShiftProgress` every frame by the zone's
+      ticker, sole writer — no Animator/Timeline may key it
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-005
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering/Physics
+    requirement: >-
+      Box collider sized ≥ `BoxHalfExtentMin`, `blendDistance=0`, for pop-free
+      Shifting-Out
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-006
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      "Tick" = per-zone position-sampling coroutine, default once/frame at 60fps;
+      may be throttled
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-007
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Minimum safe `R_trigger = PlayerMaxSpeed × tick interval` to guarantee no
+      zone skip
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-008
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Ticker skips position sampling when zone's scene ≠ active scene, preventing
+      spurious co-residency triggers
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-009
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Scene-mismatch skip applies only to position checks; time-based `x` progress
+      keeps advancing regardless
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-010
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      State reversion (Held→Shifting-Out) purely radius/hysteresis-based, no fixed
+      timer
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-011
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Each zone has Inspector-assigned `string shiftId`, key for
+      `TriggerShift`/`RevertShift`/`IsShiftActive` and edit-time matching
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-012
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay/Architecture
+    requirement: >-
+      Each zone has `TriggerMode { Automatic, ManualOnly }`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-013
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edit-time validation fails build if any `MemoryTriggerDef`-linked zone has
+      `TriggerMode != ManualOnly`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-014
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      ≥1 MVP zone must be `Automatic`, `Persistent=false`, on mandatory route, not
+      linked to any clue
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-015
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Build-time check fails if zero `Automatic` zones found in MVP scenes
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-016
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Persistence
+    requirement: >-
+      `ShiftConfig.Persistent` bool — true skips `Shifting-Out`, remains `Shifted`
+      rest of session, never evaluates exit radius
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-017
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Lighting-state change is post-process + per-light color/intensity lerp only;
+      baked-lightmap-set swapping explicitly rejected
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-018
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Every `Light` in a `ShiftConfig`'s array must be Light Mode = Mixed, never
+      Baked
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-019
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering/Performance
+    requirement: >-
+      Real-time shadow-casting lights budgeted 2-3 per room
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-020
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Overlapping trigger zones must not share lights in their light arrays
+      (unenforced by tooling)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-021
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture/Performance
+    requirement: >-
+      Interpolation driven by one lightweight per-zone coroutine iterating a
+      light-tuple array — not per-light `Update()`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-022
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      State machine: `Dormant`→`Shifting-In`(~3s)→`Shifted/Held`→`Shifting-
+      Out`(~3s)→`Dormant`; `Persistent` skips Shifting-Out
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-023
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      API: `bool TriggerShift(shiftId, config)` — true if new transition started,
+      false no-op if already active
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-024
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      API: `void RevertShift(shiftId)` — silent no-op if not active
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-025
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      API: `bool IsShiftActive(shiftId)` — true for Shifting-In/Held/Shifting-Out,
+      only Dormant is inactive
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-026
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture/Persistence
+    requirement: >-
+      API: `bool IsShiftPersistent(shiftId)` — must be queried same frame as
+      `TriggerShift`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-027
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `event OnShiftStateChanged(shiftId, newState, zoneCenter, radius)` — this
+      system never calls audio directly
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-028
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `ShiftConfig` schema: target White Balance/Color values, `Duration`,
+      `Persistent`, `StingerAudioRadius` (default 0)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-029
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture/Audio
+    requirement: >-
+      API: `float GetStingerAudioRadius(shiftId)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-030
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edit-time validation enforces `StingerAudioRadius > 0` for
+      `MemoryTriggerDef`-linked zones
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-031
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      No reference counting on `shiftId` — one `RevertShift` fully reverts
+      regardless of caller count
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-032
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `ShiftProgress = 3x²-2x³`, `x=clamp(ElapsedTime/Duration,0,1)` — smoothstep
+      ease
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-033
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Running state tracked as `x` itself, never `ElapsedTime`/`ShiftProgress`
+      alone; interrupts flip sign of per-tick delta
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-034
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Guard-rail epsilons: `TIME_EPSILON=0.01s`, `RADIUS_EPSILON=0.01m`,
+      `HYSTERESIS_EPSILON=0.001`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-035
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `Duration` clamped ≥ `TIME_EPSILON`, never 0
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-036
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `k_hysteresis` clamped ≥ `1.0+HYSTERESIS_EPSILON` in code
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-037
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `MemoryIntensityMultiplier` clamped to `[0.0,1.0)` in code
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-038
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `R_trigger` clamped ≥ `RADIUS_EPSILON`, never ≤0
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-039
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Hysteresis Radius: `R_exit = R_trigger × k_hysteresis`, default 1.15, range
+      1.05-1.3
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-040
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Physics
+    requirement: >-
+      Box Collider Safety Margin: `BoxHalfExtentMin = R_exit + (PlayerMaxSpeed ×
+      Duration) + SafetyBuffer` (≥0.5m, default 0.9m)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-041
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Light Color/Intensity Blend: `LightColor=Lerp(Base,Memory,ShiftProgress)`, `
+      LightIntensity=BaseIntensity×Lerp(1,MemoryIntensityMultiplier,ShiftProgress)
+      `
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-042
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay/Architecture
+    requirement: >-
+      Discontinuous-exit edge case (elevator teleport): no event fires at exit
+      moment, next tick outside R_exit starts Shifting-Out
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-043
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Persistence
+    requirement: >-
+      Session-restore: on load, prior `Persistent` shift initializes directly to
+      `Shifted/Held-Persistent` (ShiftProgress=1), fires event once
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-044
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Persistence
+    requirement: >-
+      Dependency on Gece/Oturum Durumu: reads `PersistentShiftIds` at scene load
+      (read-only); session writes it via event subscription
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-045
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Locked Volume Profile values: WB Temp -60, Tint +10, Post Exposure -0.5,
+      Saturation -20; MemoryColor limited to 2 options
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-046
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Rendering
+    requirement: >-
+      No additional visual-cue channels permitted (fog, particles, geometry) —
+      only light/Volume state carries the signal
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-047
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Accessibility: `MemoryIntensityMultiplier` default ≥ 0.6 (raised above 0.5
+      floor) for colorblind readability
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-048
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: UI
+    requirement: >-
+      No runtime UI of its own — future "reduced visual effects" toggle belongs to
+      Settings menu, out of scope
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-lighting-049
+    system: lighting
+    gdd: design/gdd/isik-volume-durum-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edit-time `OnValidate` warns if a referenced `Light`'s mode is Baked (only
+      checked when the `ShiftConfig` asset itself is edited)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-001
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Middleware confirmed: Unity built-in AudioMixer + AudioSource, no FMOD/Wwise
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-002
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      3 named zones each have 2 constant base ambience layers + 1 round-based
+      fade-in layer
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-003
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Round-based layer reads `CurrentRoundIndex`/`TotalRoundCount` directly from
+      Task/Carry Loop each update
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-004
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      `TensionGain(roundIndex)=ease(x)`,
+      `x=clamp(roundIndex/(TotalRoundCount-1),0,1)`, `ease(x)=x²(3-2x)`;
+      `layer3_volume=base×TensionGain`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-005
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `TensionGain` guards divide-by-zero: `TotalRoundCount≤1` hard-clamps to 1
+      before division
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-006
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Ambience crossfade: two `AudioSource`s (A/B ping-pong), ~1-2s lerp on
+      `ZoneChanged`; no Snapshot system
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-007
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Both ambience sources assigned to new dedicated "Ambiance" AudioMixer group
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-008
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      New `AmbientZoneVolume` component: one trigger collider per named zone fires
+      `ZoneChanged(zoneId)`; no hysteresis
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-009
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Adjacent zone volumes share boundaries with zero overlap/gap — exactly one
+      zone always active
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-010
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Persistence
+    requirement: >-
+      Scene co-residency guard: `AmbientZoneVolume` ticker skipped (not destroyed)
+      unless own scene matches active scene
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-011
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Physics
+    requirement: >-
+      Initial-zone spawn detection: one-time overlap check since `OnTriggerEnter`
+      doesn't fire for spawn-inside case
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-012
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Initial-check-vs-co-residency race fix: deferred to first tick where own
+      scene matches active scene, via `_initialCheckDone` flag
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-013
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Memory-Trigger Stinger processes both `Held` (always) and `Shifting-In` (if
+      `IsShiftPersistent`)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-014
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Stinger system calls `IsShiftPersistent(shiftId)` to pick early vs. late
+      trigger path
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-015
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Stinger pool: 3-4 `AudioSource`s on Stinger mixer group, `PlayOneShot` (not
+      `PlayClipAtPoint`, no mixer group support)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-016
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      `stinger_falloff`: `minDistance=stingerAudioRadius×0.3;
+      maxDistance=stingerAudioRadius×1.0`, from `GetStingerAudioRadius` not
+      gameplay radius
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-017
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Queries `GetStingerAudioRadius(shiftId)` same frame as play-attempt trigger
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-018
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `Idle`/`Playing`/`Cooldown` app-level state machine — never uses
+      `source.isPlaying`; `Invoke(EnterCooldown, clip.length)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-019
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Runtime RMS enforcement: static brickwall limiter on Stinger group, per-zone
+      RMS ceiling tuning knob
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-020
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Footstep playback: FPC calls `PlayFootstep(speed)` per step; dedicated
+      `AudioSource`, `PlayOneShot`, 4-6 samples with repeat-protection, ±5% pitch
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-021
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `footstep_volume = speed/1.6`, `speed` inline from FPC's Formula 1 output —
+      no independent Velocity sampling
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-022
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      HARD CUT Sting subscribes to `OnTransitionStateChanged`, fires only on
+      `Swapping && Hard && GetCurrentHardCutAbrupt()==true`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-023
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `GetCurrentHardCutAbrupt()` queried same frame as `Swapping` received
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-024
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      CutSting on dedicated "CutSting" mixer group, single `AudioSource`, synced
+      to zero-frame swap
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-025
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      `Abrupt=false`: CutSting never plays; ambience/stinger crossfade to silence
+      via `ambient_crossfade` instead
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-026
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Abrupt-stop-all rule (`Abrupt=true` only): all ambience/pooled stingers stop
+      instantly, no fade
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-027
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      CutSting exempt from abrupt-stop-all — stop-all-first, then CutSting
+      `PlayOneShot`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-028
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      New dedicated "SFX" mixer group for Task/Carry pickup/delivery/jostle SFX,
+      no ducking
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-029
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Persistence
+    requirement: >-
+      `HeldSessionAlreadyPlayed` guard: session-lifetime `HashSet<string>`, added
+      on `Playing`, removed only on `Shifting-Out`/`Dormant`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-030
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      `ambient_crossfade`: `x=clamp(elapsed/T,0,1); ease(x)=x²(3-2x);
+      volume_B=ease(x); volume_A=1-ease(x)`, T≈1-2s
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-031
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Mid-crossfade re-trigger resumes from current gain values, not reset to t=0
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-032
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Third-zone crossfade re-assigns quieter source to new target, still exactly
+      2 pooled sources
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-033
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Stinger pool concurrency: if all 3-4 sources Playing, new request silently
+      dropped, no queueing
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-034
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Footstep overlap has no rate limit; throttle owner (FPC vs. audio system) is
+      an open architectural question
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-035
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Cooldown re-entry: `Held` accepted only from `Idle`, not `Cooldown` —
+      ignored if still cooling down
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-036
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Audio
+    requirement: >-
+      Simultaneous multi-zone `Held`: each independently acquires a free pool
+      source if ≥2 free
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-037
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: UI
+    requirement: >-
+      Stinger-synced closed-caption UI element, timing-synced to clip start/stop,
+      styled distinct from dialogue subtitles
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-audio-038
+    system: audio
+    gdd: design/gdd/adaptif-ses-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Stinger timing doesn't subscribe to FPC Velocity/IsGrounded — footstep phase
+      stays FPC-owned to avoid drift
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-001
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Physics
+    requirement: >-
+      Focus detection via `SphereCast` (radius ~0.05m, range 2.0m) from EyeCamera
+      every frame
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-002
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Shared static `InteractableRegistry` — every `IInteractable` self-registers
+      OnEnable/OnDisable, read by both this system and FPC's taper
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-003
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `IInteractable.Type` is `Instant` or `Hold`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-004
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: UI
+    requirement: >-
+      Crosshair/prompt UI owned by this system; changes only on Idle↔Focused
+      transition
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-005
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: UI
+    requirement: >-
+      Default Hold-fill indicator drawn automatically by this system from its own
+      computed `t`, no dependency on object
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-006
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: UI
+    requirement: >-
+      `IInteractable.SuppressDefaultHoldFill` (default false) opts out of the
+      default fill entirely
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-007
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Input
+    requirement: >-
+      Input via "Gameplay" map's `Interact` — `WasPressedThisFrame` for Instant,
+      `IsPressed` for Hold
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-008
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Race-condition protection: synchronous registry cleanup in `OnDisable`,
+      Unity object-null comparison, not raw C# null
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-009
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      State machine: Idle→Focused→Holding→Focused; Instant fires `OnInteract()`
+      and stays Focused
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-010
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Entering Holding calls `RequestMovementLock(this, MoveOnly)` — MoveOnly
+      required so Look stays free for cancel-by-look-away
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-011
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Hold completion/cancellation both call `ReleaseMovementLock(this)`, return
+      to Focused
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-012
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Hard dependency on FPC's EyeCamera and IsLocked pre-check
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-013
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `IInteractable` interface: Type, HoldDuration, CanInteract, PromptText,
+      OnFocusEnter/Exit, OnInteract, OnHoldProgress/Complete/Cancelled,
+      OnHoldBlocked, SuppressDefaultHoldFill
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-014
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `hold_progress`: `t=clamp(elapsedHoldTime/HoldDuration,0,1)`; resets on
+      cancel; HoldDuration per-object 0.1-3.0s
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-015
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Hold progress must be linear at core-system level — urgency/anticipation
+      curves applied downstream only
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-016
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `OnHoldProgress(t)` always delivers raw linear t; downstream systems remap
+      in their own code
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-017
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Physics
+    requirement: >-
+      SphereCast radius/range are fixed Tuning Knob constants, not scaled by
+      speed/FOV
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-018
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: target Destroy/SetActive(false) mid-hold — `OnHoldComplete` NOT
+      called, lock released, returns to Idle not Focused
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-019
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: button-release and target-loss same frame — fixed check order
+      (target validity before button)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-020
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: `HoldDuration≤0` — checked before division, `OnHoldComplete`
+      fires immediately, logs warning
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-021
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Physics
+    requirement: >-
+      Edge case: multiple SphereCast hits same frame — smallest `hit.distance`
+      wins, ties by smallest InstanceID
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-022
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: lock already held elsewhere — pre-check via
+      `IPlayerState.IsLocked`, fires `OnHoldBlocked()` instead of requesting
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-023
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: object disables/re-enables mid-Holding — counted as target-loss,
+      requires fresh Focused entry
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-024
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Edge case: registry mutated during iteration — read-only snapshot at
+      iteration start
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-025
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Edge case: SphereCast hits different target while Holding — target locked,
+      no auto-switching until cancel/complete
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-026
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Elevator/Floor-Access does not use this system — own trigger-zone logic
+      instead
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-027
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: UI
+    requirement: >-
+      Crosshair state change must include shape/size, not color alone (colorblind
+      accessibility)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-028
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Build-time content check: mock `IInteractable` test verifies default Hold-
+      fill advances regardless of consumption
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-029
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Open question: `InteractableRegistry` ownership/location not finalized —
+      required before implementation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-interact-030
+    system: interact
+    gdd: design/gdd/etkilesim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Open question: SphereCast occlusion/blocking behavior for transparent-but-
+      blocking surfaces undefined
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-001
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Call button uses own trigger-zone logic (~1.5m), does NOT implement
+      `IInteractable`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-002
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Input
+    requirement: >-
+      Trigger-zone reads "Gameplay" map's `Interact` directly when player inside
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-003
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Reads `IsSessionActive` synchronously at press-time only, not polled
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-004
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Builds own availability logic on top of `IsSessionActive` — decision never
+      made by Session State itself
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-005
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      FSM: Idle→Called→DoorsOpening→DoorsOpen→DoorsClosing→Waiting→(DoorsOpen|Door
+      sOpening)→Idle
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-006
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `ArrivalDuration` timer (3-6s) gates Called→DoorsOpening
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-007
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Door timing:
+      `DoorOpenAnim`(~1.5s)→`DwellTime`(~4-6s)→`DoorCloseAnim`(~1.5s), constants
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-008
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Physics
+    requirement: >-
+      Cabin never receives real transform/platform movement at any state
+      transition
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-009
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Rendering
+    requirement: >-
+      "Movement" delivered via camera-space procedural shake + continuous hum,
+      active only during `Waiting`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-010
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Audio
+    requirement: >-
+      Shake/hum start/stop hard-cut (no fade) exactly on `Waiting` entry/exit
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-011
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Input
+    requirement: >-
+      `RequestMovementLock(this, MoveOnly)` on DoorsClosing→Waiting
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-012
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Input
+    requirement: >-
+      `ReleaseMovementLock(this)` inside both `onComplete` and `onFailed`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-013
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Physics
+    requirement: >-
+      No platform-delta injection into FPC required, cabin never physically moves
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-014
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Calls `RequestSoftTransition(...)` on Scene Transition once DoorsClosing
+      completes
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-015
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Subscribes to `OnSoftTransitionRejected` — fires synchronously only at
+      request time
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-016
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Synchronous rejection: cabin returns directly to DoorsOpening on origin
+      floor, lock never held
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-017
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `onFailed` during Waiting: same recovery as rejection — stop shake/hum,
+      release lock, return to origin
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-018
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Reads `IsSessionActive` read-only, polled only at press instant
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-019
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      MVP: single cabin, one button per floor, no concurrent-call queueing — other
+      buttons inert while busy
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-020
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Second press while busy is a no-op — no re-trigger, no dwell reset, no queue
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-021
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      `Called` not tied to continued physical presence — trigger checked only at
+      entry (press) time
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-022
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `IsSessionActive` going false mid-cycle has no effect — not polled during
+      in-progress cycle
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-023
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Player exit during DoorsOpen dwell: presence checked only at instant
+      DoorsClosing begins
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-024
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Gameplay
+    requirement: >-
+      Dwell expiry with no player inside auto-transitions DoorsClosing→Idle, no
+      error state
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-025
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Physics
+    requirement: >-
+      Move frozen in Waiting makes physical exit impossible; Look stays free
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-026
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      `RequestHardCut` during SOFT Waiting doesn't interrupt SOFT — queues per
+      Scene Transition's asymmetric rule
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-027
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Rendering
+    requirement: >-
+      Cabin interior must be fully enclosed/camera-safe from every look angle
+      during Waiting
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-028
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: UI
+    requirement: >-
+      No non-diegetic UI — button light is fully diegetic; shared crosshair/prompt
+      never appears
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-029
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Hard dependency on FPC (lock), Scene Transition (soft transition), Session
+      State (IsSessionActive)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-elevator-030
+    system: elevator
+    gdd: design/gdd/asansor-kat-erisim-sistemi.md
+    domain: Architecture
+    requirement: >-
+      Explicitly does NOT depend on Etkileşim Sistemi
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-001
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      `DialogueSceneConfig` per psychiatry scene: fixed base dialogue + pre-
+      written `CallbackPool` tagged by `clueId`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-002
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      On scene start, every `CallbackPool` entry evaluated via
+      `IsClueKnown(clueId)` against Narrative State
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-003
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Tempo cap: candidates beyond `MaxCallbacksPerScene` skipped by writer-
+      assigned `Priority`, not deleted
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-004
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Own `HashSet<string> UsedCallbackIds` bookkeeping, separate from Narrative
+      State's `KnownClueIds`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-005
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      `UsedCallbackIds` has no cross-night persistence plan — not blocking for MVP
+      (single night)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-006
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Zero met conditions plays base dialogue only, no error flag
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-007
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Default `MaxCallbacksPerScene = 3`, matching MVP's 3-clue content cap
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-008
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Build-time consistency check: `MaxCallbacksPerScene` must not be smaller
+      than a single-scene night's total clue count
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-009
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Hard dependency on Narrative State — calls `IsClueKnown` for every pool
+      entry
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-dialogue-010
+    system: dialogue
+    gdd: design/quick-specs/diyalog-anlati-icerigi-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      No systems depend on this one — Cutscene guarantees load, never calls its
+      API
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-001
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `TaskList` = ordered `CarryRound[]` (3-5), each holds `List<CarryItemDef>` ≤
+      N slots
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-002
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Only active round's items spawned/interactable; later rounds not yet in the
+      registry
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-003
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay
+    requirement: >-
+      `CarryItemPickup` implements `IInteractable`(Instant);
+      `CanInteract=(slots<N) AND (active round)`; "Eller Dolu" prompt when blocked
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-004
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      On pickup, `SetActive(false)`, relies on Interaction System's snapshot-
+      iteration registry pattern
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-005
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay
+    requirement: >-
+      `SetCarrying(true)` called exactly once, on 0→1 filled-slot transition only
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-006
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Rendering/Performance
+    requirement: >-
+      Carried-item visuals: pre-instantiated pool of N slot representations,
+      scene-lifetime
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-007
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Rendering
+    requirement: >-
+      Pickup "settling" impulse: ~0.05-0.1s spring/offset transform effect, not an
+      animation state machine
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-008
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay
+    requirement: >-
+      Slot capacity N hard gate on filled-slot count
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-009
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay/Physics
+    requirement: >-
+      Delivery point is a trigger-zone (not `IInteractable`) — auto-delivers on
+      entry
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-010
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Persistence
+    requirement: >-
+      TaskList/round state kept in-memory, cross-scene-load persistent service, no
+      disk persistence
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-011
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Persistence/Architecture
+    requirement: >-
+      Static/singleton plain C# service holding `HashSet<string>
+      CollectedItemIds`, cleared on round change
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-012
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Persistence/Architecture
+    requirement: >-
+      Each pickup checks `CollectedItemIds` in `Awake()` before registration,
+      prevents re-collect after reload
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-013
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `OnTaskListCompleted` fires once when queue and slots both empty; no
+      separate manifest structure
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-014
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `OnFinalRoundStarted` fires exactly once when the activating round is the
+      last
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-015
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `HasCarriedInFinalRound` set true on first final-round pickup, write-once
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-016
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `OnFinalRoundItemPickedUp` fires exactly once at same moment
+      `HasCarriedInFinalRound` becomes true
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-017
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `CurrentRoundIndex`/`TotalRoundCount` public read-only queries, same
+      counters as `Highlight(round)`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-018
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay
+    requirement: >-
+      No forced resolution for undelivered item — remains carried indefinitely, no
+      "put back"
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-019
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      State machine: Idle(Depo)→Loading(optional)→Carrying→Delivering→RoundComplet
+      e→(Idle|AllComplete); elevator travel opaque
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-020
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      No direct API call to Elevator — participates only as passive passenger
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-021
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `FirstPersonController.SetCarrying(bool)` single call point; sway reads
+      FPC's phase accumulator
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-022
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Reads `IsSessionActive` read-only guard before allowing pickup
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-023
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Audio
+    requirement: >-
+      `JostleSounds`/pickup/delivery SFX routed to Adaptive Audio's "SFX" group,
+      no ducking
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-024
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Persistence
+    requirement: >-
+      State must survive `RequestSoftTransition` scene changes — reinforces
+      persistent-service requirement
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-025
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Build-blocking validation: `OnValidate()` warning +
+      `IPreprocessBuildWithReport` failing on >N items, 0 items, or N=0
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-026
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay
+    requirement: >-
+      Runtime must never silently clamp/crop invalid config — build validation
+      only defense
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-027
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Round-complete evaluation and next-round registry registration execute
+      synchronously same frame, no yield
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-028
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Gameplay/Physics
+    requirement: >-
+      Delivery logic idempotent, guarded by `carriedCount>0`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-029
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Cutscene subscribes to `OnTaskListCompleted`, `OnFinalRoundStarted`,
+      `OnFinalRoundItemPickedUp`; reads final-round flags
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-030
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Rendering
+    requirement: >-
+      `Highlight(round)=lerp(1.0,0.30,ease(roundIndex/(roundCount-1)))`, guarded
+      for roundCount≤1
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-031
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Rendering
+    requirement: >-
+      Round-based dimming only via light/rim-highlight + socket offset — camera
+      FOV/rotation/post-process untouched
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-032
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Audio
+    requirement: >-
+      Pickup/delivery SFX type-based, constant across rounds, 3D spatialized
+      ~0.5-3m rolloff
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-033
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Audio
+    requirement: >-
+      Jostle sound single-shot on direction change ≥30-60°, gated 0.5-1.0s repeat
+      interval
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-034
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Audio
+    requirement: >-
+      Uses built-in AudioSource/AudioMixer, no pooling needed (~3-8 events/round)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-035
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      `CarryItemDef` requires added optional `AudioClip[] JostleSounds` field
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-036
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: UI
+    requirement: >-
+      Zero screen-space HUD for carry state — conveyed via visible arm/hand rig
+      only
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-037
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: UI
+    requirement: >-
+      Slot-fill readability unaffected by round-based aesthetic dimming —
+      functional channel never fades
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-038
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: UI
+    requirement: >-
+      Optional accessibility "N/M" numeric fallback, toggle default OFF
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-039
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Automated structural test verifies no Animator/blend-tree exists on carry
+      rig — socket-offset only
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-carry-040
+    system: carry
+    gdd: design/gdd/gorev-tasima-dongusu.md
+    domain: Architecture
+    requirement: >-
+      Automated unit test verifies jostle sound-selection function is
+      pure/deterministic independent of round index
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-001
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `MemoryTriggerDef` (ScriptableObject): shiftId, shiftConfig (always
+      `Persistent=true`), holdDurationOverride (0.6-1.5s), promptText
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-002
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Scene instance is `MemoryTriggerObject : IInteractable` referencing a
+      `MemoryTriggerDef`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-003
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: UI/Architecture
+    requirement: >-
+      `OnHoldProgress` never consumed; returns `SuppressDefaultHoldFill=>true` —
+      default crosshair fill never drawn
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-004
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `OnHoldComplete()` calls `TriggerShift(shiftId, shiftConfig)` with no
+      additional guard, relies on `Persistent=true` invariant
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-005
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Gameplay
+    requirement: >-
+      After `TriggerShift`, object becomes permanently `CanInteract=false`
+      (Committed)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-006
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Persistence
+    requirement: >-
+      Committed state persists via Session State, not scene-local field —
+      `Awake()` checks `FiredTriggerIds`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-007
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Persistence/Architecture
+    requirement: >-
+      `OnHoldComplete()` also adds shiftId to `FiredTriggerIds`, same step as
+      `TriggerShift`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-008
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Persistence/Architecture
+    requirement: >-
+      Fired/Committed flag never written to the `MemoryTriggerDef` asset itself —
+      lives only in session state
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-009
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Gameplay
+    requirement: >-
+      `OnHoldCancelled()` complete no-op — object stays Unfired, unlimited retries
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-010
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `shiftConfig.Persistent` must always be true, enforced by edit-time
+      validation; `RevertShift` must never be called
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-011
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Bound zone must always be `TriggerMode=ManualOnly`, enforced by build-time
+      validation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-012
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `TriggerMode` lives on the scene-placed zone, not the shared asset; matching
+      via shared `shiftId` string key, no direct object reference
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-013
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture/Audio
+    requirement: >-
+      Bound zone's `StingerAudioRadius` must always be >0, enforced by build-time
+      validation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-014
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Edit-time validation via `IPreprocessBuildWithReport` scans all
+      `MemoryTriggerDef` assets for duplicate shiftId, Persistent≠true,
+      StingerAudioRadius≤0
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-015
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `OnValidate()` explicitly unusable for duplicate-shiftId check — can't see
+      sibling assets
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-016
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Optional `[MenuItem]` fast in-editor scan; only `IPreprocessBuildWithReport`
+      actually blocks build
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-017
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `TriggerMode` validation requires separate scene-scan step opening every
+      scene, matching zones by shiftId
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-018
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Asset-scan validation must share one `IPreprocessBuildWithReport` utility
+      with Narrative State's clueId duplicate check
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-019
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      State machine: Unfired(CanInteract=true)→Committed(CanInteract=false,
+      terminal across reloads)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-020
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Implements `IInteractable.Hold`, consumes OnHoldProgress/Complete/Cancelled
+      contract; HoldDuration within 0.6-1.5s subrange
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-021
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Decoupled/event-driven: Adaptive Audio and Narrative State never called
+      directly, both subscribe to `OnShiftStateChanged` independently
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-022
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      No derived Formulas — pure event orchestration, `TriggerShift` is a one-shot
+      call
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-023
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Duplicate-shiftId bypass edge case: first `TriggerShift` succeeds, second
+      silently no-ops but object still transitions to Committed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-024
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      `Persistent=false` misconfiguration edge case has NO runtime fallback
+      defense in this system — edit-time validation only line of defense
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-025
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Compound-bypass edge case (duplicate shiftId AND Persistent=false) can hit
+      Light/Volume's retrigger rule and reverse direction
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-026
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Soft-lock-from-concurrent-Hold impossibility guaranteed structurally via
+      IsLocked pre-check + OnHoldBlocked
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-027
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Gameplay
+    requirement: >-
+      Destroy/disable while Unfired: shiftId may become permanently unreachable if
+      no other object shares it — content-authoring risk
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-028
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      Destroy/disable while Committed has no effect — shift state independent of
+      triggering object's lifetime
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-029
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Persistence
+    requirement: >-
+      Scene-reload restore: re-Awoken instance checks `FiredTriggerIds`, starts
+      directly in Committed if present
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-030
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: UI/Audio
+    requirement: >-
+      Visual/Audio requires literally zero feedback during Hold — mechanically
+      enforced via SuppressDefaultHoldFill + zero own VFX/SFX
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-031
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: UI
+    requirement: >-
+      Committed state has no dedicated visual marker — absence of prompt is the
+      only signal
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-032
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: UI
+    requirement: >-
+      Pre-interaction appearance has no special highlight/glow — relies on
+      Interaction System's general focus behavior
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-033
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC3: duplicate shiftId caught by asset-scan, blocks build, verified by
+      EditMode test
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-034
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC4: `Persistent=false` caught by asset-scan validation, verified by
+      EditMode test
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-035
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC4a: `TriggerMode=Automatic` default on bound zone caught by scene-scan
+      step
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-036
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC4b: `StingerAudioRadius≤0`/unset caught by asset-scan validation
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-037
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC6: CI static-analysis grep for `RevertShift(` calls, fails build if found
+      — BLOCKING Logic-tier gate
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-038
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Architecture
+    requirement: >-
+      AC7 (full end-to-end) deferred to Blocked ACs, gated on engine build +
+      audio-paired spike
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-memory-039
+    system: memory
+    gdd: design/gdd/ani-tetikleyici-etkilesim.md
+    domain: Persistence
+    requirement: >-
+      AC10: scene reload with shiftId already in `FiredTriggerIds` re-Awakes
+      directly into Committed
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-001
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Night ending: OR logic — `OnTaskListCompleted` OR memory-trigger saturation,
+      whichever first
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-002
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      Saturation requires 3 flags simultaneously:
+      `SettledTriggerIds.Count==Total`, `IsFinalRoundActive`,
+      `HasCarriedInFinalRound`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-003
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Saturation measured against `SettledTriggerIds` (populated at `Held`), not
+      `FiredTriggerIds` (populated at `Shifting-In`)
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-004
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Preload timing intentionally uses the earlier eager signal
+      (`FiredTriggerIds.Count==Total-1`); second `PreloadHardCut` safe via no-op
+      rule
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-005
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Condition (b) event-driven, not polled — subscribes to `OnTriggerSettled`,
+      `OnFinalRoundStarted`, `OnFinalRoundItemPickedUp`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-006
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      `HasCarriedInFinalRound` guard prevents saturation becoming true on final
+      round's first frame before preload is Ready
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-007
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      On real trigger: `RequestMovementLock(Full)` immediately followed by
+      `RequestHardCut(...)`, in order, exactly once
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-008
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Audio
+    requirement: >-
+      `HardCutConfig.Abrupt` differs per ending — saturation=true, task-
+      completion=false, must never share the same value
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-009
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Gameplay
+    requirement: >-
+      `MovementLockScope.Full` required for both endings — prevents camera drift
+      during zero-frame swap
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-010
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Re-trigger guard: `HasTriggeredThisNight` set true instantly on
+      `RequestHardCut` call, guarantees exactly one call per night
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-011
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Session closure: `onComplete` calls `EndSession()` + releases lock;
+      `onFailed` releases lock but does NOT end session
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-012
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Does not participate in dialogue selection — only guarantees correct scene
+      is loaded
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-013
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      State machine:
+      Watching→Preloaded→Triggering(HasTriggeredThisNight=true)→Complete; may skip
+      directly to Triggering
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-014
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Cross-system contract on Scene Transition: `PreloadHardCut`,
+      `RequestHardCut`, `onComplete`/`onFailed`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-015
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Cross-system contract on Task/Carry Loop: `OnTaskListCompleted`,
+      `IsFinalRoundActive`, `OnFinalRoundStarted`, `HasCarriedInFinalRound`,
+      `OnFinalRoundItemPickedUp`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-016
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Persistence
+    requirement: >-
+      Cross-system contract on Session State: `EndSession()`,
+      `SettledTriggerIds.Count`, `FiredTriggerIds.Count`, `OnTriggerSettled`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-017
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Input
+    requirement: >-
+      Cross-system contract on FPC:
+      `RequestMovementLock(Full)`/`ReleaseMovementLock`
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-018
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      No numeric tuning knobs — pure event orchestration;
+      `TotalConfiguredTriggerCountForNight` ownership still unresolved open item
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-019
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      Zero-frame delay guarantee at real trigger requires preload to have already
+      reached Ready
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
+  - id: TR-cutscene-020
+    system: cutscene
+    gdd: design/quick-specs/sahne-kesmeli-anlati-2026-08-02.md
+    domain: Architecture
+    requirement: >-
+      On `onFailed`: whether `HasTriggeredThisNight` resets for retry or stays
+      terminal is an unresolved open question
+    created: "2026-08-05"
+    revised: ""
+    status: active
+
