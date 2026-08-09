@@ -1,12 +1,12 @@
 # Story 003: FoundationBootstrap.ResetAll() iskeleti
 
 > **Epic**: Proje Kurulumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -55,10 +55,18 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/foundation_bootstrap_order_test.cs` (+ zamanlama `[UnityTest]` PlayMode'da)
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/foundation_bootstrap_order_test.cs` (3 test) + `game/Assets/Tests/PlayMode/foundation_bootstrap_timing_test.cs` (1 UnityTest)
+**Status**: [x] Created — EditMode 7/7; PlayMode 1/1 **iki modda da** (Reload Domain AÇIK ve KAPALI profillerle ayrı CLI koşuları; her ikisinde `[FoundationBootstrap] ResetAll #1` logu sahne yüklenmeden önce)
 
 ## Dependencies
 
 - Depends on: Story 002
 - Unlocks: gece-oturum-durumu epic'i (ilk gerçek servis), Story 004
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 5/5 (statik sınıf + tek attribute'lu `ResetAll()`; 9 servislik belgeli sıra `// TODO(epic:...)` satırlarıyla iskelette, ADR-0008 istisna yorumu dahil; sıra-assertion testi kasıtlı kırılganlıkla; zamanlama smoke'u iki Enter Play Mode profilinde de CLI ile kanıtlı; Awake-öncesi garanti probe testiyle)
+**Deviations**: ADVISORY — reset çağrıları ADR'deki düz satırlar yerine adlandırılmış `ResetEntry[]` dizisi üzerinden (tek giriş noktası + açık sıra korunuyor; ADR'nin kendi Validation Criteria'sındaki sıra-assertion testi kaynak-dosya parse etmeden ancak böyle yazılabiliyor — servis epic'leri satır eklerken diziye ekler). `Foundation.asmdef` + `InternalsVisibleTo(EditMode/PlayModeTests)` bu story'de kuruldu (test erişimi için zorunlu altyapı).
+**Test Evidence**: yukarıda — CLI sonuç XML'leri + `ResetAll #1` logları
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
