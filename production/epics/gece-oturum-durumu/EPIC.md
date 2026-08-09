@@ -7,7 +7,18 @@
 > **Engine Risk**: LOW
 > **Control Manifest Version**: 2026-08-09
 > **Status**: Ready
-> **Stories**: Not yet created — run `/create-stories gece-oturum-durumu`
+> **Stories**: 4 stories (2026-08-09)
+
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | Üçlü desen + oturum gerçekleri + in-place reset | Logic | Ready | ADR-0006 (+0001/0015) |
+| 002 | Internal yazım yolları (InternalInstance) | Logic | Ready | ADR-0006 (+0014) |
+| 003 | Shift-state handler mantığı (saf, injected) | Logic | Ready | ADR-0006 |
+| 004 | Işık/Volume aboneliği (gerçek wiring) | Integration | Ready ⚠ isik-volume bekler | ADR-0006 (+0015) |
+
+Bağımlılık: 001 → 002 → 003 → 004 (+004 cross-epic: isik-volume facade story'si)
 
 ## Overview
 
