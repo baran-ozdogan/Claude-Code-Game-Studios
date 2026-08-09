@@ -1,7 +1,7 @@
 # Story 002: Test asmdef'leri + ilk geçen EditMode testi + CI yeşil
 
 > **Epic**: Proje Kurulumu
-> **Status**: In Progress — **GATE KOŞULU #1 (BLOCKING)**: gate-check 2026-08-09 kabul koşulu; bu story kapanmadan hiçbir sistem story'si Done sayılmaz
+> **Status**: Complete — **GATE KOŞULU #1 (BLOCKING)**: gate-check 2026-08-09 kabul koşulu; bu story kapanmadan hiçbir sistem story'si Done sayılmaz
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S (~2h)
@@ -53,10 +53,18 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/` ilk test dosyası — geçmek zorunda; CI koşu linki evidence'a not edilir
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/foundation_sanity_test.cs` (3 test + framework kontrolü, 4/4 lokal Passed)
+**Status**: [x] Created — CI green run: https://github.com/baran-ozdogan/Claude-Code-Game-Studios/actions/runs/31302865474
 
 ## Dependencies
 
 - Depends on: Story 001
 - Unlocks: Story 003, Story 006, Story 004
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 5/5 passing (asmdef'ler derleniyor; EditMode 4/4 lokal + CI; boş PlayMode `result=Passed` lokal + CI; CI run 31302865474 yeşil; tests/README yol referansları güncellendi)
+**Deviations**: ADVISORY — lisans aktivasyon yöntemi story yazıldığından beri değişti: Unity, Personal için manuel `.ulf` aktivasyonunu kaldırdı; çözüm Unity Hub'dan `.ulf` üretimi + `UNITY_LICENSE`/`UNITY_EMAIL`/`UNITY_PASSWORD` üçlüsü oldu (ilk iki CI koşusu bu yüzden kırmızı: eksik `.ulf`, sonra 401 şifre — Engine Notes ve tests/README güncel).
+**Test Evidence**: Logic → `game/Assets/Tests/EditMode/foundation_sanity_test.cs`; CI green run linki yukarıda
+**Code Review**: Skipped — LP-CODE-REVIEW/QL-TEST-COVERAGE gate'leri için `lead-programmer`/`qa-lead` subagent'ları mevcut değil (proje emsalindeki gate-skip kayıtlarıyla tutarlı); kod yüzeyi 1 test dosyası + 2 asmdef.
