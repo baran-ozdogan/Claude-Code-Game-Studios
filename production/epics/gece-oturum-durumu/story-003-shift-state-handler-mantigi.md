@@ -1,12 +1,12 @@
 # Story 003: Shift-state handler mantığı (saf, injected)
 
 > **Epic**: Gece/Oturum Durumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S (~2h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -63,8 +63,16 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_shift_handler_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_shift_handler_test.cs` (6 test)
+**Status**: [x] Created — EditMode 30/30 (CLI)
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 8/8 (`ProcessShiftStateChanged` + `BindIsShiftPersistentQuery` delegate dikişi; Shifting-In→anında Persistent (query-gated, false→yazım yok, idempotent); Held→Fired-kapılı Settled + tam-bir-kez event; Automatic-ambient koruması; lag penceresi belgeli testle; `ShiftState` enum'u Foundation'da GEÇİCİ evle tanımlandı — Işık/Volume epic'i sahiplenecek, yorumla işaretli)
+**Deviations**: None — quick-spec N2/2026-08-04 düzeltme notları kod yorumlarında
+**Test Evidence**: EditMode 30/30 CLI
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
 
 ## Dependencies
 

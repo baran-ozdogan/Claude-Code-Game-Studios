@@ -1,12 +1,12 @@
 # Story 002: Internal yazım yolları (InternalInstance)
 
 > **Epic**: Gece/Oturum Durumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S (~2h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -64,8 +64,16 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_internal_writers_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_internal_writers_test.cs` (5 test) + `game/Assets/Tests/PlayMode/gece_oturum_two_session_test.cs` (Story 001'in kaydırılan AC-7'si)
+**Status**: [x] Created — EditMode 24/24, PlayMode 7/7 (CLI)
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 5/5 (+Story 001'in kaydırılan iki-oturum AC'si burada kapandı: facade instance'ında oturum-1 Fired kaydı → `ResetOnLoad` sınırı → oturum-2 `HasFired=false`, in-place)
+**Deviations**: None — imzalar ADR-0006 bloğundan birebir; ADR yorumları (Fired'ı handler asla yazmaz vb.) kodda korunuyor
+**Test Evidence**: EditMode 24/24 + PlayMode 7/7 CLI; abone-hayatta-kalma testi (`ResetOnLoad_SubscriberSurvives...`) ADR-0015 rejiminin ilk gerçek doğrulaması
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
 
 ## Dependencies
 

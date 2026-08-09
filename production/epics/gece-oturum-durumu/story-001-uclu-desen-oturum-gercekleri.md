@@ -1,12 +1,12 @@
 # Story 001: Üçlü desen + oturum gerçekleri + in-place reset
 
 > **Epic**: Gece/Oturum Durumu
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -64,8 +64,16 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_state_test.cs` (+ iki-oturum `[UnityTest]` `game/Assets/Tests/PlayMode/gece_oturum_two_session_test.cs`)
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/gece_oturum_state_test.cs` (4 test — EditMode 19/19)
+**Status**: [x] Created — iki-oturum `[UnityTest]` Story 002'nin kapsamına kaydırıldı (`HasFired` senaryosu `AddFiredTrigger`'ı gerektiriyor; oradaki `gece_oturum_two_session_test.cs` bu AC'yi kapatır)
+
+## Completion Notes
+
+**Completed**: 2026-08-09
+**Criteria**: 7/7 — AC-7 (iki-oturum) Story 002'de kapanacak şekilde kaydırıldı (yazıcı olmadan Fired doldurulamaz; story sırası gereği bilinçli erteleme)
+**Deviations**: ADVISORY — yukarıdaki AC-7 kaydırması. `CurrentNightNumber` sabit `=> 1` (reset'te bile 1; MVP sözleşmesi).
+**Test Evidence**: EditMode 19/19 CLI (4 yeni test: defaults, EndSession idempotent, in-place reset + IsSessionActive re-init, facade same-instance invariant); `ExpectedActiveOrder=["GeceOturumDurumu"]` sıra testi güncel
+**Code Review**: Skipped — gate subagent'ları mevcut değil (emsal kayıtlı)
 
 ## Dependencies
 

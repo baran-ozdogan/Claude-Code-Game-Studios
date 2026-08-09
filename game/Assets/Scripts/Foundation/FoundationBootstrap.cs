@@ -63,7 +63,7 @@ internal static class FoundationBootstrap
     {
         // TODO(epic:interactable-registry):      new ResetEntry("InteractableRegistry",    InteractableRegistry.ResetOnLoad),    // no upstream dependency
         // TODO(epic:isik-volume-durum-sistemi):  new ResetEntry("IsikVolumeDurumSistemi",  IsikVolumeDurumSistemi.ResetOnLoad),  // exposes OnShiftStateChanged, subscribes to nothing; IN-PLACE (persistent MonoBehaviour + constructor subscribers)
-        // TODO(epic:gece-oturum-durumu):         new ResetEntry("GeceOturumDurumu",        GeceOturumDurumu.ResetOnLoad),        // constructor-subscribes to Işık/Volume OnShiftStateChanged (binds once per process, ADR-0015)
+        new ResetEntry("GeceOturumDurumu", GeceOturumDurumu.ResetOnLoad), // constructor-subscribes to Işık/Volume OnShiftStateChanged (binds once per process, ADR-0015; wiring: gece-oturum Story 004)
         // TODO(epic:anlati-durum-ipucu-takibi):  new ResetEntry("AnlatiDurumIpucuTakibi",  AnlatiDurumIpucuTakibi.ResetOnLoad),  // constructor-subscribes to Işık/Volume OnShiftStateChanged
         // TODO(epic:adaptif-ses-sistemi):        new ResetEntry("AdaptifSesSistemi",       AdaptifSesSistemi.ResetOnLoad),       // pure state (HeldSessionAlreadyPlayed) — playback lives in AdaptifSesController (ADR-0009)
         // TODO(epic:diyalog-anlati-icerigi):     new ResetEntry("DiyalogAnlatiIcerigi",    DiyalogAnlatiIcerigi.ResetOnLoad),    // UsedCallbackIds only (ADR-0012) — in-place Clear()

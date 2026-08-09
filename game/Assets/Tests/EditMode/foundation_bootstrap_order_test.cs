@@ -24,9 +24,12 @@ public class FoundationBootstrapOrderTest
         "SahneKesmeliAnlati",
     };
 
-    // The lines that exist in FoundationBootstrap TODAY. Story 003 ships the
-    // skeleton, so this is empty; each service epic extends it with its line.
-    private static readonly string[] ExpectedActiveOrder = { };
+    // The lines that exist in FoundationBootstrap TODAY. Each service epic
+    // extends this in the same change that adds its ResetEntry line.
+    private static readonly string[] ExpectedActiveOrder =
+    {
+        "GeceOturumDurumu", // gece-oturum-durumu Story 001 (2026-08-09)
+    };
 
     [Test]
     public void ActiveResetOrder_CurrentLines_MatchExpectedExactly()
