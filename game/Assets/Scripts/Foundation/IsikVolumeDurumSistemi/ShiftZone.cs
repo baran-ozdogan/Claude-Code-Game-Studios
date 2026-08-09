@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Sahneye yerleştirilen anı-shift bölgesi (ADR-0005 Decision — birebir):
@@ -9,18 +11,21 @@ using UnityEngine.Rendering;
 /// göre boyutlandırılır; spike Corridor C bunu ampirik doğruladı), box trigger
 /// collider, shiftId, TriggerMode ve Inspector-atanmış ZoneLight dizisi.
 ///
-/// Per-zone TEK coroutine tüm ışık dizisini sürer (ışık başına Update yok);
-/// <c>Volume.weight</c>'in TEK yazıcısı bu ticker'dır (TR-isik-002). Mantık
-/// MonoBehaviour'a gömülü değildir: ilerleme Story 002'nin saf
-/// <see cref="ShiftProgressMachine"/>'inde yaşar. Baked lightmap setine hiç
-/// dokunulmaz — yazım modeli post-process + gerçek-zamanlı ışık lerp'idir
-/// (TR-isik-017, yapısal).
+/// Per-zone TEK coroutine, durum-kapılı İKİ sorumluluk taşır (ADR "Automatic-zone
+/// monitoring"): Dormant'ta yalnız Automatic bölgeler için pozisyon izleme
+/// (R_trigger giriş tespiti), Dormant dışında R_exit histerezis kontrolü + tick.
+/// ManualOnly bölge Dormant'ta HİÇBİR coroutine koşturmaz — gerçek sıfır maliyet.
+/// <c>Volume.weight</c>'in TEK yazıcısı bu ticker'dır (TR-isik-002). İlerleme
+/// Story 002'nin saf <see cref="ShiftProgressMachine"/>'inde yaşar. Baked
+/// lightmap setine hiç dokunulmaz (TR-isik-017, yapısal).
 ///
-/// Bu story'de (003) bölge yalnız dış çağrıyla sürülür: Automatic pozisyon
-/// izleme + R_exit histerezisi + SOFT co-residency + OnDestroy tamamlama
-/// garantisi Story 004'te; Persistent semantiği Story 005'te eklenir.
-/// Alanlar internal: test fixture'ları runtime'da kurup doğrudan atar
-/// (asla on-disk asset).
+/// SOFT co-residency (TR-isik-011): bölgenin sahnesi aktif değilken POZİSYON
+/// örneklemesi atlanır (giriş/çıkış tespiti yok) ama zaman-tabanlı x ASLA
+/// donmaz. OnDestroy tamamlama garantisi (ADR): mid-transition yıkım terminal
+/// duruma zorla-tamamlar + event'i teardown'dan ÖNCE fırlatır — güvenlik
+/// gerekçesi MEKANSAL MESAFE (Box Safety Margin boyutlandırması), sahne-aktifliği
+/// değil. Persistent'ın "çıkış kontrolü hiç koşmaz" kuralı Story 005'te.
+/// Alanlar internal: test fixture'ları runtime'da kurup doğrudan atar.
 /// </summary>
 [RequireComponent(typeof(BoxCollider))]
 public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
@@ -31,10 +36,27 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
     [SerializeField] internal Volume _volume; // isGlobal=false, paylaşılan profil; API'de asla açığa çıkmaz (tek-yazıcı zırhı)
     [SerializeField] internal float _rTrigger;
 
+    /// <summary>Histerezis faktörü (GDD default 1.15; guard'lı tüketilir — k=1.0 dahi clamp'lenir).</summary>
+    [SerializeField] internal float _kHysteresis = 1.15f;
+
+    /// <summary>
+    /// Automatic self-trigger'ın kullanacağı authored config — ManualOnly bölgede
+    /// kullanılmaz; Automatic bölgede atanmamış olması build-time'da yakalanacak
+    /// (Story 006), runtime'da izleme sessiz atlar.
+    /// </summary>
+    [SerializeField] internal ShiftConfig _autoTriggerConfig;
+
     // AC14c-pre: açıkça ayarlanmamışsa (Vector3.zero sentinel) Awake/OnValidate
     // collider bounds.center'ına düşürür — asla tanımsız kalmaz. Kasti merkezi
     // TAM sıfır olan bölge de bounds.center'a düşer; pratikte aynı nokta.
     [SerializeField] internal Vector3 _zoneCenter;
+
+    /// <summary>
+    /// Oyuncu pozisyon örnekleyicisi — FPC henüz yok; birinci-şahıs epic'i
+    /// production wiring'ini bağlar (TR-isik-018'in izleme yarısı), testler
+    /// doğrudan enjekte eder. Null iken pozisyon tespiti (giriş/çıkış) atlanır.
+    /// </summary>
+    internal Func<Vector3> _playerPositionSampler;
 
     private readonly ShiftProgressMachine _machine = new ShiftProgressMachine();
     private ShiftState _state = ShiftState.Dormant;
@@ -64,18 +86,53 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
     {
         IsikVolumeDurumSistemi.InternalInstance.RegisterZone(this);
 
-        // Disable, koşan coroutine'i öldürür — aktif bölge re-enable'da ticker'ını
-        // geri alır (tam yaşam döngüsü/OnDestroy garantisi Story 004'ün işi).
-        if (_state != ShiftState.Dormant && _tickCoroutine == null)
+        // Automatic bölge Dormant'ta da izler → coroutine hemen başlar (ADR).
+        // ManualOnly yalnız aktif kalmışsa geri alır (disable coroutine'i
+        // öldürür; tam yaşam döngüsü garantisi OnDestroy'da).
+        if (_triggerMode == TriggerMode.Automatic || _state != ShiftState.Dormant)
         {
-            _tickCoroutine = StartCoroutine(TickShift());
+            _tickCoroutine ??= StartCoroutine(MonitorAndTick());
         }
     }
 
     private void OnDisable()
     {
         IsikVolumeDurumSistemi.InternalInstance.DeregisterZone(this);
-        _tickCoroutine = null; // Unity coroutine'i disable'da durdurdu — referansı bayat bırakma
+
+        // DİKKAT: Unity, coroutine'i yalnız GameObject deaktivasyonunda/yıkımda
+        // kendisi durdurur — component-level disable (enabled=false) DURDURMAZ.
+        // Açık StopCoroutine olmadan coroutine yetim koşmaya devam eder ve
+        // re-enable ??= ile İKİNCİ coroutine başlatırdı (LP review bulgusu).
+        // SetActive yolunda StopCoroutine zararsız no-op.
+        if (_tickCoroutine != null)
+        {
+            StopCoroutine(_tickCoroutine);
+            _tickCoroutine = null;
+        }
+    }
+
+    /// <summary>
+    /// Sahne-yıkımı tamamlama garantisi (ADR-0005, unity-specialist BLOCKING
+    /// düzeltmesi): mid-transition yıkım, geçişi doğal terminal durumuna anında
+    /// zorla-tamamlar ve terminal event'i teardown'dan ÖNCE senkron fırlatır —
+    /// Held-kapılı bir ipucu reveal'i sessizce düşmez. Görsel sıçrama güvenliği
+    /// MEKANSAL MESAFE argümanıdır (Box Safety Margin + SOFT zamanlaması),
+    /// sahne-aktifliği değil. NOT: OnDisable bu noktada bölgeyi çoktan deregister
+    /// etti — terminal event'in abonesi payload'a güvenmeli; aynı handler içinde
+    /// facade'a IsShiftActive cross-query'si Dormant-default (false) döner.
+    /// </summary>
+    private void OnDestroy()
+    {
+        if (_state == ShiftState.ShiftingIn)
+        {
+            ApplyProgress(1f);
+            TransitionTo(ShiftState.Held);
+        }
+        else if (_state == ShiftState.ShiftingOut)
+        {
+            ApplyProgress(0f);
+            TransitionTo(ShiftState.Dormant);
+        }
     }
 
     /// <summary>
@@ -110,7 +167,7 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
                 StingerAudioRadius = config.StingerAudioRadius;
                 _machine.BeginShiftIn();
                 TransitionTo(ShiftState.ShiftingIn);
-                _tickCoroutine ??= StartCoroutine(TickShift());
+                _tickCoroutine ??= StartCoroutine(MonitorAndTick());
                 return true;
         }
     }
@@ -132,44 +189,102 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
     }
 
     /// <summary>
-    /// Per-zone TEK ticker (ADR-0005): her karede Volume.weight = ShiftProgress
-    /// ve tüm ZoneLight girdileri AYNI progress değeriyle lockstep (TR-isik-006;
-    /// AC13 çifti aynı karede). Held'de iş yapmaz, yalnız bekler (Story 004'ün
-    /// histerezis izlemesi de bu döngüye eklenecek — ikinci coroutine değil).
+    /// Per-zone TEK coroutine, durum-kapılı iki sorumluluk (ADR-0005):
+    /// • Dormant — yalnız Automatic: pozisyon izleme, R_trigger girişinde
+    ///   self-trigger (TR-isik-009). ManualOnly buraya yalnız Shifting-Out'tan
+    ///   dönerken uğrar ve coroutine biter (Dormant'ta gerçek sıfır maliyet).
+    /// • Shifting-In/Out — tick: Volume.weight = ShiftProgress + ışıklar aynı
+    ///   değerle lockstep (TR-isik-006). Zaman-tabanlı x, sahne aktif olmasa da
+    ///   İLERLER (TR-isik-011).
+    /// • Held — R_exit histerezis kontrolü (TR-isik-010; her iki mod).
+    /// Pozisyon örneklemesi her dalda sahne-aktif kapısının arkasındadır
+    /// (manifest: gameObject.scene == SceneManager.GetActiveScene()).
+    /// Işınlanma-çıkışı (GDD AC18) doğal düşer: sonraki tick "R_exit dışında"
+    /// görür; tek tick'te bölgeyi atlayan hareket (AC19) hiç tespit edilmez —
+    /// belgeli kısıt, per-frame örnekleme tasarımının sonucu.
     /// </summary>
-    private IEnumerator TickShift()
+    private IEnumerator MonitorAndTick()
     {
         while (true)
         {
-            if (_state == ShiftState.ShiftingIn || _state == ShiftState.ShiftingOut)
-            {
-                _machine.Tick(Time.deltaTime, _activeConfig.Duration);
-                ApplyProgress(_machine.ShiftProgress);
+            bool positionSamplingAllowed =
+                _playerPositionSampler != null && gameObject.scene == SceneManager.GetActiveScene();
 
-                if (_state == ShiftState.ShiftingIn && _machine.X >= 1f)
-                {
-                    TransitionTo(ShiftState.Held);
-                }
-                else if (_state == ShiftState.ShiftingOut && _machine.X <= 0f)
-                {
-                    // Referans, event'ten ÖNCE temizlenir: Dormant event'ine senkron
-                    // re-trigger yapan bir abone ??= guard'ına takılıp ticker'sız
-                    // kalmasın (reentrancy — LP review bulgusu).
-                    _tickCoroutine = null;
-                    TransitionTo(ShiftState.Dormant);
-                    yield break; // Dormant ManualOnly bölge gerçek sıfır maliyet (ADR-0005)
-                }
+            switch (_state)
+            {
+                case ShiftState.Dormant:
+                    if (_triggerMode == TriggerMode.ManualOnly)
+                    {
+                        _tickCoroutine = null;
+                        yield break; // yalnız dış çağrı başlatabilir (GDD AC2a)
+                    }
+
+                    if (positionSamplingAllowed && _autoTriggerConfig != null
+                        && IsInside(IsikVolumeFormulas.ClampTriggerRadius(_rTrigger)))
+                    {
+                        TriggerShift(_autoTriggerConfig); // TR-isik-009 — kendi kendini tetikler
+                    }
+                    break;
+
+                case ShiftState.ShiftingIn:
+                case ShiftState.ShiftingOut:
+                    _machine.Tick(Time.deltaTime, _activeConfig.Duration);
+                    ApplyProgress(_machine.ShiftProgress);
+
+                    if (_state == ShiftState.ShiftingIn && _machine.X >= 1f)
+                    {
+                        TransitionTo(ShiftState.Held);
+                    }
+                    else if (_state == ShiftState.ShiftingOut && _machine.X <= 0f)
+                    {
+                        if (_triggerMode == TriggerMode.ManualOnly)
+                        {
+                            // Referans, event'ten ÖNCE temizlenir: Dormant event'ine
+                            // senkron re-trigger yapan abone ??= guard'ına takılıp
+                            // ticker'sız kalmasın (reentrancy — LP review bulgusu).
+                            _tickCoroutine = null;
+                            TransitionTo(ShiftState.Dormant);
+                            yield break; // Dormant ManualOnly bölge gerçek sıfır maliyet (ADR-0005)
+                        }
+
+                        TransitionTo(ShiftState.Dormant); // Automatic: izlemeye geri döner
+                    }
+                    break;
+
+                case ShiftState.Held:
+                    // R_exit histerezisi (TR-isik-010) — çıkış eşiği girişten ayrı;
+                    // R_trigger-R_exit bandındaki gidiş-geliş Held'i bozmaz (AC3b).
+                    // Persistent'ın "bu kontrol hiç koşmaz" kuralı Story 005'te.
+                    if (positionSamplingAllowed
+                        && !IsInside(IsikVolumeFormulas.ExitRadius(_rTrigger, _kHysteresis)))
+                    {
+                        RevertShift(); // AC3a — R_exit dışına çıkış
+                    }
+                    break;
             }
 
             yield return null;
         }
     }
 
+    private bool IsInside(float radius) =>
+        Vector3.Distance(_playerPositionSampler(), _zoneCenter) <= radius;
+
     // Volume.weight'in projedeki TEK yazım noktası (TR-isik-002) + ışık dizisi
     // aynı p ile aynı karede (TR-isik-006 lockstep — tek paylaşılan girdi).
+    // Null guard'lar OnDestroy yolunda kardeş bileşenlerin önce yıkılmış
+    // olabilmesi için (destroy sırası garanti değil).
     private void ApplyProgress(float progress)
     {
-        _volume.weight = progress;
+        if (_volume != null)
+        {
+            _volume.weight = progress;
+        }
+
+        if (_lights == null)
+        {
+            return; // alan atanmadan AddComponent edilmiş bölge (yalnız runtime kurulumda mümkün)
+        }
 
         for (int i = 0; i < _lights.Length; i++)
         {

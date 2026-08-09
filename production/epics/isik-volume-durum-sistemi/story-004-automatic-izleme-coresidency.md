@@ -1,12 +1,12 @@
 # Story 004: Automatic izleme + histerezis + co-residency + OnDestroy garantisi
 
 > **Epic**: Işık/Volume Durum Sistemi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: M (~3-4h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-09
 
 ## Context
 
@@ -57,9 +57,17 @@
 ## Test Evidence
 
 **Story Type**: Integration → `game/Assets/Tests/PlayMode/isik_volume_monitoring_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 9 UnityTest, PlayMode süiti 27/27 (2026-08-09)
 
 ## Dependencies
 
 - Depends on: Story 003
 - Unlocks: Story 005
+
+## Completion Notes
+**Completed**: 2026-08-09
+**Criteria**: 7/7 passing (EditMode 53/53, PlayMode 27/27 lokal CLI)
+**Deviations**: None. LP bulgusuyla gerçek yaşam-döngüsü bug'ı kapanış öncesi düzeltildi: component-level disable (enabled=false) coroutine'i durdurmuyordu (Unity yalnız GameObject deaktivasyonunda durdurur) — OnDisable'a açık StopCoroutine + regresyon testi. Ek sertleştirme: _lights null-guard'ı; OnDestroy doc'una deregister-sonrası facade cross-query uyarısı (terminal event abonesi payload'a güvenmeli).
+**Uygulama notları**: pozisyon kaynağı per-zone internal `Func<Vector3>` (test-injected; FPC production wiring'i birinci-şahıs epic'inde — null iken izleme sessiz atlar, testli). Automatic self-trigger `_autoTriggerConfig` serialized alanından (atanmamışsa izleme atlar; zorunluluğu Story 006 build-check'i). Held çıkış kontrolü bilinçli KOŞULSUZ — Persistent "hiç koşmaz" istisnası Story 005'te (kodda işaretli). Test debug notları: UnityTest finally'de yield yasak (CS1625) → sahne unload'ı [UnityTearDown]'da; bekleme yardımcıları kesin eşitlikle.
+**Test Evidence**: Integration — `game/Assets/Tests/PlayMode/isik_volume_monitoring_test.cs` (9 UnityTest: matris, ManualOnly, ışınlanma, hızlı-atlama, 3-yarımlı co-residency [giriş VE çıkış tespiti donması + ilerleyen x], OnDestroy'un İKİ dalı, null-sampler, component-disable regresyonu)
+**Code Review**: Complete — LP-CODE-REVIEW: CONCERNS→giderildi, QL-TEST-COVERAGE: GAPS→3 test eklendi (full mod, general-purpose subagent gate'leri)

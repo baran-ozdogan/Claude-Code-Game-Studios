@@ -1,5 +1,18 @@
 # Session State — Active
 
+## Session Extract — /story-done isik-volume Story 004, 2026-08-09
+- Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 4/6 — kalan: 005 Persistent/restore, 006 build-check'ler)
+- Gate'ler ikisi de aksiyonluydu, kapanış öncesi giderildi: **LP CONCERNS** — GERÇEK bug: component-level disable (enabled=false) coroutine'i durdurmuyor (Unity yalnız GO deaktivasyonunda durdurur) → OnDisable'a açık StopCoroutine + regresyon testi; + _lights null-guard, OnDestroy doc notu. **QL GAPS** — 3 test: OnDestroy Out→Dormant dalı, donmuş-ÇIKIŞ-tespiti assert'i (co-residency yarım 3), null-sampler.
+- Süit: **EditMode 53/53, PlayMode 27/27**. CI: Story 003 koşusu (8500db3) YEŞİL (run 31324926729).
+- Next: Story 005 (`story-005-persistent-semantigi-restore.md`) ya da 006. Story 004 değişiklikleri commit'lenmedi (talimat bekliyor).
+
+## Session Extract — /dev-story isik-volume Story 004, 2026-08-09
+- Story: `production/epics/isik-volume-durum-sistemi/story-004-automatic-izleme-coresidency.md` — Automatic izleme + histerezis + co-residency + OnDestroy (Status hâlâ Ready; /story-done bekliyor)
+- Files changed: `ShiftZone.cs` (coroutine "tek coroutine, durum-kapılı iki sorumluluk" desenine genişledi: Dormant'ta Automatic pozisyon izleme + self-trigger [_autoTriggerConfig], Held'de R_exit histerezisi [her iki mod; Persistent istisnası Story 005'e], Shifting'de tick — x sahne-aktifliğinden bağımsız ilerler; pozisyon örneklemesi scene-active kapısı + null-sampler guard'ı arkasında; OnDestroy zorla-tamamlama + terminal event teardown öncesi; ApplyProgress'e yıkım-sırası null-guard'ları; yeni alanlar _kHysteresis/_autoTriggerConfig/_playerPositionSampler [Func<Vector3> test-injected — FPC wiring'i birinci-şahıs epic'inde]), `Tests/PlayMode/isik_volume_monitoring_test.cs` (YENİ, 6 UnityTest)
+- Debug notu: UnityTest finally bloğunda yield YASAK (CS1625) — sahne unload'ı [UnityTearDown]'a taşındı (assert patlasa bile sahne temizliği garantili; co-residency deseni ileride tekrar lazım olur).
+- Süit: **EditMode 53/53, PlayMode 24/24**. Blockers: None.
+- Next: `/story-done production/epics/isik-volume-durum-sistemi/story-004-automatic-izleme-coresidency.md` → sonra Story 005 (Persistent/restore). Commit yok (talimat bekliyor). CI: 8500db3 koşusu arka planda izleniyordu — sonucu kontrol edilmeli.
+
 ## Session Extract — /story-done isik-volume Story 003, 2026-08-09
 - Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 3/6)
 - Gate'ler İKİSİ DE aksiyonluydu, hepsi kapanış öncesi giderildi: **LP CONCERNS** — AC14a runtime clamp'i mutlak-değer sapmasında düşmüştü, `ClampMemoryIntensity(mem, base)` mutlak-form guard'ıyla geri geldi (ApplyProgress); Dormant-event reentrancy fix'i (_tickCoroutine=null event'ten ÖNCE); doc netleştirmeleri. **QL GAPS** — 3 test birebir eklendi: orta-In Revert (Held atlanır, In→Out→Dormant), tam-tur-sonrası coroutine restart, disable/re-enable ticker kurtarma; + Held no-op dönüş assert'i, + AC14a dejenere-girdi testi.
