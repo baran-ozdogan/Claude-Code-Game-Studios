@@ -7,7 +7,20 @@
 > **Engine Risk**: LOW — domain HIGH'ı (URP RenderGraph) "custom pass yok" kararıyla yapısal olarak devre dışı; mekanizma prototiple ampirik doğrulanmış (`prototypes/yankilar-volume-weight-spike/`)
 > **Control Manifest Version**: 2026-08-09
 > **Status**: Ready
-> **Stories**: Not yet created — run `/create-stories isik-volume-durum-sistemi`
+> **Stories**: 6 stories (2026-08-09)
+
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | Facade sözleşmesi + ShiftConfig (addendum) | Logic | Ready | ADR-0005 addendum (+0001/0015) |
+| 002 | Shift progress çekirdeği + guard rail'ler (saf) | Logic | Ready | ADR-0005 |
+| 003 | ShiftZone + ticker + lockstep | Integration | Ready | ADR-0005 |
+| 004 | Automatic izleme + histerezis + co-residency + OnDestroy | Integration | Ready | ADR-0005 |
+| 005 | Persistent semantiği + reload restore | Integration | Ready | ADR-0005 (+0006) |
+| 006 | Build-blocking doğrulamalar | Logic | Ready | ADR-0005 (+0014) |
+
+Bağımlılık: 001 → 002 → 003 → {004 → 005, 006}. **001 biter bitmez gece-oturum Story 004'ün kilidi açılır.** AC22 çapraz kontrolü anlati epic'ine ertelendi (ClueDefinition tipi orada doğar).
 
 ## Overview
 
