@@ -19,7 +19,10 @@ tests/
 
 `unit/` and `integration/` hold this project's *organizational* layout (one
 subdirectory per system, e.g. `tests/unit/gorev-tasima/`); the Unity-side
-assemblies that actually compile and run them are `EditMode/` and `PlayMode/`.
+assemblies that actually compile and run them live inside the Unity project:
+`game/Assets/Tests/EditMode/EditModeTests.asmdef` and
+`game/Assets/Tests/PlayMode/PlayModeTests.asmdef` (created in Story 002; the
+`EditMode/`/`PlayMode/` folders here hold their READMEs and candidate lists).
 A unit test for a pure C# state machine (e.g. `CarryLoopStateMachine`,
 `EndConditionStateMachine`) belongs in the EditMode assembly; anything needing
 a scene, `MonoBehaviour` lifecycle, or the "Reload Scene: Off" two-session
@@ -89,6 +92,8 @@ Tests run automatically on every push to `main` and on every pull request.
 A failed test suite blocks merging. Never disable or skip a failing test to
 make CI pass — fix the underlying issue.
 
-**Setup prerequisite**: add the `UNITY_LICENSE` secret to the GitHub repository
-(Settings → Secrets and variables → Actions) before the first CI run — see
-https://game.ci/docs/github/activation for how to generate it.
+**Setup prerequisite**: add the `UNITY_EMAIL` and `UNITY_PASSWORD` secrets to the
+GitHub repository (Settings → Secrets and variables → Actions) before the first
+CI run. Unity no longer supports manual `.ulf` activation for Personal licenses
+(license.unity3d.com/manual now rejects them, 2026-08-09), so game-ci activates
+with Unity account credentials instead — see https://game.ci/docs/github/activation.
