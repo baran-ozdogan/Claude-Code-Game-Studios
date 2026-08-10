@@ -1,12 +1,12 @@
 # Story 002: İki-oturum self-correction + cache-collision doğrulaması
 
 > **Epic**: InteractableRegistry
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-10
 
 ## Context
 
@@ -27,10 +27,10 @@
 
 ## Acceptance Criteria
 
-- [ ] `[UnityTest]`, amaca özel bir test-double `MonoBehaviour` (`Awake()`'te artan bir `AwokeCount`; `OnEnable`'da `Register(this)`, `OnDisable`'da `Deregister(this)`) ile OnEnable/OnDisable self-correction'ı GERÇEKTEN kanıtlar: nesne aktif→`SetActive(false)` (oturum-1 teardown'unu simüle eder, `OnDisable` fırlar)→`InteractableRegistry.ResetOnLoad()` (oturum sınırı cache temizliği)→`SetActive(true)` (Reload-Scene-off'ta hayatta kalan bir nesnenin oturum-2 başlangıcını simüle eder) sonrasında: `AwokeCount` HÂLÂ `1`'dir (Awake yeniden ATEŞLENMEDİ — belgelenen Reload-Scene-off boşluğu sadakatle yeniden üretilir) VE nesne `Snapshot()`'ta tekrar mevcuttur (OnEnable onu yeniden kaydetti)
-- [ ] Aynı test, `SetActive(false)` durumundayken nesnenin `Snapshot()`'tan GERÇEKTEN kaybolduğunu da assert eder (yalnız "sonunda düzelir" değil, `OnDisable`→`Deregister`'ın gerçekten fırladığının kanıtı)
-- [ ] `[UnityTest]`, cross-session cache-collision hasarını NEGATİF KONTROLLÜ olarak yeniden üretir: gerçek geçerli `Time.frameCount`'u oku (`staleFrame`); zehirli bir array + `staleFrame`'i `_frameSnapshot`/`_snapshotFrame`'e doğrudan yaz (Story 001'in `internal` yaptığı alanlar); **reset ÖNCESİ** `Snapshot()` çağır ve zehirli array'in (gerçek `_live` içeriği DEĞİL) döndüğünü assert et (bug'ın gerçek olduğunun kanıtı); SONRA `ResetOnLoad()` çağır; SONRA `Snapshot()` tekrar çağır ve şimdi GERÇEK `_live` içeriğinin (zehirli array değil) döndüğünü assert et (düzeltmenin bug'ı kapattığının kanıtı)
-- [ ] Her iki test de gerçek bir Unity PlayMode koşusu altında geçer (yalnız mimari muhakeme değil) — ADR-0004'ün unity-specialist BLOCKING bulgusunu ampirik olarak kapatır
+- [x] `[UnityTest]`, amaca özel bir test-double `MonoBehaviour` (`Awake()`'te artan bir `AwokeCount`; `OnEnable`'da `Register(this)`, `OnDisable`'da `Deregister(this)`) ile OnEnable/OnDisable self-correction'ı GERÇEKTEN kanıtlar: nesne aktif→`SetActive(false)` (oturum-1 teardown'unu simüle eder, `OnDisable` fırlar)→`InteractableRegistry.ResetOnLoad()` (oturum sınırı cache temizliği)→`SetActive(true)` (Reload-Scene-off'ta hayatta kalan bir nesnenin oturum-2 başlangıcını simüle eder) sonrasında: `AwokeCount` HÂLÂ `1`'dir (Awake yeniden ATEŞLENMEDİ — belgelenen Reload-Scene-off boşluğu sadakatle yeniden üretilir) VE nesne `Snapshot()`'ta tekrar mevcuttur (OnEnable onu yeniden kaydetti)
+- [x] Aynı test, `SetActive(false)` durumundayken nesnenin `Snapshot()`'tan GERÇEKTEN kaybolduğunu da assert eder (yalnız "sonunda düzelir" değil, `OnDisable`→`Deregister`'ın gerçekten fırladığının kanıtı)
+- [x] `[UnityTest]`, cross-session cache-collision hasarını NEGATİF KONTROLLÜ olarak yeniden üretir: gerçek geçerli `Time.frameCount`'u oku (`staleFrame`); zehirli bir array + `staleFrame`'i `_frameSnapshot`/`_snapshotFrame`'e doğrudan yaz (Story 001'in `internal` yaptığı alanlar); **reset ÖNCESİ** `Snapshot()` çağır ve zehirli array'in (gerçek `_live` içeriği DEĞİL) döndüğünü assert et (bug'ın gerçek olduğunun kanıtı); SONRA `ResetOnLoad()` çağır; SONRA `Snapshot()` tekrar çağır ve şimdi GERÇEK `_live` içeriğinin (zehirli array değil) döndüğünü assert et (düzeltmenin bug'ı kapattığının kanıtı)
+- [x] Her iki test de gerçek bir Unity PlayMode koşusu altında geçer (yalnız mimari muhakeme değil) — ADR-0004'ün unity-specialist BLOCKING bulgusunu ampirik olarak kapatır
 
 ## Implementation Notes
 
@@ -65,9 +65,17 @@
 ## Test Evidence
 
 **Story Type**: Integration → `game/Assets/Tests/PlayMode/interactable_registry_session_test.cs`
-**Status**: [ ] Not yet created
+**Status**: [x] Created — 2 UnityTest, PlayMode'da kendi testleri 2/2 temiz (2026-08-10)
 
 ## Dependencies
 
 - Depends on: Story 001 (ŞART — `_frameSnapshot`/`_snapshotFrame`'in `internal` olması bu story'nin ön koşulu)
 - Unlocks: Epic'in Definition of Done'ı (ADR-0004 Validation Criteria testlerinin tamamı) — epic tamamlanır
+
+## Completion Notes
+**Completed**: 2026-08-10 — **EPİC 2/2 TAMAM**
+**Criteria**: 3/3 passing. Kendi test dosyasının 2 testi her koşuda temiz.
+**Deviations**: None. LP bulgusuyla kapanış öncesi düzeltildi: Test 1'e açık `InteractableRegistry.Deregister(probe)` eklendi (Object.Destroy'un ertelenmiş OnDisable'ına tek başına güvenmek yerine, Test 2'nin kendi savunmacı deseniyle tutarlı — registry'nin ResetOnLoad'u `_live`'a bilerek dokunmadığından iki test paylaşımlı sınıfta potansiyel kırılganlık). Çift-reset edge case'i story metnine ("poison→reset dizisi art arda iki kez") uygun şekilde gerçek bir ikinci poison→reset çiftine genişletildi.
+**Ortam gözlemi (bu story'yi bloklamıyor)**: Story 001'in push'undaki CI koşusu GitHub'ın Linux runner'ında da isik-volume'un aynı önceden-bilinen flake'ini üretti — sorunun tek makineye özgü değil, ortam-bağımsız gerçek bir test-tasarımı meselesi olduğunu güçlendiren üçüncü bağımsız kanıt (Windows lokal ×2, Linux CI ×1, hepsi farklı testlerde). `task_d5aee2cb`'ye eklendi.
+**Test Evidence**: Integration — `game/Assets/Tests/PlayMode/interactable_registry_session_test.cs` (2 UnityTest)
+**Code Review**: Complete — LP-CODE-REVIEW: CONCERNS→giderildi, QL-TEST-COVERAGE: ADEQUATE (full mod, general-purpose subagent gate'leri)

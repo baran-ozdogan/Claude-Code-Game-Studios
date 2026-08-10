@@ -32,8 +32,8 @@
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 001 | IInteractable arayüzü + Registry çekirdeği + snapshot cache | Logic | Ready | ADR-0004 |
-| 002 | İki-oturum self-correction + cache-collision doğrulaması | Integration | Ready | ADR-0004 |
+| 001 | IInteractable arayüzü + Registry çekirdeği + snapshot cache | Logic | Complete | ADR-0004 |
+| 002 | İki-oturum self-correction + cache-collision doğrulaması | Integration | Complete | ADR-0004 |
 
 ## Next Step
 

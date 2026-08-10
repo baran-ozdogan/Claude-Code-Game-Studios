@@ -1,5 +1,14 @@
 # Session State — Active
 
+## Session Extract — /dev-story + kapanış, interactable-registry Story 002 → **EPİC 2/2 TAMAM**, 2026-08-10
+- Verdict: COMPLETE → **Status: Complete**; `production/epics/index.md` → InteractableRegistry **Complete (2026-08-10)**
+- Files: `Tests/PlayMode/interactable_registry_session_test.cs` (YENİ, 2 UnityTest — TestInteractableProbe Awake-sayaç deseni + cross-session cache-collision negatif-kontrollü regresyon)
+- Gate'ler: QL ADEQUATE, **LP CONCERNS→giderildi** (Test 1'e açık Deregister eklendi — Object.Destroy'un ertelenmiş OnDisable'ına tek başına güvenmek Test 2'yle tutarsızdı; çift-reset edge case'i gerçek ikinci poison→reset çiftine genişletildi).
+- Süit: kendi testleri her koşuda 2/2 temiz (EditMode 83/83 değişmedi).
+- **isik-volume flake takibi güncellendi**: eski task_d5aee2cb → task_c8bcf8d2'ye devredildi (geri çekildi) — artık 3 BAĞIMSIZ ORTAMDA doğrulanmış (Windows lokal ×2 farklı test, GitHub Linux CI ×1 farklı test) + ikinci bir olası mekanizma (histerezis-bandı fazladan event) not edildi.
+- **GÜN KAPANIŞI**: InteractableRegistry epic'i 2/2 Complete — bugün biten DÖRDÜNCÜ epic (Proje Kurulumu, Gece/Oturum, Işık/Volume, InteractableRegistry). Commit yok (talimat bekliyor).
+- Next: `/create-stories` ile sıradaki Foundation epic'i (önerilen: birinci-sahis-kontrolcu — Işık/Volume'un iki bekleyen wiring'i [PlayerMaxSpeed, pozisyon sampler'ı] buraya bağlanacak) YA DA isik-volume flake takibi (task_c8bcf8d2).
+
 ## Session Extract — /dev-story + kapanış, interactable-registry Story 001, 2026-08-10
 - Verdict: COMPLETE → **Status: Complete** (epic 1/2 — kalan: Story 002 iki-oturum + cache-collision)
 - Files: `Foundation/IInteractable.cs` (YENİ), `Foundation/InteractableRegistry.cs` (YENİ — ADR-0004 Key Interfaces birebir, tek sapma: cache alanları `internal`), `FoundationBootstrap.cs` (+kök reset girişi), `foundation_bootstrap_order_test.cs` (+ExpectedActiveOrder), `Tests/EditMode/interactable_registry_core_test.cs` (YENİ, 15 test)
