@@ -1340,3 +1340,23 @@ Epic: Anlatı Durum/İpucu Takibi — TAMAMLANDI
 Feature: —
 Task: ADR-0007 addendum borcu / sıradaki Foundation epic'i
 <!-- /STATUS -->
+
+## Session Extract — ADR-0007 addendum YAZILDI 2026-08-10
+- Anlati epic'inin TEK kalan mimari borcu kapandı.
+- `docs/architecture/adr-0007-clue-tracking-architecture.md`:
+  - `### Addendum (2026-08-10)` bölümü eklendi (Alternatives Considered'dan hemen önce, ADR-0005/0009 emsalinin şekliyle)
+  - Status satırı "**amended 2026-08-10**" olarak işaretlendi
+  - İki supersede edilen yer üstü çizili + addendum'a yönlendirmeli: (a) `AnlatiDurumState()` ctor bloğundaki abonelik satırı, (b) Edit-time validation madde 2'nin `EditorSceneManager.sceneOpened/sceneSaved` tetikleyicisi
+  - Related Decisions'a ADR-0014 satırı eklendi
+- Addendum ÜÇ maddeli (borç 2 maddeli kaydedilmişti; üçüncüsü Story 004'te ortaya çıkan gerçek sapma):
+  1. Abonelik FACADE static ctor'ında — ADR-0001'in test deseni State-ctor aboneliğini imkânsız kılıyor; ADR-0015 in-place rejimi ikisini eşdeğer kılıyor. Pin: FacadeFirstAccess_… + TwoSessions_…
+  2. Orphaned kontrolü build-time IBuildCheckAggregate'te — tek-sahne tetikleyici proje-geneli iddiayı veremez. ADR'ın iki kısıtı korundu; Alternative 3'ün reddi DOKUNULMADI (hâlâ runtime kontrolü değil). Pin: MultiSceneClue_DoesNotWarn
+  3. Sevk edilen set DÖRT bloklayan + bir uyarı (ADR üç anlatıyor) — fazladan olan AC22 çaprazı; ayrıca null slot + boş ClueId bloklayıcı, requiredShiftIds İÇİNDEKİ boş girdi bilinçli olarak uyarı katmanında
+- COMMIT EDİLMEDİ (bu satır yazıldığında). Story 005 CI'ı (fcc10bc) hâlâ koşuyordu.
+- NEXT: Foundation'da /create-stories yapılmamış iki epic — seviye-sahne-gecisi, adaptif-ses-sistemi
+
+<!-- STATUS -->
+Epic: Foundation
+Feature: Anlatı epic'i kapandı, mimari borç sıfır
+Task: seviye-sahne-gecisi ya da adaptif-ses-sistemi için /create-stories
+<!-- /STATUS -->

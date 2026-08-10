@@ -50,11 +50,11 @@
 
 Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda. Story 004+005 beş build check’i ekledi (dördü bloklayan, biri non-blocking uyarı).
 
-**Kapanış öncesi TEK borç: ADR-0007 addendum’u** — aşağıdaki iki madde `/architecture-decision` ile açılmalı. Sapmalar kodda, README’de ve ADR’ın kendisinde işaretli, ama addendum resmileşmedi.
+**ADR-0007 addendum’u YAZILDI (2026-08-10)** — `docs/architecture/adr-0007-clue-tracking-architecture.md` → `### Addendum (2026-08-10)`; ADR’ın Status satırı da "amended" olarak işaretlendi ve iki supersede edilen yer (State ctor bloğu, orphaned tetikleyici) üstü çizili + addendum’a yönlendirmeli. **Epic’in mimari borcu kalmadı.**
 
-### ADR-0007 addendum borcu (epic kapanışında tek pakette açılacak)
+### ADR-0007 addendum’u — KAPANDI (2026-08-10)
 
-`/architecture-decision` ile açılacak addendum'un İKİ maddesi var:
+Addendum ÜÇ madde olarak yazıldı — üçüncüsü Story 004 kapanışında ortaya çıktı:
 
 1. **Abonelik yeri (Story 001'de tespit, Story 003'te UYGULANDI)**: Işık/Volume
    aboneliği ADR-0007'nin `AnlatiDurumState` constructor'ında DEĞİL, FACADE'ın
@@ -71,6 +71,12 @@ Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/Addressa
    build'ine girmez. Uygulama: `ClueConsistencyValidator.cs`; sapma ADR-0007'nin
    satır 152'sinde ve izlenebilirlik tablosunda işaretli, `MultiSceneClue_DoesNotWarn`
    testi geri alınmasını engelliyor.
+3. **Sevkiyattaki check seti ADR'ın anlattığından FARKLI (Story 004'te ortaya çıktı)**:
+   ADR üç bloklayan check anlatıyor, sevk edilen set DÖRT bloklayan + bir uyarı.
+   Fazladan olan `Anlati/AutomaticZoneNotClueBearing` (GDD AC22 / TR-isik-021,
+   isik Story 006'dan devir). Ayrıca `Definitions` içindeki null slot ve boş
+   `ClueId` de bloklayıcı yapıldı; `requiredShiftIds` İÇİNDEKİ boş girdi ise
+   bilinçli olarak bloklamıyor (ulaşılamaz clue → uyarı katmanı).
 
 ### Dışarı çıkan iş kalemleri
 

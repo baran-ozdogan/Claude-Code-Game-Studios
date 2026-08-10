@@ -4,7 +4,7 @@
 > **Technical Director Review (TD-ADR)**: CONCERNS (revised) 2026-08-06 — 1 finding, fixed: Decision → Edit-time validation only described 2 of the 3 build-blocking checks that Consequences → Risks and Validation Criteria already assumed existed (the third — resolving the `"ClueRegistry"` Addressable key itself, not just its contents — was mentioned as a deferred mitigation in Risks but never promoted into Decision's actual validator description). Decision now describes all 3 checks in one place. Verified clean otherwise: the `FoundationBootstrap.ResetAll()` ordering claim, GDD/architecture.md/registry cross-references, the lazy-load redesign's safety against the GDD's direct-`MarkClueKnown`-bypass path, and all 4 Alternatives-Considered entries.
 
 ## Status
-Accepted (2026-08-09 — status flip per `/architecture-review` 2026-08-09 follow-up, user-approved; unity-specialist validation and TD-ADR review were already complete in-file)
+Accepted (2026-08-09 — status flip per `/architecture-review` 2026-08-09 follow-up, user-approved; unity-specialist validation and TD-ADR review were already complete in-file) — **amended 2026-08-10** by the addendum in Decision (subscription site, orphaned-shiftId trigger, shipped check set), written at anlati epic closure.
 
 ## Date
 2026-08-06
@@ -79,13 +79,16 @@ public sealed class AnlatiDurumState : IAnlatiDurumState {
     private Dictionary<string, List<ClueDefinition>> _byRequiredShiftId;
 
     public AnlatiDurumState() {
-        // The event subscription itself happens here, at first-access
-        // construction time, per anlati-durum-ipucu-takibi.md Core Rules
-        // — deliberately NOT deferred, unlike the registry load below.
-        // Subscribing touches only a plain C# event, no engine asset API,
-        // so it carries none of the Addressables-readiness risk the
-        // registry load does.
-        IsikVolumeDurumSistemi.Instance.OnShiftStateChanged += OnShiftStateChanged;
+        // SUPERSEDED IN IMPLEMENTATION (2026-08-10 addendum, below): the
+        // subscription does NOT live here. It binds in the FACADE's static
+        // constructor instead — a State-ctor subscription is incompatible
+        // with ADR-0001's own testability pattern, which has tests construct
+        // a fresh AnlatiDurumState directly. See "Addendum (2026-08-10)".
+        // The original comment's reasoning still holds for WHEN it binds
+        // (first access, not deferred) and WHY that is safe (plain C# event,
+        // no engine asset API) — only the OWNER moved.
+        //
+        //   IsikVolumeDurumSistemi.Instance.OnShiftStateChanged += OnShiftStateChanged;
     }
 
     private void EnsureRegistryLoaded() {
@@ -149,9 +152,37 @@ Surfaced to the user as a real trade-off (`AskUserQuestion`, 2026-08-06) rather 
 Two validation tiers, matching the GDD's own build-blocking/warning-only split exactly:
 
 1. **Build-blocking** (`requiredShiftIds` empty, duplicate `clueId` across two `ClueDefinition` assets, **or** an unresolvable `"ClueRegistry"` Addressable key) — an `IPreprocessBuildWithReport.OnPreprocessBuild` implementation (a) resolves the `"ClueRegistry"` Addressable key via `AddressableAssetSettings` (not a runtime load) and throws `BuildFailedException` if it doesn't resolve, then (b) scans every `ClueDefinition` referenced by `ClueRegistry.Definitions` and throws on either of the two content-authoring violations, naming the offending asset(s). **Corrected during TD-ADR review (2026-08-06)**: an earlier draft of this section only described checks (b), while Consequences → Risks and Validation Criteria both already described the key-resolution check (a) as part of the same validator — Decision now matches what the rest of the ADR already assumed exists. Checks (b) also run as an `OnValidate()` check directly on `ClueDefinition`/`ClueRegistry` (Inspector-time feedback, not just at build time) — the two checks share the same validation logic, `OnValidate()` just surfaces it earlier in the authoring loop; check (a) is build-only, since there's no single asset instance for `OnValidate()` to attach to.
-> **UYGULAMADA SÜPERSEDE EDİLDİ (anlati Story 005, 2026-08-10 — kullanıcı kararı)**: mekanizma `EditorSceneManager.sceneOpened`/`sceneSaved` + `ValidateScene(sceneId)` yerine `IBuildCheckAggregate` build yürüyüşüdür. Gerekçe: tek-sahne bir tetikleyici GDD'nin PROJE-GENELİ iddiasını yapısal olarak veremez — MVP'de Depot ve Ballroom ayrı sahneler ve `ClueRegistry` sahne-üstü olduğu için, çok-sahneli her meşru clue yanlışlıkla "orphaned" görünürdü. Bu ADR'ın İKİ KISITI korundu: non-blocking ve player build'ine girmez. Uygulama: `game/Assets/Editor/BuildValidation/ClueConsistencyValidator.cs`. **Addendum bekliyor.**
+2. **Editor-only warning** (orphaned `shiftId` — a `requiredShiftIds` entry no scene-configured trigger will ever fire) — `ClueConsistencyValidator`, ~~registered via `EditorSceneManager.sceneOpened`/`sceneSaved` callbacks (`[InitializeOnLoad]`), calls `ValidateScene(sceneId)`~~ **— trigger superseded by the 2026-08-10 addendum below (build-time `IBuildCheckAggregate` walk); everything else in this item stands** — and logs `Debug.LogWarning` for each orphaned `(clueId, shiftId)` pair found in `GetOrphanedClueIds()`. Deliberately Editor-only (`#if UNITY_EDITOR`, no `[RuntimeInitializeOnLoadMethod]` counterpart) — matches the GDD's own framing of this as "a content-authoring warning," not a runtime behavior check, and keeps this code out of player builds entirely rather than shipping an inert check.
 
-2. **Editor-only warning** (orphaned `shiftId` — a `requiredShiftIds` entry no scene-configured trigger will ever fire) — `ClueConsistencyValidator`, registered via `EditorSceneManager.sceneOpened`/`sceneSaved` callbacks (`[InitializeOnLoad]`), calls `ValidateScene(sceneId)` and logs `Debug.LogWarning` for each orphaned `(clueId, shiftId)` pair found in `GetOrphanedClueIds()`. Deliberately Editor-only (`#if UNITY_EDITOR`, no `[RuntimeInitializeOnLoadMethod]` counterpart) — matches the GDD's own framing of this as "a content-authoring warning," not a runtime behavior check, and keeps this code out of player builds entirely rather than shipping an inert check.
+### Addendum (2026-08-10): the subscription site, the orphaned-shiftId trigger, and the shipped check set
+
+Written at the close of the `anlati-durum-ipucu-takibi` epic (Stories 001–005, all Complete). Three places where the implementation deliberately diverged from this ADR's Decision — each caught by a gate, each ratified here rather than left as undocumented drift. Nothing in Context, Alternatives, or the Risks analysis changes.
+
+**1. The Işık/Volume subscription binds in the FACADE's static constructor, not in `AnlatiDurumState`'s constructor.**
+
+The Data model sketch above put `IsikVolumeDurumSistemi.Instance.OnShiftStateChanged += …` inside `AnlatiDurumState()`. That is wrong for this codebase, for a reason this ADR could not see from the outside: ADR-0001's testability pattern — restated as a Required rule in the control manifest — has tests construct a fresh state object directly and never touch the static facade. A State-constructor subscription means every such test leaks one more permanent handler onto the process-wide `OnShiftStateChanged`, and makes nominally "pure state" tests depend on the real Işık/Volume facade existing. The project's own precedent already resolved this the other way: `GeceOturumDurumu` subscribes in its facade's static constructor.
+
+Under ADR-0015's in-place regime the two sites are equivalent in every respect this ADR's argument relied on: the facade instance is never replaced, so a static-constructor subscription binds **exactly once per process**, at first access, and survives every `ResetAll()` with no re-wiring — precisely the property the original comment was reaching for. The facade binds the lazy-loader hook (`EnsureRegistryLoaded`) the same way, which keeps `AnlatiDurumState` free of any engine dependency.
+
+*Pinned by*: `FacadeFirstAccess_SubscribesExactlyOnce_AndSurvivesReset` (counts only handlers declared in the facade type, so deleting the `+=` line turns it red) and `TwoSessions_RealEventPath_DeliversExactlyOncePerSession` (a subscriber must receive exactly one additional event after a reset boundary — 1 means the subscription broke, 3+ means it accumulated).
+
+**2. The orphaned-`shiftId` check runs on the build-time `IBuildCheckAggregate` walk, not on `EditorSceneManager.sceneOpened`/`sceneSaved`.**
+
+*User decision, 2026-08-10.* The trigger this ADR chose sees **one scene**. The GDD's claim is project-wide — "a `shiftId` no trigger will ever fire". In the MVP, Depot and Ballroom are separate scenes and `ClueRegistry` is a central, scene-independent asset, so with Depot open, every legitimate clue requiring a Ballroom `shiftId` would be reported as orphaned. A single-scene trigger cannot deliver a project-wide claim: the check would have been not merely noisy but structurally wrong, and the wrongness would grow with the scene count.
+
+The check moved to `IBuildCheckAggregate` (`BeginWalk`/`Run`/`FinalizeWalk`), which ADR-0014's shared utility already provides and which already walks every Build-Settings scene: `shiftId`s are unioned across the walk and evaluated once at the end. **Both of this ADR's constraints are preserved** — the check remains non-blocking (`Debug.LogWarning`, never `context.Fail`) and remains out of player builds (the build pipeline is Editor-side). **Alternative 3's rejection is untouched**: this is still not a runtime Play-mode check; only the Editor-side trigger changed.
+
+Trade-off accepted: feedback is less frequent (per build, not per scene save). The Inspector-time `OnValidate()` tier is unaffected and still gives immediate feedback for the two content rules that *are* decidable from a single asset.
+
+*Pinned by*: `MultiSceneClue_DoesNotWarn` — a clue requiring `shiftId`s that live in two different scenes must stay silent. Reverting to this ADR's literal single-scene mechanism turns that test red, which is the intended tripwire.
+
+**3. The shipped build-check set is four blocking checks plus one warning, not three plus one.**
+
+Edit-time validation above describes three blocking checks (key resolution, empty `requiredShiftIds`, duplicate `clueId`). A fourth shipped: **`Anlati/AutomaticZoneNotClueBearing`** — a `TriggerMode=Automatic` zone's `shiftId` may not appear in any `ClueDefinition.requiredShiftIds`, because a passive ambient zone triggers on mere proximity and would silently bypass the `ManualOnly` consent precondition for acquiring a clue. This is not scope invented here: it is GDD AC22 / `TR-isik-021`, deferred out of isik-volume Story 006 precisely because the `ClueDefinition` type is born in this epic. It is registered as its own `SceneScan` check rather than folded into `IsikVolumeAutomaticPresenceCheck`, which early-returns on the first Automatic zone it finds and would therefore have skipped every later zone in a scene.
+
+Two smaller ratifications from the same gates: a null slot inside `ClueRegistry.Definitions` and a blank/whitespace `ClueId` both fail the build (the runtime reverse index skips them silently, so an authored clue would otherwise vanish without a trace); and a blank entry *inside* `requiredShiftIds` is deliberately **not** blocking — it makes the clue unreachable rather than vacuously known, so it belongs to the warning tier, where it is reported.
+
+**Implementation**: `game/Assets/Editor/BuildValidation/{AnlatiBuildChecks,ClueConsistencyValidator}.cs` and `game/Assets/Scripts/Foundation/AnlatiDurumIpucuTakibi/AnlatiContentValidation.cs` (shared validation core, `#if UNITY_EDITOR`, called by both the build checks and `OnValidate`). All five checks register on the one `BuildValidationRegistry` — no second `IPreprocessBuildWithReport`, per ADR-0014 and the manifest.
 
 ## Alternatives Considered
 
@@ -229,4 +260,5 @@ No existing code to migrate (`Anlatı Durum/İpucu Takibi` is not yet implemente
 - ADR-0001 (In-Memory Static Service Pattern) — this ADR's foundational mechanism.
 - ADR-0005 (Işık/Volume Rendering Architecture) — source of `OnShiftStateChanged`, the sole trigger for this system.
 - ADR-0006 (Session State Service and Round-Counter Ownership) — established the corrected `FoundationBootstrap.ResetAll()` order this ADR's service already participates in correctly (no further change needed); also the ADR where the `IReadOnlySet<T>` BCL-risk pattern was first caught, applied proactively here.
+- ADR-0014 (shared build-validation utility) — the one `IPreprocessBuildWithReport` all five of this system's checks register on; also the source of the `IBuildCheckAggregate` shape the 2026-08-10 addendum's item 2 moved to.
 - Future "Dialogue Callback Selection Timing" ADR (Diyalog/Anlatı İçeriği, Required ADR #12) — will consume `IsClueKnown`/`GetKnownClueIds` as its primary input.
