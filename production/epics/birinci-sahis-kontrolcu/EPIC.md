@@ -7,7 +7,7 @@
 > **Engine Risk**: LOW (solver-iteration MEDIUM iddiası ADR-0003'te faktüel hata olarak düzeltildi)
 > **Control Manifest Version**: 2026-08-09
 > **Status**: Ready
-> **Stories**: Not yet created — run `/create-stories birinci-sahis-kontrolcu`
+> **Stories**: 6 stories
 
 ## Overview
 
@@ -33,6 +33,17 @@ Persistent Player sahnesinde yaşayan oyuncu: `CharacterController`-tabanlı kin
 - Tüm story'ler kapandı; ADR-0003 Validation Criteria testleri geçiyor (kilit matrisi EditMode; SOFT repozisyon + Reload-Scene-off iki-oturum `[UnityTest]`; duplicate-guard)
 - Motion kaydırıcısı: %0'da görsel sıfır, ayak sesi zamanlaması değişmemiş (a11y §8)
 
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | IPlayerState + PlayerStateProvider (referans-sayımlı hareket kilidi) | Logic | Complete | ADR-0003 |
+| 002 | Hareket matematiği — ivmelenme, taper, head-bob (saf) | Logic | Complete | ADR-0003 (secondary) |
+| 003 | FirstPersonController sürücüsü — CharacterController + kamera + Input System | Integration | Complete | ADR-0003 |
+| 004 | Persistent Player sahnesi + SOFT transition repozisyonu | Integration | Ready | ADR-0003 |
+| 005 | Taper wiring + IsCarrying aynası + faz akümülatörü entegrasyonu | Integration | Ready | ADR-0003/0004 |
+| 006 | Decoy içerik build-time doğrulaması | Logic | Ready | ADR-0003 (secondary) |
+
 ## Next Step
 
-Run `/create-stories birinci-sahis-kontrolcu`.
+Story 001+002+003 Complete (3/6). Run `/dev-story production/epics/birinci-sahis-kontrolcu/story-004-kalici-sahne-soft-transition.md` next (Story 003'ün ürettiği `Assets/Prefabs/Player.prefab`'ı Player.unity'ye yerleştirir + `RepositionTo` API'sini kilitler).
