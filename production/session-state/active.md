@@ -1360,3 +1360,70 @@ Epic: Foundation
 Feature: Anlatı epic'i kapandı, mimari borç sıfır
 Task: seviye-sahne-gecisi ya da adaptif-ses-sistemi için /create-stories
 <!-- /STATUS -->
+
+## Session Extract — /create-stories seviye-sahne-gecisi 2026-08-10
+- Verdict: COMPLETE — 7 story yazıldı (3 Logic, 4 Integration). EPIC.md + index güncellendi. COMMIT EDİLMEDİ.
+- Bağımlılık grafiği KESİNLİKLE DOĞRUSAL: 001→002→003→004→005→006→007. Hiçbiri paralel değil.
+
+### İki kullanıcı kararı
+1. **Durum ayrımı SEÇİLDİ**: saf C# SceneTransitionState + ince MonoBehaviour sürücü. Manifest'in "saf çekirdek + ince sürücü (BLOCKING)" kuralı bölüm bazında Core Layer altında, sahne geçişleri Foundation Layer'a ait → bağlayıcı DEĞİLDİ, tercihti. **ADR-0008 story'ler yazılmadan ÖNCE yerinde düzeltildi** (o an hiç kod yoktu): Data model'e ayrım notu + SceneTransitionState taslağı, artık yanlış olan Negative maddesi üstü çizildi, Status'e dokunulmadı. MonoBehaviour barındırma kararı DEĞİŞMEDİ.
+2. **AC-9(b) "tam 0 siyah kare"**: Story 005'in İLK işi CI'da gerçek kare yakalama spike'ı. Mümkünse otomatik piksel assertion, değilse DEFERRED manuel kanıt.
+
+### İki gate ayrıştı, kritik nokta elle doğrulandı
+- QL-STORY-READY: "Story 001'in saf çekirdeği ADR-0008 ile çelişiyor, 002'ye birleştir" dedi (ADR'ın o anki taslağına göre doğruydu).
+- TD (ikinci ajan): "çelişki görünürde, manifest kazanır, ADR'ı ŞİMDİ düzelt" dedi; ShiftZone/ShiftProgressMachine ve ADR-0011 emsallerini buldu.
+- ELLE DOĞRULADIM: manifest satır 65-70, kural Core Layer Rules altında ve o bölümün kapsam satırı "interaction pipeline, elevator, dialogue selection" — sahne geçişleri satır 22'de Foundation Layer'da listeli. Yani kural bu sistemi bölüm bazında kapsamıyor; ADR-0008'in kaynak listesinde olmamasının sebebi de bu.
+
+### QL'in uygulanan diğer bulguları
+- TR-006 ATFI YANLIŞTI: o kayıt yalnız PreloadHardCut/HARD CUT hakkında, "soft yarısı" yok. Story 003 TR-001'e demirlendi.
+- **AÇIK KAYIT BOŞLUĞU**: GDD'nin "SOFT süre knob'u tamamlanma kapısı DEĞİL" kuralının hiç TR-ID'si yok. /architecture-review bir sonraki turda mint etmeli.
+- Story 004 anchor matematiğini YENİDEN TÜRETMEZ — FirstPersonController.RepositionTo(from, to) göreli aşırı yüklemesine devreder (FPC epic'inde zaten test edilmiş).
+- Story 004 RenderSettings AC'si alan alan sabitlendi (skybox + ambientMode + mode'un ima ettiği ambient alanları + intensity).
+- Story 005'e `_hardCutPreloadState` bağımsızlık AC'si eklendi (numaralı GDD AC'si yoktu ama en yük taşıyan davranış).
+- Story 006'ya "reddedilen çağrının kendi callback'leri HİÇ çağrılmaz" AC'si eklendi (GDD belirsiz bırakmıştı).
+- TR-014 tek davranış testi yerine YAPISAL kontrol (kaynak dosyalarda RequestMovementLock/ReleaseMovementLock adı geçmez) — sonraki story'ler aynı sınıfa yeni yol ekliyor.
+
+### TD'nin manifest bulguları (iş kalemi, hand-patch YAPILMADI)
+- Ayrım kuralı yanlış bölümde: Core Layer yerine Global Rules'a ait ("her durum makinesi" diyorsa)
+- Foundation "Boot contract" kuralı (satır 32) Foundation sahnesini YARATAN ADR-0008'i kaynak olarak saymıyor
+- İkisi de /create-control-manifest update ile tam yeniden üretim ister, tek satır yaması değil
+
+- NEXT: /story-readiness + /dev-story story-001; ya da /create-stories adaptif-ses-sistemi (Foundation'da story'si olmayan son epic)
+
+<!-- STATUS -->
+Epic: Seviye/Sahne Geçişi
+Feature: Story'ler yazıldı (7)
+Task: story-001 readiness/implementasyon
+<!-- /STATUS -->
+
+## Session Extract — sahne-gecisi Story 001+002 KAPANDI 2026-08-10
+- Epic 2/7. COMMIT EDİLMEDİ.
+- Tests: **EditMode 261/261, PlayMode 88/88 (normal) + 88/88 (options=3, Reload Domain+Scene KAPALI)**
+- Yeni kod: Foundation/SeviyeSahneGecisi/{TransitionState,TransitionType,SoftTransitionConfig,HardCutConfig,ISceneTransitionManager,SceneTransitionState,SceneTransitionManager}.cs; Editor/SahneGecisiStory002FoundationSceneSetup.cs (tek seferlik, koştu); Tests/EditMode/{sahne_gecisi_durum_makinesi_test,sahne_gecisi_bootstrap_test}.cs; Tests/PlayMode/sahne_gecisi_surucu_test.cs
+- Assets/Scenes/Foundation.unity artık SceneTransitionManager taşıyor
+
+### Bu iki story'de yakalanan GERÇEK hatalar
+1. (Story 001, LP) `Fail`'in hook'u sarmalanmamıştı → fırlatan callback `SetState(Idle)`'ı atlatıp durum makinesini kalıcı `Failed`'de bırakıyordu. GDD'nin "üretim durdurucu boşluk" dediği soft-lock. try/finally eklendi.
+2. (Story 001, LP) `GetCurrentHardCutAbrupt` için `_activeHardCutConfig` alanı yoktu → senkron-bekleme fallback'i config park edecek yer bulamaz, `false` döner, Adaptif Ses yanlış ton çalardı.
+3. (Story 001, QL) Saflık "kanıtı" hiçbir şey kanıtlamıyordu → MUTASYONLA doğrulandı: `using UnityEngine; private Vector3 _a;` eklemek 14 testin hepsini yeşil bırakıyordu. İki guard eklendi (imza reflection + kaynak taraması); mutasyon tam olarak o ikisini kırdı, diğer 18'i yeşil bıraktı.
+4. (Story 002, QL) İki-oturum testi TİYATROYDU → unload/reload objeyi yeniden yarattığı için kırmızıya dönebilecek mutasyon yoktu. Dört ayırt edici iddiayla değiştirildi.
+5. (Story 002, QL) "Reload Scene kapalı" şartı hiç karşılanmamıştı → options=3 profiliyle ikinci koşu yapıldı, ayar geri alındı.
+6. (Story 002, LP) Stub'lar `onFailed` çağırmıyordu → oyuncu bir log uyarısının arkasında kalıcı hareket-kilitli kalırdı.
+7. (Story 002, her iki gate) bootstrap sıra testi mevcut testin birebir kopyasıydı → kaldırıldı.
+
+### ADR-0008 story yazımından ÖNCE yerinde düzeltildi (kullanıcı kararı)
+Durum ayrımı (saf çekirdek + ince sürücü) seçildi. Manifest'in ayrım kuralı bölüm bazında Core Layer altında ve sahne geçişleri Foundation'a ait → bağlayıcı DEĞİLDİ, tercihti. Data model'e ayrım notu + SceneTransitionState taslağı eklendi, artık yanlış olan Negative maddesi üstü çizildi.
+
+### AÇIK İŞ KALEMLERİ
+- `Instance` null-kontrol şartı için manifest satırı (tüketiciler OnDisable'da -= yaparken Foundation sahnesi önce gitmiş olabilir)
+- `GetCurrentHardCutAbrupt()` preload yolunu okumalı → Story 005 (kodda <remarks>'ta yazılı)
+- Story 003 AC-1: dizi iddiası SON DURUMA değil TÜM KAYDEDİLEN LİSTEYE assert edilmeli, yoksa GDD AC-1 hiçbir yerde doğrulanmamış olur
+- CI'da player-build job'ı hâlâ yok (proje geneli)
+
+- NEXT: Story 003 (SOFT geçiş dizisi + gerçek %100 yükleme)
+
+<!-- STATUS -->
+Epic: Seviye/Sahne Geçişi
+Feature: Sürücü kuruldu
+Task: Story 003 — SOFT geçiş dizisi
+<!-- /STATUS -->

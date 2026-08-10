@@ -69,6 +69,30 @@ This is also the first Foundation-layer system in this project that needs both `
 
 ### Data model
 
+> **CORRECTED IN PLACE (2026-08-10, user decision — before any story was written)**: the sketch below
+> originally declared the state machine's fields directly on the `MonoBehaviour`. It is now split into a
+> **pure C# `SceneTransitionState`** (the six-state machine, `_activeType`, `_hardCutPreloadState`, the
+> single-slot pending queue, and every accept/reject/queue *decision*) plus a **thin
+> `SceneTransitionManager : MonoBehaviour` driver** (coroutines, `SceneManager` calls, `Awake`, timing).
+>
+> Nothing in this ADR's actual Decision changes: the MonoBehaviour hosting in the persistent Foundation
+> scene, chosen specifically so an ordinary `Coroutine` can implement the 0.5–2s deferred unload, is
+> untouched — that was the argued decision, and the state's physical location was never part of it.
+>
+> Why: `docs/architecture/control-manifest.md`'s "pure C# state machine + thin MonoBehaviour driver split
+> (BLOCKING unit-test rule)" postdates this ADR. Read by section that rule sits under *Core Layer Rules*
+> and does not formally govern scene transitions (a Foundation-layer concern), so this is a **choice, not
+> a compelled correction** — but the shipped precedents point the same way (`ShiftZone` holds a pure
+> `ShiftProgressMachine`; ADR-0011 splits `ElevatorController`/`ElevatorStateMachine`), and the split makes
+> most of this ADR's own Validation Criteria plain EditMode `[Test]`s instead of `AddComponent` PlayMode
+> tests. Every guarantee that is genuinely engine-coupled (`SWAP_FRAME_EPSILON`, zero black frames, the
+> Reload-Scene staleness check) stays a `[UnityTest]` and is unaffected.
+>
+> **Do NOT read this as reintroducing ADR-0001's static-service pattern.** `SceneTransitionState` is a
+> plain field on the driver (the `ShiftZone` shape), *not* a static facade with `ResetOnLoad()` registered
+> in `FoundationBootstrap.ResetAll()` (the `ElevatorSystem` shape). This system remains the one documented
+> exception to ADR-0001 — that framing is correct and orthogonal to this split.
+
 ```csharp
 public enum TransitionState { Idle, Preloading, Ready, Swapping, Complete, Failed }
 public enum TransitionType { Soft, Hard }
@@ -91,12 +115,51 @@ public interface ISceneTransitionManager {
     event Action<string> OnSoftTransitionRejected;
 }
 
+// PURE C# CORE (2026-08-10 split) — no UnityEngine API, plain-constructible
+// by an EditMode [Test]. Owns the state machine and every DECISION; the
+// driver below owns every ACTION. Methods return an instruction (the
+// ElevatorStateMachine.TryCall() shape) rather than performing engine work.
+internal sealed class SceneTransitionState {
+    public TransitionState CurrentState { get; private set; } = TransitionState.Idle;
+    private TransitionType _activeType;
+
+    // Tracked separately from CurrentState per GDD Edge Cases — a HARD CUT
+    // preload can advance in the background while CurrentState still
+    // reflects an unrelated, already-in-flight SOFT transition.
+    private TransitionState _hardCutPreloadState = TransitionState.Idle;
+    private string _hardCutPreloadScene;
+    private HardCutConfig _hardCutPreloadConfig;
+
+    // Single-slot "pending" queue for a HARD CUT requested while a SOFT
+    // transition already owns CurrentState (GDD "Cross-type bekleyen slot").
+    private (string toScene, HardCutConfig config, Action onComplete, Action<string> onFailed)? _pendingHardCut;
+
+    public event Action<TransitionState, TransitionType> OnTransitionStateChanged;
+    public event Action<string> OnSoftTransitionRejected;
+
+    internal void SetState(TransitionState newState, TransitionType type) {
+        CurrentState = newState;
+        _activeType = type;
+        OnTransitionStateChanged?.Invoke(newState, type);
+    }
+
+    // Arbitration lives here and returns what the driver should DO:
+    //   TryBeginSoft  -> Rejected | StartCoroutine
+    //   TryBeginHard  -> Rejected | Queued | SwapDirectly (preload already Ready
+    //                    for this exact scene) | StartCoroutine (sync-wait fallback)
+    // ... plus TryFirePendingHardCut(), the PreloadHardCut no-op rules, the
+    // Failed -> Idle auto-return, and SafeInvoke's try/catch — all pure.
+}
+
 public sealed class SceneTransitionManager : MonoBehaviour, ISceneTransitionManager {
     // Static facade — matches every other Foundation service's calling
     // convention (X.Instance.Method()) even though the implementation
     // is MonoBehaviour-backed, not a plain static class (see Decision).
     public static ISceneTransitionManager Instance => _instance;
     private static SceneTransitionManager _instance;
+
+    // Plain field, NOT a static facade — see the correction note above.
+    private readonly SceneTransitionState _state = new SceneTransitionState();
 
     private void Awake() {
         if (_instance != null) {
@@ -336,7 +399,7 @@ private void SafeInvoke(Action<string> callback, string failureReason) {
 ### Negative
 - Breaks ADR-0001's "one pattern, uniform across all Foundation services" claim — now five plain-static-service consumers plus this one documented `MonoBehaviour` exception. Required editing ADR-0001 in ~10 places to correct the resulting "six"→"five" count.
 - Imposes a real, binding constraint on a not-yet-written ADR (`Audio Architecture`, #9): `Adaptif Ses Sistemi`'s subscription to `OnTransitionStateChanged` must be lazy, not constructor-time — a constraint that adds a small amount of design complexity to that future ADR specifically because of this one's mechanism choice.
-- `SceneTransitionManager`'s own state (the six-state machine, the pending-HARD-CUT slot, `_hardCutPreloadState`) is `MonoBehaviour`-instance state, not a plain C# object a `[Test]` can construct in isolation the way ADR-0001's pattern allows — testing this system requires `new GameObject().AddComponent<SceneTransitionManager>()` (the same MonoBehaviour-testability shape ADR-0003 already established for `PlayerStateProvider`), not a bare `new SceneTransitionManagerState()`.
+- ~~`SceneTransitionManager`'s own state (the six-state machine, the pending-HARD-CUT slot, `_hardCutPreloadState`) is `MonoBehaviour`-instance state, not a plain C# object a `[Test]` can construct in isolation the way ADR-0001's pattern allows — testing this system requires `new GameObject().AddComponent<SceneTransitionManager>()` (the same MonoBehaviour-testability shape ADR-0003 already established for `PlayerStateProvider`), not a bare `new SceneTransitionManagerState()`.~~ **No longer true — corrected 2026-08-10 (see the Data model note).** The state and all arbitration live in a plain-constructible `SceneTransitionState`; only genuinely engine-coupled behavior (coroutines, `SceneManager` calls, `Awake`'s duplicate guard, frame timing) needs `AddComponent`. This bullet was written before the manifest's split rule existed and was comparing itself to ADR-0003's `PlayerStateProvider`, whose own TD-ADR review had already corrected that framing — `PlayerStateProvider` is not plain-constructible either, but for `CharacterController`/`Camera` coupling reasons, not as a considered rejection of a pure core.
 
 ### Risks
 - **Risk**: A future Foundation service (most concretely, `Adaptif Ses Sistemi`, ADR-0009) subscribes to `OnTransitionStateChanged` in its own constructor, reproducing the exact "subscribed before the event source exists" class of bug ADR-0006 already found and fixed once for `FoundationBootstrap.ResetAll()`'s internal ordering — except this time the event source (`SceneTransitionManager.Instance`) doesn't exist at `SubsystemRegistration` time *at all*, regardless of ordering, since it's set by a scene's `Awake()`, not by `FoundationBootstrap`. **Mitigation**: this ADR states the lazy-subscription requirement explicitly (Decision, "Second consequence"). **Corrected during TD-ADR review (2026-08-06)**: an earlier draft of this bullet claimed this rule was already recorded in `docs/registry/architecture.yaml`'s forbidden patterns — checked directly, it isn't; only ADR-0006's and ADR-0007's forbidden patterns exist there. This is a pending Step-6 action for this ADR (registry update, after write approval), not something already done — flagged clearly so ADR-0009's own author doesn't wrongly assume the registry check already catches a constructor-time `SceneTransitionManager.Instance` subscription before that entry actually exists.
