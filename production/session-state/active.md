@@ -1,10 +1,21 @@
 # Session State — Active
 
+## Session Extract — /dev-story + kapanış, interactable-registry Story 001, 2026-08-10
+- Verdict: COMPLETE → **Status: Complete** (epic 1/2 — kalan: Story 002 iki-oturum + cache-collision)
+- Files: `Foundation/IInteractable.cs` (YENİ), `Foundation/InteractableRegistry.cs` (YENİ — ADR-0004 Key Interfaces birebir, tek sapma: cache alanları `internal`), `FoundationBootstrap.cs` (+kök reset girişi), `foundation_bootstrap_order_test.cs` (+ExpectedActiveOrder), `Tests/EditMode/interactable_registry_core_test.cs` (YENİ, 15 test)
+- Süit: **EditMode 83/83**. Gate'ler: LP APPROVE, QL ADEQUATE (full mod).
+- **ÖNEMLİ YAN BULGU**: PlayMode doğrulama amaçlı 3 kez koşuldu — HER SEFERİNDE farklı, önceden-kapanmış bir isik-volume testinde ortam/zamanlama kaynaklı flake (Story 001'in koduna sıfır örtüşme, kanıtlandı). Ayrı arka plan görevi bırakıldı: `task_d5aee2cb` (isik-volume PlayMode timing flakiness araştırması — kısa-Duration coroutine testleri, muhtemelen Time.deltaTime/coroutine-sıralama kırılganlığı, üretim kodu değil test tasarımı sorunu).
+- Next: Story 002 (`story-002-iki-oturum-cache-collision-dogrulama.md`) — Story 001'in `internal` sapması ön koşulu sağlıyor. Commit yok (talimat bekliyor).
+
+- 2 story yazıldı: `story-001-registry-cekirdegi-snapshot-cache.md` (Logic — IInteractable arayüzü + Register/Deregister + snapshot cache + FoundationBootstrap kaydı) → `story-002-iki-oturum-cache-collision-dogrulama.md` (Integration — Awake-vs-OnEnable ampirik kanıtı + cache-collision negatif-kontrollü regresyon testi). QL-STORY-READY full modda koştu (general-purpose subagent) → GAPS bulundu, ACs revize edilerek yazıldı: AC5 kapsamı `_live`'a daraltıldı, AC8 (enumerasyon-ortası deregister) eklendi, Story 002'nin iki AC'si totolojik/eksik-kanıt halinden gerçek red-then-green regresyon testine çevrildi. Story 001'in Implementation Notes'unda BİLİNÇLİ ADR-sapması işaretli: cache alanları `internal` (ADR taslağında `private`) — Story 002'nin ön koşulu.
+- EPIC.md + epics/index.md güncellendi (2 stories).
+- Next: `/story-readiness story-001-...` → `/dev-story` ile Story 001'den başla (yukarı bağımlılığı yok, Foundation kökü).
+
 ## Session Extract — /story-done isik-volume Story 006 → **IŞIK/VOLUME EPİC'İ TAMAM (6/6)**, 2026-08-09
 - Verdict: COMPLETE WITH NOTES → **Status: Complete**; `production/epics/index.md` → Işık/Volume **Complete (2026-08-09)** — bugün biten ÜÇÜNCÜ epic (Proje Kurulumu, Gece/Oturum, Işık/Volume)
 - Gate'ler: **LP CONCERNS→giderildi** — kritik yanlış-geçirme bug'ı yapısal çözüldü: aggregate sıfırlaması yürüyüş BAŞINDA (`IBuildCheckAggregate.BeginWalk` + runner kancası; sonda self-reset kaldırıldı); registry testi IsikVolume/* 'a daraltıldı; README güncel. **QL GAPS→kapatıldı** — 6 test (aggregate çatı sözleşmesi çok/sıfır-sahne + null ScenePath, aborted-walk sızıntısı, null ışık girdisi, dönük kutu, mesajda sahne yolu).
 - Süit: **EditMode 68/68, PlayMode 32/32**. CI: 7410e67 (Story 005) YEŞİL (run 31326370384).
-- Next: Story 006 değişiklikleri commit'lenmedi (talimat bekliyor). Epic bitti — sıradaki doğal işler: başka Foundation epic'ine `/create-stories` (önerilen: InteractableRegistry ya da Birinci Şahıs Kontrolcü) YA DA sprint close-out (/smoke-check → /team-qa).
+- **GÜN KAPANIŞI**: Story 006 commit `9e0b7c5` push'lu, **CI YEŞİL (run 31327071626)**. Günün tam bilançosu: 7 story Complete (isik-volume 001-006 TÜM EPİC + gece-oturum 004), 3 epic bitti (Proje Kurulumu, Gece/Oturum, Işık/Volume), 6 commit push'lu (+ birikmiş 15 ADR/docs + Blender asset'leri), TÜM CI koşuları yeşil. Süit: **EditMode 68/68, PlayMode 32/32**. Full-mod gate'ler her kapanışta koştu ve 3 gerçek bug yakaladı (component-disable coroutine yetimi; AC14a guard kaybı; aggregate bayat-gözlem yanlış-geçirmesi). **Bir sonraki oturumun giriş noktası**: `/create-stories` ile sıradaki Foundation epic'i — önerilen: interactable-registry ya da birinci-sahis-kontrolcu (index'teki önerilen sıra); alternatif: sprint close-out (/smoke-check → /team-qa).
 
 ## Session Extract — /dev-story isik-volume Story 006, 2026-08-09
 - Story: `production/epics/isik-volume-durum-sistemi/story-006-build-blocking-dogrulamalar.md` — 4 build-blocking sahne-scan check'i (Status hâlâ Ready; /story-done bekliyor — kapanınca EPİC 6/6 TAMAM)

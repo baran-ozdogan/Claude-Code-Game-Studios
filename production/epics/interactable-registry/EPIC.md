@@ -7,7 +7,7 @@
 > **Engine Risk**: LOW
 > **Control Manifest Version**: 2026-08-09
 > **Status**: Ready
-> **Stories**: Not yet created — run `/create-stories interactable-registry`
+> **Stories**: 2 stories
 
 ## Overview
 
@@ -28,6 +28,13 @@
 - Tüm story'ler kapandı; ADR-0004 Validation Criteria testleri geçiyor (snapshot kararlılığı, cross-session cache-collision `[UnityTest]`, kopya-döndürme garantisi)
 - Gerçek/decoy ayrımı API yüzeyinde yapısal olarak sızdırmıyor
 
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | IInteractable arayüzü + Registry çekirdeği + snapshot cache | Logic | Ready | ADR-0004 |
+| 002 | İki-oturum self-correction + cache-collision doğrulaması | Integration | Ready | ADR-0004 |
+
 ## Next Step
 
-Run `/create-stories interactable-registry`.
+Run `/story-readiness production/epics/interactable-registry/story-001-registry-cekirdegi-snapshot-cache.md` then `/dev-story`.

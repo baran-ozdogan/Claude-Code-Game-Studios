@@ -61,7 +61,7 @@ internal static class FoundationBootstrap
     // Do not "fix" this by adding it here.
     private static readonly ResetEntry[] _resetSequence =
     {
-        // TODO(epic:interactable-registry):      new ResetEntry("InteractableRegistry",    InteractableRegistry.ResetOnLoad),    // no upstream dependency
+        new ResetEntry("InteractableRegistry", InteractableRegistry.ResetOnLoad), // no upstream dependency — interactable-registry Story 001
         new ResetEntry("IsikVolumeDurumSistemi", IsikVolumeDurumSistemi.ResetOnLoad), // exposes OnShiftStateChanged, subscribes to nothing; IN-PLACE (persistent MonoBehaviour + constructor subscribers) — isik-volume Story 001
         new ResetEntry("GeceOturumDurumu", GeceOturumDurumu.ResetOnLoad), // constructor-subscribes to Işık/Volume OnShiftStateChanged (binds once per process, ADR-0015; wiring: gece-oturum Story 004)
         // TODO(epic:anlati-durum-ipucu-takibi):  new ResetEntry("AnlatiDurumIpucuTakibi",  AnlatiDurumIpucuTakibi.ResetOnLoad),  // constructor-subscribes to Işık/Volume OnShiftStateChanged

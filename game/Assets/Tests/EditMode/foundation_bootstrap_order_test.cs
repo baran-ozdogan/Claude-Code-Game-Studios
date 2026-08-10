@@ -28,6 +28,7 @@ public class FoundationBootstrapOrderTest
     // extends this in the same change that adds its ResetEntry line.
     private static readonly string[] ExpectedActiveOrder =
     {
+        "InteractableRegistry", // interactable-registry Story 001 (2026-08-10) — yukarı bağımlılığı yok, belgeli sıranın kökü
         "IsikVolumeDurumSistemi", // isik-volume-durum-sistemi Story 001 (2026-08-09) — GeceOturumDurumu'ndan ÖNCE (constructor-time abonelik bağımlılığı)
         "GeceOturumDurumu", // gece-oturum-durumu Story 001 (2026-08-09)
     };
