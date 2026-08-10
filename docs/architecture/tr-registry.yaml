@@ -99,6 +99,7 @@ requirements:
   - { id: TR-anlati-006, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "Işık/Volume aboneliği first-access zamanında (Awake/OnEnable değil) — sahne yaşam döngüsünden bağımsız", created: 2026-08-09, status: active }
   - { id: TR-anlati-007, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "API hiçbir sıralama/zaman damgası verisi açmaz — kasıtlı (Pillar 1/5)", created: 2026-08-09, status: active }
   - { id: TR-anlati-008, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "Edit-time doğrulama: boş requiredShiftIds + çift clueId build-blocking; orphaned shiftId Editor-only uyarı (ClueConsistencyValidator)", created: 2026-08-09, status: active }
+  - { id: TR-anlati-009, system: anlati, gdd: design/gdd/anlati-durum-ipucu-takibi.md, requirement: "\"ClueRegistry\" Addressable anahtarının build-time çözümlenebilirliği (ADR-0007 Risks mitigasyonu + Validation Criteria; GDD'de doğrudan karşılığı yok — anlati Story 004'te mint edildi)", created: 2026-08-10, status: active }
 
   # ── seviye-sahne-gecisi ───────────────────────────────────────────────
   - { id: TR-sahne-gecisi-001, system: sahne-gecisi, gdd: design/gdd/seviye-sahne-gecisi.md, requirement: "SOFT ve HARD CUT tek paylaşılan durum makinesinden geçer: Idle→Preloading→Ready→Swapping→Complete→Idle + Failed", created: 2026-08-09, status: active }

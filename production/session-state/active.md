@@ -1,5 +1,20 @@
 # Session State — Active
 
+## Session Extract — /create-stories anlati-durum-ipucu-takibi (5 story), 2026-08-10
+- 5 story yazıldı: 001 facade çekirdeği (Logic, ADR-0001 üçlü deseni) → 002 ClueDefinition/ClueRegistry SO + ters indeks + Held mantığı (Logic) → 003 Addressables lazy-load + gerçek Işık/Volume aboneliği (Integration) → 004 build-blocking doğrulama DÖRTLÜSÜ (Logic) → 005 orphaned shiftId uyarısı (Logic).
+- **Bağımlılık grafiği düz zincir DEĞİL**: 001 → 002 → {003, 004, 005}; son üçü birbirine bağlı değil, paralel ilerleyebilir.
+- QL-STORY-READY full modda **ÜÇ LENSLE** koştu (testability / scope-sequencing / GDD-fidelity, paralel general-purpose subagent'lar). Üçü de GAPS buldu, hepsi story'lere işlendi:
+  - **Story 002/003 kod düzeyinde iç içeydi** (iki lens bağımsız yakaladı): ADR-0007'nin `OnShiftStateChanged`'i `EnsureRegistryLoaded()` (Addressables) ile Held mantığını TEK metotta birleştiriyor → Story 002 bir Logic story olarak kapanamazdı (testleri gerçek Addressables çözümlemesi tetiklerdi). Fix: 002 saf `ProcessHeldShift` dikişini sahiplenir, 003 ince sarmalayıcı ekler (gece-oturum 003/004 emsali birebir).
+  - **Story 004'e 4. check eklendi**: isik-volume AC22/TR-isik-021 çapraz kontrolü (Automatic bölgenin shiftId'si hiçbir ClueDefinition'da olamaz — pasif bölge `ManualOnly` rıza ön koşulunu atlatırdı) ÜÇ yerde "anlati epic'ine devredildi" diye kayıtlıydı ama hiçbir story'ye atanmamıştı.
+  - **TR-anlati-009 mint edildi**: `"ClueRegistry"` Addressable anahtar çözümlemesi yalnız ADR prose'unda vardı, hiçbir TR-ID'si yoktu (registry'ye append edildi, mevcut ID'ler yeniden numaralanmadı).
+  - **Story 003'ün Addressables smoke'u DEFERRED manuel kanıta çevrildi**: repoda Addressables ALTYAPISI HİÇ YOK (paket 4.0.1 kurulu ama `AddressableAssetsData` settings asset'i yok) — story artık kurulumu da kapsıyor; AC11/AC12 için Addressables'tan bağımsız test dikişi zorunlu.
+  - **Story 004'ün check (a)'sına resolver dikişi** (`IAddressableKeyResolver`) zorunlu kılındı — `AddressableAssetSettings`'i in-memory fabrike etmek belirsiz; `IBuildSceneWalker` ile aynı şekil.
+  - Ayrıca: AC7 için kapalı-yüzey reflection testi, AC12b'nin AC2 ile fazlalığı (ayrı test gerekmez), AC4'ün davranışsal test şekli, `IReadOnlySet` yasağının teyidi.
+- **KULLANICI KARARI — Story 005 mekanizma sapması**: GDD "HİÇBİR tetikleyicinin ateşlemediği shiftId" (proje geneli) diyor ama ADR-0007 `ValidateScene(sceneId)` + `sceneOpened/sceneSaved` (tek sahne) seçmişti. MVP'de Depot/Ballroom ayrı sahneler → çok-sahneli clue'lar YANLIŞLIKLA orphaned görünürdü (birinci-sahis-kontrolcu Story 006'daki blocking bulgunun aynı sınıfı). Karar: `IBuildCheckAggregate` build-yürüyüşüne taşındı (isik-volume Story 006'nın tam bu iş için kurduğu çatı) — non-blocking ve player build'e girmiyor kısıtları KORUNUYOR, yalnız tetikleyici sapıyor. **ADR-0007'ye addendum açılmalı** (`/architecture-decision`); sapma Story 005'in kendi dosyasında kutu içinde belgeli ("bu notu silmeyin").
+- Ayrıca kullanıcı kararı: motion slider varsayılanı %40'ta kaldı, `accessibility-requirements.md` §5 düzeltildi (FPC Story 005 çelişkisi).
+- EPIC.md (5 story tablosu + bağımlılık grafiği + ileri bayrak) ve epics/index.md güncellendi; `tr-registry.yaml`'a TR-anlati-009 eklendi.
+- Next: `/dev-story production/epics/anlati-durum-ipucu-takibi/story-001-facade-cekirdegi.md`. Commit yok (talimat bekliyor).
+
 ## Session Extract — Story 006 → **BİRİNCİ ŞAHIS KONTROLCÜ EPİC'İ TAMAM (6/6)**, 2026-08-10
 - Verdict: COMPLETE WITH NOTES → **Status: Complete**; `production/epics/index.md` → FPC **Complete (2026-08-10)** — bugün biten BEŞİNCİ epic (Proje Kurulumu, Gece/Oturum, Işık/Volume, InteractableRegistry, FPC).
 - Files: `Foundation/DecoyInteractable.cs` (YENİ), `Editor/BuildValidation/FpcDecoyPresenceCheck.cs` (YENİ), `BuildValidationRegistry.cs` (+kayıt), `BuildValidation/README.md`, `Tests/EditMode/fpc_decoy_build_check_test.cs` (YENİ, 18 test), `Tests/EditMode/fpc_decoy_scene_drift_test.cs` (YENİ tripwire), `Tests/PlayMode/fpc_decoy_registry_test.cs` (YENİ)
