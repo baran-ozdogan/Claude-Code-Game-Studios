@@ -64,7 +64,7 @@ internal static class FoundationBootstrap
         new ResetEntry("InteractableRegistry", InteractableRegistry.ResetOnLoad), // no upstream dependency — interactable-registry Story 001
         new ResetEntry("IsikVolumeDurumSistemi", IsikVolumeDurumSistemi.ResetOnLoad), // exposes OnShiftStateChanged, subscribes to nothing; IN-PLACE (persistent MonoBehaviour + constructor subscribers) — isik-volume Story 001
         new ResetEntry("GeceOturumDurumu", GeceOturumDurumu.ResetOnLoad), // constructor-subscribes to Işık/Volume OnShiftStateChanged (binds once per process, ADR-0015; wiring: gece-oturum Story 004)
-        // TODO(epic:anlati-durum-ipucu-takibi):  new ResetEntry("AnlatiDurumIpucuTakibi",  AnlatiDurumIpucuTakibi.ResetOnLoad),  // constructor-subscribes to Işık/Volume OnShiftStateChanged
+        new ResetEntry("AnlatiDurumIpucuTakibi", AnlatiDurumIpucuTakibi.ResetOnLoad), // constructor-subscribes to Işık/Volume OnShiftStateChanged (abonelik Story 003'te bağlanır); IN-PLACE — anlati Story 001
         // TODO(epic:adaptif-ses-sistemi):        new ResetEntry("AdaptifSesSistemi",       AdaptifSesSistemi.ResetOnLoad),       // pure state (HeldSessionAlreadyPlayed) — playback lives in AdaptifSesController (ADR-0009)
         // TODO(epic:diyalog-anlati-icerigi):     new ResetEntry("DiyalogAnlatiIcerigi",    DiyalogAnlatiIcerigi.ResetOnLoad),    // UsedCallbackIds only (ADR-0012) — in-place Clear()
         // TODO(epic:asansor-kat-erisim-sistemi): new ResetEntry("ElevatorSystem",          ElevatorSystem.ResetOnLoad),          // ride state (ADR-0011) — in-place, events preserved

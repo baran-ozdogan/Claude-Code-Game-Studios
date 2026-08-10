@@ -36,8 +36,8 @@
 
 | # | Story | Type | Status | ADR |
 |---|-------|------|--------|-----|
-| 001 | Facade çekirdeği — IAnlatiDurumState + AnlatiDurumState + statik facade | Logic | Ready | ADR-0007 (+0001/0015) |
-| 002 | ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı | Logic | Ready | ADR-0007 |
+| 001 | Facade çekirdeği — IAnlatiDurumState + AnlatiDurumState + statik facade | Logic | Complete | ADR-0007 (+0001/0015) |
+| 002 | ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı | Logic | Complete | ADR-0007 |
 | 003 | Addressables lazy-load + gerçek Işık/Volume aboneliği | Integration | Ready | ADR-0007 (+0015) |
 | 004 | Build-blocking doğrulama dörtlüsü | Logic | Ready | ADR-0007 (+0014) |
 | 005 | Orphaned shiftId uyarısı (build-time aggregate, non-blocking) | Logic | Ready | ADR-0007 (+0014) |
@@ -46,8 +46,16 @@
 
 ## Next Step
 
-Run `/dev-story production/epics/anlati-durum-ipucu-takibi/story-001-facade-cekirdegi.md`.
+Story 001+002 Complete (2/5). Kalan: 003 (Addressables + gerçek abonelik), 004 (build-blocking dörtlü), 005 (orphan uyarısı) — üçü de 002'ye bağlı ama BİRBİRİNE değil, paralel ilerleyebilir.
 
+> **Açık ileri bayrak #2 (Story 001 → 003)**: Işık/Volume aboneliği ADR-0007'nin
+> `AnlatiDurumState` constructor'ında DEĞİL, FACADE'ın static constructor'ında
+> bağlanacak (LP-CODE-REVIEW bulgusu: State-ctor aboneliği, ADR-0001 deseni gereği
+> taze State kuran her testte kalıcı event'e bir handler daha sızdırırdı; proje
+> emsali `GeceOturumDurumu` de facade static ctor kullanıyor). Story 003'ün AC'si
+> ve test şekli buna göre yazıldı; **ADR-0007 addendum'u gerekiyor** — Story 005'in
+> sapmasıyla aynı pakette açılabilir.
+>
 > **Açık ileri bayrak (Story 005)**: orphaned-shiftId kontrolünün mekanizması,
 > kullanıcı kararıyla ADR-0007'nin `EditorSceneManager.sceneOpened/sceneSaved`
 > tetikleyicisinden `IBuildCheckAggregate` build-yürüyüşüne taşındı (GDD'nin

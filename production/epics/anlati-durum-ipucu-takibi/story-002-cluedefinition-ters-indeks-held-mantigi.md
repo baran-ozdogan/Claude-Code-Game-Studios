@@ -1,12 +1,12 @@
 # Story 002: ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı
 
 > **Epic**: Anlatı Durum/İpucu Takibi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: M (~3-4h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-10
 
 ## Context
 
@@ -27,13 +27,13 @@
 
 ## Acceptance Criteria
 
-- [ ] `ClueDefinition` ScriptableObject: `ClueId` (string), `RequiredShiftIds` (`List<string>`); `ClueRegistry` ScriptableObject: `Definitions` (`List<ClueDefinition>`) — ikisi de `[CreateAssetMenu]` (TR-anlati-002)
-- [ ] `BuildReverseIndex(IReadOnlyList<ClueDefinition>)` → `Dictionary<string, List<ClueDefinition>>`: her `shiftId`, onu `RequiredShiftIds`'inde listeleyen TÜM tanımlara eşlenir (N:1 destekli)
-- [ ] **ALL-semantiği, sıra bağımsız**: `requiredShiftIds = [A, B]` olan bir tanım için yalnız A Held'e ulaşınca `IsClueKnown` `false` ve `OnClueKnown` FIRLAMAZ; sonra B Held'e ulaşınca `IsClueKnown` `true` ve `OnClueKnown` TAM BİR KEZ fırlar — B-önce-A sırası da AYNI sonucu verir (GDD AC1+AC2, tek ilerleyen senaryo olarak yazılır; AC1 tek başına no-op bir handler'ı da geçirirdi)
-- [ ] **Yalnız `ShiftState.Held` işlenir**: Shifting-In/Shifting-Out/Dormant geçişleri `_seenShiftIds`'e HİÇBİR giriş eklemez ve hiçbir tamamlanma kontrolü çalıştırmaz (GDD AC4, TR-anlati-005 mantık yarısı). *Test şekli davranışsal olmalı* (`_seenShiftIds` private): iki-shift'li bir tanımda A için Shifting-In gönder → B için Held gönder → hâlâ Known DEĞİL; sonra A için Held → şimdi Known. Bu tek senaryo hem "yalnız Held sayılır" hem "önceki Shifting-In sızmadı" iddiasını kanıtlar
-- [ ] **Paylaşılan shiftId, bağımsız değerlendirme**: iki farklı `ClueDefinition` aynı `shiftId`'yi listeliyorsa tek bir Held geçişi sıfır, bir ya da İKİSİNİ birden tamamlayabilir — her tanım bağımsız değerlendirilir (GDD AC10; ilk eşleşmede erken-return eden bir hata AC1/AC2'yi geçer ama bunu geçemez)
-- [ ] **Yinelenen `shiftId` zararsız**: `requiredShiftIds = [A, A, B]`, `[A, B]` ile birebir aynı davranır — `HashSet` kapsaması yinelenenleri tekilleştirir (GDD Edge Cases)
-- [ ] **Test dikişi (ZORUNLU)**: Held mantığı, Addressables'a DOKUNMAYAN, ters indeksin zaten dolu olduğunu varsayan ayrı bir metotta yaşar (ör. `ProcessHeldShift(string shiftId)`); ters indeks testlere doğrudan enjekte edilebilir. Bu story'nin hiçbir testi `EnsureRegistryLoaded()`'ı ya da Addressables'ı çağırmaz
+- [x] `ClueDefinition` ScriptableObject: `ClueId` (string), `RequiredShiftIds` (`List<string>`); `ClueRegistry` ScriptableObject: `Definitions` (`List<ClueDefinition>`) — ikisi de `[CreateAssetMenu]` (TR-anlati-002)
+- [x] `BuildReverseIndex(IReadOnlyList<ClueDefinition>)` → `Dictionary<string, List<ClueDefinition>>`: her `shiftId`, onu `RequiredShiftIds`'inde listeleyen TÜM tanımlara eşlenir (N:1 destekli)
+- [x] **ALL-semantiği, sıra bağımsız**: `requiredShiftIds = [A, B]` olan bir tanım için yalnız A Held'e ulaşınca `IsClueKnown` `false` ve `OnClueKnown` FIRLAMAZ; sonra B Held'e ulaşınca `IsClueKnown` `true` ve `OnClueKnown` TAM BİR KEZ fırlar — B-önce-A sırası da AYNI sonucu verir (GDD AC1+AC2, tek ilerleyen senaryo olarak yazılır; AC1 tek başına no-op bir handler'ı da geçirirdi)
+- [x] **Yalnız `ShiftState.Held` işlenir**: Shifting-In/Shifting-Out/Dormant geçişleri `_seenShiftIds`'e HİÇBİR giriş eklemez ve hiçbir tamamlanma kontrolü çalıştırmaz (GDD AC4, TR-anlati-005 mantık yarısı). *Test şekli davranışsal olmalı* (`_seenShiftIds` private): iki-shift'li bir tanımda A için Shifting-In gönder → B için Held gönder → hâlâ Known DEĞİL; sonra A için Held → şimdi Known. Bu tek senaryo hem "yalnız Held sayılır" hem "önceki Shifting-In sızmadı" iddiasını kanıtlar
+- [x] **Paylaşılan shiftId, bağımsız değerlendirme**: iki farklı `ClueDefinition` aynı `shiftId`'yi listeliyorsa tek bir Held geçişi sıfır, bir ya da İKİSİNİ birden tamamlayabilir — her tanım bağımsız değerlendirilir (GDD AC10; ilk eşleşmede erken-return eden bir hata AC1/AC2'yi geçer ama bunu geçemez)
+- [x] **Yinelenen `shiftId` zararsız**: `requiredShiftIds = [A, A, B]`, `[A, B]` ile birebir aynı davranır — `HashSet` kapsaması yinelenenleri tekilleştirir (GDD Edge Cases)
+- [x] **Test dikişi (ZORUNLU)**: Held mantığı, Addressables'a DOKUNMAYAN, ters indeksin zaten dolu olduğunu varsayan ayrı bir metotta yaşar (ör. `ProcessHeldShift(string shiftId)`); ters indeks testlere doğrudan enjekte edilebilir. Bu story'nin hiçbir testi `EnsureRegistryLoaded()`'ı ya da Addressables'ı çağırmaz
 
 ## Implementation Notes
 
@@ -89,10 +89,28 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/anlati_clue_definition_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/anlati_clue_definition_test.cs` (25 test)
+**Status**: [x] Created — EditMode 182/182
 
 ## Dependencies
 
 - Depends on: Story 001 (`MarkClueKnown`/`_seenShiftIds` çekirdeği)
 - Unlocks: Story 003 (bu mantığı sarmalar), Story 004 (bu tipleri doğrular), Story 005 (bu tipleri okur)
+
+## Completion Notes
+
+**Verdict**: COMPLETE WITH NOTES — 7/7 AC, EditMode 182/182 (ilk koşuda 175/175 temiz; gate düzeltmeleriyle 182).
+
+**Dosyalar**: `Foundation/AnlatiDurumIpucuTakibi/ClueDefinition.cs` + `ClueRegistry.cs` (YENİ, iki `[CreateAssetMenu]` SO), `AnlatiDurumState.cs` (+ters indeks, `BuildReverseIndex`, `BindEnsureRegistryLoaded`, `IsRegistryLoaded`, `ProcessShiftStateChanged`, `ProcessHeldShift`), `Tests/EditMode/anlati_clue_definition_test.cs` (YENİ, 25 test).
+
+**Story sınırı dikişi tuttu**: ADR-0007'nin kod bloğu `EnsureRegistryLoaded()` (Addressables) ile Held mantığını TEK metotta birleştiriyordu. Bu story onu enjekte edilebilir bir `Action` kancasına ayırdı (`ProcessShiftStateChanged`: Held filtresi → kanca → `ProcessHeldShift`) — LP gate ADR'ın sıralama semantiğinin BİREBİR korunduğunu ve Story 003'e saf bir ekleme bıraktığını doğruladı (virtual metot `sealed`'ı bozardı, constructor enjeksiyonu ADR'ın taşıdığı yükü geri getirirdi).
+
+**Gate'ler (full mod)**: **LP-CODE-REVIEW CONCERNS→giderildi**, **QL-TEST-COVERAGE GAPS→giderildi**.
+
+**LP düzeltmeleri**: `[CreateAssetMenu]` menü kökü `"Yankılar/..."` (dotless-ı) yazılmıştı — mevcut `ShiftConfig` `"Yankilar/..."` (ASCII) kullanıyor, farklı string olduğu için Unity İKİ ayrı üst-seviye Create menüsü çizerdi; ASCII köke hizalandı. `ClueRegistry.EditorSetDefinitions` silindi: `Assets/Scripts` ağacındaki TEK `#if UNITY_EDITOR` dikişiydi, sıfır çağıranı vardı ve SO'nun serialized alanına canlı alias veriyordu (sınıfın kendi doc'unun uyardığı bayatlama tehlikesi) — testler projenin yerleşik `SerializedObject` desenini kullanıyor. Abone patlarsa kalan aday tanımların değerlendirilmediği belgelendi (`try/catch` BİLİNÇLİ olarak eklenmedi, `AddFiredTrigger` emsali).
+
+**QL test eklemeleri**: **boş `RequiredShiftIds`'in çalışma zamanı davranışı** pinlendi — GDD'nin en gürültülü tehlikesi (`SeenShiftIds ⊇ ∅` her zaman doğru); bugün yapısal olarak imkânsız ama hiçbir test bunu tutmuyordu, ADR'ın reddettiği lineer taramaya dönen bir düzenleme hatayı geri getirirdi. Ayrıca: abone patlamasının çok-aday döngüsündeki sonucu, `ClueRegistry`'nin kendi sözleşmesi (sıfır kapsamı vardı), `BuildReverseIndex`'in ikinci çağrıda BİRLEŞTİRMEYİP DEĞİŞTİRDİĞİ, 3+ gereksinimli ipucu, `RequiredShiftIds` içindeki boş girdinin ipucunu tamamlanamaz kıldığı, ve canlı-görünüm sonucu #2 (gezerken işaretleme → `InvalidOperationException`) — Story 001'de belgelenmiş ama test edilmemişti, çok-tamamlanmalı döngü onu ilk kez erişilebilir kılıyor.
+
+**AC-1'in kendi testi ayırt edici değildi (QL)**: eski hâli `Held("A")` ile başlıyordu ve "clue-2 kovada yoktu" ile "değerlendirildi ama eksikti" durumlarını ayıramıyordu; üstelik başka bir testle birebir aynıydı. Yeni kurgu önce `Held("B")` sonra `Held("A")` — İKİ ipucunun da tamamlanması yalnız A'nın kovası her iki tanımı da taşıyorsa mümkün.
+
+**Story 003'e devredilen iki karar (LP)**: (1) `IsRegistryLoaded` "indeks var" demek, "yükleme başarılı" değil — `WaitForCompletion()` patlarsa bloklayan çağrı her Held'de yeniden denenir; latch'leme kararı orada açıkça verilmeli. (2) Abone istisnası canlı `OnShiftStateChanged`'e bağlanınca Işık/Volume'un multicast'ine düşer ve çağrı sırasına göre diğer aboneleri düşürebilir.

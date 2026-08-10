@@ -31,6 +31,7 @@ public class FoundationBootstrapOrderTest
         "InteractableRegistry", // interactable-registry Story 001 (2026-08-10) — yukarı bağımlılığı yok, belgeli sıranın kökü
         "IsikVolumeDurumSistemi", // isik-volume-durum-sistemi Story 001 (2026-08-09) — GeceOturumDurumu'ndan ÖNCE (constructor-time abonelik bağımlılığı)
         "GeceOturumDurumu", // gece-oturum-durumu Story 001 (2026-08-09)
+        "AnlatiDurumIpucuTakibi", // anlati-durum-ipucu-takibi Story 001 (2026-08-10) — Işık/Volume'a constructor-abone (Story 003'te bağlanır), o yüzden ondan SONRA
     };
 
     [Test]
