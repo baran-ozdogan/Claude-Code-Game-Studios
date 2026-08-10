@@ -3,7 +3,16 @@ using UnityEditor.Build;
 /// <summary>Which pass of the shared build-validation utility a check runs in (ADR-0014).</summary>
 internal enum BuildCheckPhase
 {
-    /// <summary>Project-wide asset scan (AssetDatabase.FindAssets) — cheap, always runs first.</summary>
+    /// <summary>
+    /// Sahne AÇMAYAN, asset-tabanlı geçiş — ucuz, her zaman önce koşar.
+    ///
+    /// "Asset-scan" bir MALİYET sınıfıdır, bir API reçetesi DEĞİLDİR: bu faz
+    /// `AssetDatabase.FindAssets` KULLANMAK ZORUNDA DEĞİL. anlati Story 004'ün
+    /// üç check'i merkezi bir kaydın (`ClueRegistry.Definitions`) içine bakar ve
+    /// proje-geneli tarama yapmaz — ADR-0007 kapsamı bunu açıkça böyle kilitliyor.
+    /// (Bu cümle eskiden fazı "AssetDatabase.FindAssets tabanlı" diye tanımlıyordu;
+    /// story AC-5 o ifadeyi kapsam-sürüklenmesi daveti saydı.)
+    /// </summary>
     AssetScan,
 
     /// <summary>Per-scene scan over EditorBuildSettings.scenes — expensive, only for scene-dependent checks.</summary>

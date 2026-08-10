@@ -33,4 +33,30 @@ public sealed class ClueDefinition : ScriptableObject
     public string ClueId => _clueId;
 
     public IReadOnlyList<string> RequiredShiftIds => _requiredShiftIds;
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Inspector-time erken geri bildirim (Story 004). YALNIZ kendi kendine
+    /// yeten kuralı çağırır — çift `ClueId` tespiti buraya AİT DEĞİL: o,
+    /// asset'ler ARASI bir sorgudur ve `OnValidate`'in tek-asset görüşünden
+    /// yapılamaz (ADR-0014, cross-asset OnValidate yasağı). Onun sahibi
+    /// `ClueRegistry.OnValidate` (bütün listeyi görür) ve build check (c).
+    ///
+    /// **`LogWarning`, `LogError` DEĞİL — bilinçli**: `SerializedObject`'in
+    /// `ApplyModifiedPropertiesWithoutUndo()`'su `OnValidate`'i tetikler ve
+    /// projenin test fixture'ları tam olarak bunu kullanarak KASTEN ihlalli
+    /// tanımlar kurar (`anlati_clue_definition_test.cs`'in vacuous-truth ve
+    /// blank-clueId testleri). Unity Test Framework beklenmeyen bir `LogError`'ı
+    /// test BAŞARISIZLIĞI sayar; `LogError` bugün yeşil olan testleri kırardı.
+    /// Bloklayan kapı zaten build check'idir — burası yalnız erken uyarı.
+    /// </summary>
+    private void OnValidate()
+    {
+        string violation = AnlatiContentValidation.FindEmptyRequiredShiftIdsViolation(this);
+        if (violation != null)
+        {
+            Debug.LogWarning($"[Anlati] {violation}", this);
+        }
+    }
+#endif
 }

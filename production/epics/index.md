@@ -12,7 +12,7 @@
 | [Birinci Şahıs Kontrolcü](birinci-sahis-kontrolcu/EPIC.md) | Foundation | FPC | birinci-sahis-kontrolcu.md | ADR-0003 | **6 stories** | **Complete (2026-08-10)** |
 | [Işık/Volume Durum Sistemi](isik-volume-durum-sistemi/EPIC.md) | Foundation | Işık/Volume | isik-volume-durum-sistemi.md | ADR-0005 (+addendum) | **6 stories** | **Complete (2026-08-09)** |
 | [Gece/Oturum Durumu](gece-oturum-durumu/EPIC.md) | Foundation | Session State | gece-oturum-durumu-2026-08-02.md | ADR-0006 | **4 stories** | **Complete (2026-08-09)** |
-| [Anlatı Durum/İpucu Takibi](anlati-durum-ipucu-takibi/EPIC.md) | Foundation | Clue Tracking | anlati-durum-ipucu-takibi.md | ADR-0007 | **5 stories** | In Progress (3/5) |
+| [Anlatı Durum/İpucu Takibi](anlati-durum-ipucu-takibi/EPIC.md) | Foundation | Clue Tracking | anlati-durum-ipucu-takibi.md | ADR-0007 | **5 stories** | In Progress (4/5) |
 | [Seviye/Sahne Geçişi](seviye-sahne-gecisi/EPIC.md) | Foundation | Scene Transition | seviye-sahne-gecisi.md | ADR-0008 | Not yet created | Ready |
 | [Adaptif Ses Sistemi](adaptif-ses-sistemi/EPIC.md) | Foundation | Audio | adaptif-ses-sistemi.md | ADR-0009 (+addendum) | Not yet created | Ready |
 

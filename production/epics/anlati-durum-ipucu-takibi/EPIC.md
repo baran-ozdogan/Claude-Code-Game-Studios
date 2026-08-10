@@ -39,14 +39,14 @@
 | 001 | Facade çekirdeği — IAnlatiDurumState + AnlatiDurumState + statik facade | Logic | Complete | ADR-0007 (+0001/0015) |
 | 002 | ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı | Logic | Complete | ADR-0007 |
 | 003 | Addressables lazy-load + gerçek Işık/Volume aboneliği | Integration | Complete | ADR-0007 (+0015) |
-| 004 | Build-blocking doğrulama dörtlüsü | Logic | Ready | ADR-0007 (+0014) |
+| 004 | Build-blocking doğrulama dörtlüsü | Logic | Complete | ADR-0007 (+0014) |
 | 005 | Orphaned shiftId uyarısı (build-time aggregate, non-blocking) | Logic | Ready | ADR-0007 (+0014) |
 
 **Bağımlılık grafiği** (düz zincir DEĞİL): 001 → 002 → {003, 004, 005} — son üçü 002'ye bağlı ama BİRBİRİNE bağlı değil, paralel ilerleyebilir.
 
 ## Next Step
 
-Story 001+002+003 Complete (3/5). Kalan: 004 (build-blocking dörtlü), 005 (orphan uyarısı) — ikisi de 002'ye bağlı ama BİRBİRİNE değil, paralel ilerleyebilir. Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda.
+Story 001+002+003+004 Complete (4/5). Kalan: yalnız 005 (orphaned shiftId, build-time aggregate uyarısı). Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda.
 
 ### ADR-0007 addendum borcu (epic kapanışında tek pakette açılacak)
 
@@ -70,5 +70,8 @@ Story 001+002+003 Complete (3/5). Kalan: 004 (build-blocking dörtlü), 005 (orp
 | # | Kalem | Nereye |
 |---|-------|--------|
 | 1 | `IsikVolumeState.RaiseShiftStateChanged` delege-başına try/catch (bir abonenin istisnası multicast'i ve `ShiftZone`'un tick coroutine'ini düşürüyor) | isik-volume EPIC.md → FD-1 |
-| 2 | `ClueRegistry.asset` boş ship ediliyor; üç build kontrolü de boş kayıtta geçiyor — bloklamayan bir "içerik hiç yazılmadı" uyarısı düşünülmeli | Story 004 |
-| 3 | Player-build content-catalog doğrulaması (`anlati-addressables-smoke-evidence.md` §3) | Story 004 |
+| 2 | `ClueRegistry.asset` boş ship ediliyor; dört build kontrolü de içeriğin ŞEKLİ hakkında, VARLIĞI hakkında değil — "içerik hiç yazılmadı" sessizce ship olur. Presence check ayrı bir karar (içerik henüz yazılmadı) | İçerik yazımı başlayınca |
+| 3 | Player-build content-catalog doğrulaması (`anlati-addressables-smoke-evidence.md` §3) | İlk player build |
+| 4 | **CI'da player-build job'ı YOK** (`.github/workflows/tests.yml` yalnız editmode+playmode) → `BuildValidationRunner.OnPreprocessBuild` CI'da HİÇ koşmuyor. Beş epic'in TÜM build-blocking check'leri yalnız yerel/manuel build'de devreye giriyor — bu, projenin tamamını ilgilendiren bir kapsam boşluğu | CI/DevOps iş kalemi |
+| 5 | `m_BuildAddressablesWithPlayerBuild: 0` = makineye özel `EditorPref` (varsayılan true ama versiyon kontrolünde değil). Kapalı bir makinede player build Addressables içerik build'i koşmaz; gate yeşil kalır, runtime latch'ler | CI/DevOps iş kalemi |
+| 6 | `FindObjectsByType` tabanlı TÜM sahne-scan check'leri (5 adet) yalnız açık sahneyi görür — prefab içindeki ya da build settings'te olmayan ihlaller görünmez | Ortak build-validation iş kalemi |

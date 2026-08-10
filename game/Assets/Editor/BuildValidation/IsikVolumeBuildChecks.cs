@@ -4,9 +4,16 @@ using UnityEngine;
 /// Işık/Volume sisteminin dört build-blocking sahne-scan check'i (ADR-0005
 /// Risks bölümünün üçlüsü + AC21 içerik zorunluluğu; TR-isik-016/020/021).
 /// Hepsi BuildValidationRegistry.Checks üzerinden koşar — ikinci bağımsız
-/// IPreprocessBuildWithReport yasak (manifest). AC22'nin ClueDefinition çapraz
-/// kontrolü anlati epic'inde bu eve eklenecek; StingerAudioRadius>0 zorunluluğu
-/// ani-tetikleyici epic'inin check'i (MemoryTriggerDef eşlemesi gerekli).
+/// IPreprocessBuildWithReport yasak (manifest).
+///
+/// AC22'nin ClueDefinition çapraz kontrolü BU DOSYAYA EKLENMEDİ: anlati Story
+/// 004 onu AYRI bir check olarak yazdı — `AnlatiAutomaticZoneNotClueBearingCheck`
+/// (`AnlatiBuildChecks.cs`). Gerekçe aşağıdaki `IsikVolumeAutomaticPresenceCheck`
+/// içinde: o check ilk Automatic bölgede `return` ediyor (varlık iddiası için
+/// doğru), oysa AC22 çaprazının HER Automatic bölgeyi incelemesi gerekiyor.
+///
+/// StingerAudioRadius>0 zorunluluğu hâlâ ani-tetikleyici epic'inin check'i
+/// (MemoryTriggerDef eşlemesi gerekli).
 /// </summary>
 internal static class IsikVolumeBuildCheckUtil
 {
@@ -146,6 +153,10 @@ internal sealed class IsikVolumeAutomaticPresenceCheck : IBuildCheck, IBuildChec
 
     public void BeginWalk() => _automaticSeen = false;
 
+    // DİKKAT: ilk Automatic bölgede `return` eder — VARLIK iddiası için doğru ve
+    // yeterli. Bu yüzden AC22 çaprazı buraya KATLANAMAZ: katlansaydı sahnedeki
+    // ikinci ve sonraki Automatic bölgeler sessizce hiç incelenmezdi. Çapraz,
+    // AnlatiBuildChecks.cs'te ayrı bir check (anlati Story 004, LP paneli bulgusu).
     public void Run(BuildCheckContext context)
     {
         foreach (ShiftZone zone in IsikVolumeBuildCheckUtil.FindZones())

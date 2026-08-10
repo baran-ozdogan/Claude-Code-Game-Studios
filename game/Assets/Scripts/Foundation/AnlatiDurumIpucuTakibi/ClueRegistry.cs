@@ -24,4 +24,23 @@ public sealed class ClueRegistry : ScriptableObject
 
     /// <summary>Boş bir asset'te de BOŞ ve non-null döner — çağıranlar null kontrolü yapmaz.</summary>
     public IReadOnlyList<ClueDefinition> Definitions => _definitions;
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Inspector-time erken geri bildirim (Story 004). Çift `ClueId` kuralının
+    /// DOĞRU sahibi burasıdır: bütün listeyi gören tek yer bu asset. Bu bir
+    /// asset'ler-arası ARAMA değil (ADR-0014'ün yasakladığı şey o) — kendi
+    /// serialize edilmiş alanının içine bakıyor.
+    ///
+    /// `LogWarning` gerekçesi için bkz. `ClueDefinition.OnValidate`.
+    /// </summary>
+    private void OnValidate()
+    {
+        string violation = AnlatiContentValidation.FindContentViolation(_definitions);
+        if (violation != null)
+        {
+            Debug.LogWarning($"[Anlati] {violation}", this);
+        }
+    }
+#endif
 }

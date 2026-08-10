@@ -1242,3 +1242,72 @@ Epic: Anlatı Durum/İpucu Takibi
 Feature: İpucu takibi Foundation
 Task: Story 003 kapandı (3/5) — Story 004 sırada
 <!-- /STATUS -->
+
+## Session Extract — anlati Story 004 YARIM KALDI 2026-08-10
+- Story 003 kapandı, commit+push edildi (93604b4), **CI YEŞİL**.
+- Story 004 (build-blocking dörtlü) implementasyonu BAŞLADI, YARIM. Çalışma ağacı COMMIT EDİLMEDİ (kasten: kod henüz derlenmedi/test edilmedi).
+
+### Tamamlanan
+1. `game/Assets/Editor/BuildValidation/BuildValidation.asmdef` → `"Unity.Addressables.Editor"` eklendi. **Tek başına derlendi, temiz** (BuildValidation.dll yeniden üretildi). Bu ilk iş olarak yapıldı çünkü kırılsaydı projenin TEK build-doğrulama assembly'si mevcut beş check'le birlikte ölürdü.
+2. `game/Assets/Scripts/Foundation/AnlatiDurumIpucuTakibi/AnlatiContentValidation.cs` (YENİ) — `#if UNITY_EDITOR` sarmalı, paylaşılan doğrulama çekirdeği. Metotlar FIRLATMAZ/LOGLAMAZ, ihlal mesajı ya da null DÖNER. `FindEmptyRequiredShiftIdsViolation(ClueDefinition)` + liste hâli (null slot sahibi), `FindDuplicateClueIdViolation` (blank ClueId çift-gruplamadan ÖNCE; 3+ çakışmada ilk ÇİFT), `FindContentViolation` (b ?? c). `StringComparison.Ordinal` — runtime HashSet/Dictionary varsayılan comparer'ıyla aynı.
+3. `ClueDefinition.OnValidate` + `ClueRegistry.OnValidate` eklendi, ikisi de `#if UNITY_EDITOR` ve **`Debug.LogWarning`** (LogError DEĞİL).
+
+### Sırada (yazılmadı)
+4. `game/Assets/Editor/BuildValidation/AnlatiBuildChecks.cs` — iki internal seam (`IAddressableKeyResolver`, `IClueRegistrySource` ile `ClueRegistry Load()` null dönebilir) + `AddressableClueRegistryAccess` (ikisini de implement eden üretim sınıfı) + dört check: `Anlati/ClueRegistryKeyResolves` (AssetScan), `Anlati/RequiredShiftIdsNotEmpty` (AssetScan), `Anlati/UniqueClueIds` (AssetScan), `Anlati/AutomaticZoneNotClueBearing` (SceneScan). Her check: parametresiz ctor → enjekte ctor'a zincirlenir.
+5. `BuildValidationRegistry.cs` — dört kayıt + TODO satırının gerçek kayda dönüşmesi.
+6. `game/Assets/Tests/EditMode/anlati_build_checks_test.cs` (YENİ).
+7. Bayat doküman süpürmesi: `IsikVolumeBuildChecks.cs:7-8`, `BuildValidationRegistry.cs:8-12`, README kayıtlı+planlanan tabloları, `IBuildCheck.cs:6` ve `README.md:13`'ün AssetScan'i "AssetDatabase.FindAssets tabanlı" diye tanımlayan cümlesi.
+
+### Tasarım kararları (10 ajanlı keşif + 3 tasarım + 3 jüri paneli; üç jüri de aynı tasarımda birleşti)
+- **Kayıt konumu ADRES üzerinden**: `entry.address == key` → `entry.AssetPath` → `LoadAssetAtPath`. Sabit yol sabiti YASAK. Doğrulandı: `Default Local Group.asset:18-19` GUID tutuyor, asset taşınınca adres SAĞ KALIR ama sabit yol ölür → check (a) yeşil kalırken (b)(c)(d) sessizce ölürdü (fpc-decoy hata sınıfının aynısı).
+- **Statik test seam'i (`RegistryForTests`) REDDEDİLDİ** — üretim build kodunda global mutable; EditMode testleri Editor domain'ini paylaşır, domain reload olmadan build alan geliştirici uydurma kayda karşı doğrulama yapardı (Story 003 zehirlenme sınıfı). Ctor enjeksiyonu kullanılacak.
+- **`IClueRegistrySource.Load()` null dönebilmeli** — "kayıt yok" ile "kayıt boş" AYRILMALI, yoksa üretim seam'i kalıcı olarak test edilemez (gerçek kayıt bugün BOŞ).
+- **Pozitif tripwire ŞART**: `Assert.IsNotNull(AddressableClueRegistryAccess.Default.Load())` + `Assert.IsTrue(...KeyResolves("ClueRegistry"))`. Yalnız `Assert.DoesNotThrow`'a dayanan tripwire tam da koruduğu fail-open durumda GEÇER.
+- **Check (d) düz SceneScan `IBuildCheck`, aggregate DEĞİL** (∃-birleşim ⟺ ∃-sahne-başına; AC21 ayrışmıyor, AC22 ayrışıyor). `IsikVolumeAutomaticPresenceCheck`'e KATLANMAMALI: o check ilk Automatic bölgede `return` ediyor (IsikVolumeBuildChecks.cs:153-157), katlamak ikinci bölgeyi sessizce kaçırırdı. TÜM Automatic bölgeler gezilecek, `First()/Single()` YASAK (`TriggerMode.Automatic == 0`, yani varsayılan).
+- **`BuildValidationRegistry.Checks` dizi literali KALIYOR** (CreateChecks fabrikası değil) — parametresiz ctor enjekte ctor'a zincirlenir.
+- **Test fixture'ı `definition.name`'i AÇIKÇA set etmeli**, assetName clueId'den AYRI. Mevcut `anlati_clue_definition_test.cs:42-60` helper'ı `.name` atamıyor; kopyalamak AC-1/AC-2'yi boş string'e assert ettirir (sahte yeşil).
+- **AC-3** resolver'a sorulan anahtarı HEM const HEM literal "ClueRegistry" ile assert etmeli. **AC-5** `CollectionAssert.AreEquivalent` + ad→faz sözlüğü (anlati seti KARIŞIK fazlı: 3 AssetScan + 1 SceneScan, isik'in blanket prefix deseni kopyalanamaz).
+- Çoğulluk regresyon testi check'ten DOĞRUDAN koşacak, `RunAll` üzerinden DEĞİL (origin'deki iki varsayılan BoxCollider kesişir, önce `IsikVolumeBoxOverlapCheck` patlar).
+- Bilinçli kapsam genişletmeleri: `Definitions` içinde null slot → FAIL; blank/whitespace `ClueId` → FAIL.
+- **BELGELENECEK kör nokta**: `FindZones()` yalnız AÇIK sahneyi görür — yalnız bir prefab içinde ya da EditorBuildSettings'te olmayan/disabled sahnedeki ipucu-taşıyan Automatic ShiftZone (d)'ye sonsuza dek görünmez.
+- **Story metni İKİ yerde BAYAT**: (1) satır 15/42 "TR-anlati-009 mint edilir" — zaten `tr-registry.yaml:102`'de var (created 2026-08-10), yeniden mint kalıcı-ID sözleşmesini ihlal eder; (2) satır 41 `ShiftZone._isPersistent` — BÖYLE BİR ALAN YOK, check (d) yalnız `_triggerMode` kullanır.
+- Story 005 sınır notu: `["A", "   "]` gibi İÇİNDE boş girdi olan liste check (b)'yi GEÇER (Count != 0) ama ipucu asla tamamlanamaz — "ulaşılamaz clue" sınıfı, Story 005'in non-blocking uyarısına ait.
+
+<!-- STATUS -->
+Epic: Anlatı Durum/İpucu Takibi
+Feature: Build-blocking doğrulama
+Task: Story 004 yarım — seam'ler + 4 check + testler yazılacak
+<!-- /STATUS -->
+
+## Session Extract — anlati Story 004 KAPANDI 2026-08-10
+- Verdict: COMPLETE — Story 004 (build-blocking doğrulama dörtlüsü, Logic) kapandı. Epic 4/5. COMMIT EDİLMEDİ.
+- Tests: **EditMode 222/222, PlayMode 84/84** (32 yeni EditMode testi)
+- Files: Editor/BuildValidation/{AnlatiBuildChecks.cs YENİ, BuildValidationRegistry.cs, IsikVolumeBuildChecks.cs, IBuildCheck.cs, README.md, BuildValidation.asmdef}; Foundation/AnlatiDurumIpucuTakibi/{AnlatiContentValidation.cs YENİ, ClueDefinition.cs, ClueRegistry.cs}; Tests/EditMode/anlati_build_checks_test.cs YENİ
+- Dört check: Anlati/ClueRegistryKeyResolves + RequiredShiftIdsNotEmpty + UniqueClueIds (AssetScan) + AutomaticZoneNotClueBearing (SceneScan, AC22/TR-isik-021 devri)
+- TR-anlati-009 YENİDEN MİNT EDİLMEDİ (zaten tr-registry.yaml:102'de); ShiftZone._isPersistent diye bir alan YOK — story metninde iki bayat talimat, ikisi de doğrulanıp atlandı
+
+### Gate + adversarial zinciri (bu story 3 turda düzeldi)
+1. LP+QL ortak: check (a) yalnız KeyResolves soruyordu → adres çözülüp yanlış tipte asset'e işaret ederse (a) geçer, (b)(c)(d) sessizleşir, BUILD GEÇER. (a) iki adımlı yapıldı.
+2. Adversarial (5 ajan, Addressables 4.0.1 kaynağı okundu) BENİM DÜZELTMEMİ KIRDI:
+   - IncludeInBuild 4.0.0'da GRUBA taşınmış; schema property saf forwarder (Group==null||Group.IncludeInBuild) → sıfır bilgi + Group null'sa fail-open. Artık group.IncludeInBuild okunuyor.
+   - ASIL KAPI schema.IsEnabled'dı, hiç okunmuyordu. Inspector'da tek tık → check yeşil, katalogda anahtar yok, runtime latch. BLOCKING.
+   - IncludeAddressInCatalog aynı sınıf, o da eklendi.
+   - HasSchema<BundledAssetGroupSchema>() ön koşulu Content Directory gruplarında YANLIŞ-POZİTİF üretiyordu.
+   - Fix'lerin ayırt edici testi SIFIRDI (tek grup+tek entry olduğu için mutasyonlar yeşil kalıyordu) → seçim kuralı saf AddressableKeySelection.TrySelectUnique'e çıkarıldı, 8 test.
+   - ClueRegistryOnValidate testi YANLIŞ log'la tatmin oluyordu: LogAssert.Expect kesim noktası koymuyor, scope'un başından tarıyor → ClueDefinition.OnValidate'in uyarısı yetiyordu. Fixture çift-clueId'ye çevrildi.
+
+### AÇIK İŞ KALEMLERİ (EPIC.md "Dışarı çıkan iş kalemleri" tablosunda)
+- **CI'da player-build job'ı YOK** → BEŞ epic'in TÜM build-blocking check'leri CI'da hiç koşmuyor. Proje geneli kapsam boşluğu.
+- m_BuildAddressablesWithPlayerBuild makineye özel EditorPref
+- Boş ClueRegistry presence check'i (içerik yazımı başlayınca)
+- FindObjectsByType kör noktası (5 sahne-scan check'i ortak)
+- ADR-0007 addendum borcu HÂLÂ 2 maddeli (abonelik yeri UYGULANDI + Story 005 mekanizma sapması) — epic kapanışında tek pakette
+- isik-volume FD-1 (RaiseShiftStateChanged delege-başına try/catch)
+
+- NEXT: anlati Story 005 (orphaned shiftId, build-time aggregate uyarısı) — epic'in son story'si
+
+<!-- STATUS -->
+Epic: Anlatı Durum/İpucu Takibi
+Feature: İpucu takibi Foundation
+Task: Story 004 kapandı (4/5) — Story 005 son
+<!-- /STATUS -->

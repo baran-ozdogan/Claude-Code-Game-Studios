@@ -10,8 +10,12 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 3. İhlalde `context.Fail("mesaj — offending asset/sahne yolu dahil")` çağır
    (`BuildFailedException` fırlatır, build durur — asla runtime clamp).
 4. `Phase`:
-   - `AssetScan` — `AssetDatabase.FindAssets` tabanlı, ucuz, her zaman önce koşar.
-     Dikkat: `FindAssets` dosya-başına GUID döndürür — sub-asset yasağı konvansiyonu.
+   - `AssetScan` — sahne AÇMAYAN, ucuz, her zaman önce koşar. Bu bir **maliyet
+     sınıfı**, API reçetesi değil: `AssetDatabase.FindAssets` kullanmak ZORUNLU
+     değildir. Merkezi bir kaydın içine bakmak (anlati'nın `ClueRegistry.Definitions`
+     üçlüsü) da AssetScan'dir — ve ADR kapsamı bunu böyle kilitlemişse
+     `FindAssets`'e sürüklenmek İHLALDİR.
+     `FindAssets` kullanılıyorsa: dosya-başına GUID döndürür — sub-asset yasağı konvansiyonu.
    - `SceneScan` — pahalı; yalnız sahne-bağımlı check'ler için. Runner
      `EditorBuildSettings.scenes`'i tek tek açar; sahne-scan check'i kayıtlı
      değilse hiçbir sahne açılmaz.
@@ -29,12 +33,25 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 |---|---|---|
 | Işık/Volume (Story 006, 2026-08-09) | `IsikVolume/LightModeMixed`, `IsikVolume/NoSharedLights`, `IsikVolume/NoBoxOverlap`, `IsikVolume/AutomaticZonePresence` (aggregate) | ADR-0005 / TR-isik-016/020/021 |
 | Birinci Şahıs Kontrolcü (Story 006, 2026-08-10) | `Fpc/DecoyPresence` — her MVP seviye sahnesinde (`Depot`/`Ballroom`) en az bir `DecoyInteractable`, hepsi dolu `PromptText` ile | ADR-0003 / TR-fpc-016 (GDD AC17) |
+| Anlatı Durum/İpucu Takibi (Story 004, 2026-08-10) | `Anlati/ClueRegistryKeyResolves`, `Anlati/RequiredShiftIdsNotEmpty`, `Anlati/UniqueClueIds` (üçü AssetScan, `ClueRegistry.Definitions` üzerinde — `FindAssets` DEĞİL), `Anlati/AutomaticZoneNotClueBearing` (SceneScan, AC22 çaprazı) | ADR-0007 / TR-anlati-008/009, TR-isik-021 |
+
+> **Anlatı notu**: orphaned `requiredShiftId` uyarısı bu tabloda YOKTUR ve bir
+> `IBuildCheck` DEĞİLDİR — build'i bloklamayan bir uyarıdır (Story 005, ADR-0007).
+>
+> **Kayıt konumu**: anlati'nın üç içerik check'i `ClueRegistry`'yi Addressable
+> ADRESİ üzerinden bulur (`entry.address` → `entry.AssetPath` → `LoadAssetAtPath`),
+> sabit yol sabitiyle değil. Entry GUID'e bağlı olduğu için asset taşınırsa adres
+> sağ kalır ama sabit yol ölürdü: anahtar check'i yeşil kalırken diğer üçü
+> sessizce fail-open olurdu.
+>
+> **Bilinen kör nokta (tüm SceneScan check'leri için ortak)**: `FindObjectsByType`
+> yalnız açık sahneyi görür — yalnız bir prefab içinde ya da
+> `EditorBuildSettings.scenes`'te olmayan/disabled bir sahnedeki ihlal görünmez.
 
 ## Planlanan check sahipleri (kendi epic'lerinde eklenecek)
 
 | Sistem (epic) | Check'ler | ADR / TR |
 |---|---|---|
-| Anlatı Durum/İpucu Takibi | ClueDefinition içerik doğrulama, orphaned `requiredShiftId`, Addressable `"ClueRegistry"` key çözümü; +AC22 `requiredShiftIds` çaprazı (isik Story 006 notu) | ADR-0007 / TR-anlati-008 |
 | Görev/Taşıma Döngüsü | `TaskListDef` vs sahne per-round item-count cross-check | ADR-0013 / TR-gorev-018 |
 | Anı-Tetikleyici Etkileşim | 6'lı set: def/scene eşleme, reachability (yerleşmemiş def → error), count formülü | ADR-0014 / TR-ani-tetik-007/010 |
 | Diyalog/Anlatı İçeriği | `ValidateMaxCallbacksPerScene` | ADR-0012 / TR-diyalog-005 |
