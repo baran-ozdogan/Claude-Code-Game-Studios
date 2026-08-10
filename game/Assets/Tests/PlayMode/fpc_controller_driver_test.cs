@@ -18,7 +18,12 @@ using UnityEditor;
 public class FpcControllerDriverTest
 {
     private const int InterestLayer = 8;
-    private const int DisinterestedLayer = 9;
+
+    // GDD guardrail'inin GERÇEK senaryosu: "varsayılan statik-geometri katmanı".
+    // Rastgele bir kullanıcı katmanı yerine Default(0) kullanılır — hem üretimdeki
+    // asıl vakayı sınar, hem zemin de bu katmanda olduğu için her karede gerçek
+    // çarpışma üretir (AC-9'un "tekrarlanan per-frame hit" kenar durumu).
+    private const int DisinterestedLayer = 0;
     private const float Dt = 1f / 60f;
 
     private GameObject _player;
@@ -46,7 +51,13 @@ public class FpcControllerDriverTest
         _state = _player.GetComponent<PlayerStateProvider>();
         _fpc = _player.GetComponent<FirstPersonController>();
 
-        yield return null; // Awake/OnEnable otursun (fizik/collider kaydı bir kare alır).
+        // ZORUNLU: `Physics.autoSyncTransforms` bu projede FALSE. Kod içinden kurulan
+        // test geometrisinin Transform'u PhysX'e KENDİLİĞİNDEN yansımaz — senkronlanmazsa
+        // collider'lar varsayılan yerinde (orijin, 1x1x1) kalır ve testler tamamen yanlış
+        // bir dünyada koşar (ampirik: duvar orijinde duruyordu, oyuncu içine doğuyordu ve
+        // "çarpışma oldu" sayacı bu yüzden yanlışlıkla artıyordu).
+        Physics.SyncTransforms();
+        yield return null; // Awake/OnEnable otursun.
 
         // Oyuncu zemine otursun (kendi Update()'i sürerken).
         for (int frame = 0; frame < 30 && !_characterController.isGrounded; frame++)
@@ -428,7 +439,10 @@ public class FpcControllerDriverTest
         // duvar yanlış yerleştiği için de yeşil kalırdı (QL-TEST-COVERAGE bulgusu):
         // sayaç guard sayesinde değil, hiç çarpışma olmadığı için 0 olurdu.
         float traveled = Horizontal(_player.transform.position - startPosition).magnitude;
-        Assert.Less(traveled, 1.0f, "Oyuncu duvara çarpıp durmalı — çarpışma gerçekten oldu.");
+        Assert.Less(traveled, 1.0f,
+            $"Oyuncu duvara çarpıp durmalı — çarpışma gerçekten oldu. " +
+            $"DIAG: oyuncu {startPosition}→{_player.transform.position}, duvar {_wall.transform.position} " +
+            $"(katman {_wall.layer}, ölçek {_wall.transform.localScale}), collider={_wall.GetComponent<Collider>() != null}");
     }
 
     private void SpawnWallInFrontOfPlayer(int layer)
@@ -438,6 +452,7 @@ public class FpcControllerDriverTest
         _wall.layer = layer;
         _wall.transform.position = _player.transform.position + _player.transform.forward * 0.7f + Vector3.up * 0.9f;
         _wall.transform.localScale = new Vector3(4f, 3f, 0.2f);
+        Physics.SyncTransforms(); // bkz. SetUp'taki autoSyncTransforms notu.
     }
 
     // ── AC-10: Sarmalanmış Move()-yalnız yüzeyi ──

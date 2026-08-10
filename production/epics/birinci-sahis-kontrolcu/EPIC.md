@@ -40,10 +40,10 @@ Persistent Player sahnesinde yaşayan oyuncu: `CharacterController`-tabanlı kin
 | 001 | IPlayerState + PlayerStateProvider (referans-sayımlı hareket kilidi) | Logic | Complete | ADR-0003 |
 | 002 | Hareket matematiği — ivmelenme, taper, head-bob (saf) | Logic | Complete | ADR-0003 (secondary) |
 | 003 | FirstPersonController sürücüsü — CharacterController + kamera + Input System | Integration | Complete | ADR-0003 |
-| 004 | Persistent Player sahnesi + SOFT transition repozisyonu | Integration | Ready | ADR-0003 |
+| 004 | Persistent Player sahnesi + SOFT transition repozisyonu | Integration | Complete | ADR-0003 |
 | 005 | Taper wiring + IsCarrying aynası + faz akümülatörü entegrasyonu | Integration | Ready | ADR-0003/0004 |
 | 006 | Decoy içerik build-time doğrulaması | Logic | Ready | ADR-0003 (secondary) |
 
 ## Next Step
 
-Story 001+002+003 Complete (3/6). Run `/dev-story production/epics/birinci-sahis-kontrolcu/story-004-kalici-sahne-soft-transition.md` next (Story 003'ün ürettiği `Assets/Prefabs/Player.prefab`'ı Player.unity'ye yerleştirir + `RepositionTo` API'sini kilitler).
+Story 001-004 Complete (4/6). Kalan: 005 (taper/carry/faz wiring — InteractableRegistry okuması) ve 006 (decoy içerik build doğrulaması). İkisi de bağımsız; önerilen sıra 005 → 006.

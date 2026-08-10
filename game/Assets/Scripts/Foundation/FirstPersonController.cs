@@ -209,6 +209,101 @@ public sealed class FirstPersonController : MonoBehaviour
         InterestedHitCount++;
     }
 
+    /// <summary>
+    /// SANCTIONED repozisyon primitifi (Story 004, TR-fpc-010) — "ham `CharacterController`
+    /// dışa açılmaz" kısıtının TEK istisnası. SOFT transition'da oyuncuyu hedef sahnenin
+    /// `SoftTransitionAnchor`'ına taşır: YALNIZ translation + rotation kopyalanır, GameObject
+    /// ASLA yok edilip yeniden yaratılmaz (`PlayerStateProvider.Current` aynı kalır).
+    ///
+    /// Örtük reset YOK — `Velocity`, `IsGrounded`, `IsCarrying`, koşan hız ve kamera pitch'i
+    /// dokunulmadan kalır ("Bedenin Sürekliliği": görünür pop/süreksizlik olmamalı, ADR-0003
+    /// Context). `seviye-sahne-gecisi` epic'i bunu ÇAĞIRACAK, kendi `transform.position=`
+    /// yazımını icat ETMEYECEK (ADR-0002'nin "3 ADR aynı soruyu ayrı ayrı icat etmesin"
+    /// disiplini) — bu story yalnız primitifi kilitler, entegrasyonu yapmaz.
+    /// </summary>
+    /// <param name="anchor">Hedef anchor; null ise çağrı no-op'tur.</param>
+    public void RepositionTo(Transform anchor)
+    {
+        if (anchor == null)
+        {
+            Debug.LogError("RepositionTo(null) — repozisyon atlandı.", this);
+            return;
+        }
+
+        ApplyPose(anchor.position, anchor.rotation);
+    }
+
+    /// <summary>
+    /// SOFT transition'ın GERÇEK sözleşmesi — GÖRELİ (kabin-yerel) süreklilik. Oyuncunun
+    /// `sourceAnchor`'a göre yerel pozisyon/rotasyonu ölçülür ve `targetAnchor` altında
+    /// birebir yeniden uygulanır. Yukarıdaki tek-anchor formu MUTLAK bir snap'tir ve SOFT
+    /// için YANLIŞTIR: oyuncunun kabin içindeki serbest konumu/bakışı (ride sırasında kilit
+    /// `MoveOnly`, yani Look serbest — ADR-0011) silinir ve GDD'nin açıkça yasakladığı
+    /// "pozisyon sıçraması/dönüş atlaması" oluşur.
+    ///
+    /// Kaynaklar: `seviye-sahne-gecisi.md` koordinat-çerçevesi hizalama kuralı ("kopyalanan,
+    /// dünya-uzayı pozisyonu değil, kabin-yerel pozisyon/rotasyondur"); ADR-0008'in
+    /// `CopySoftTransitionAnchorTransform(fromScene, toScene)` imzası (İKİ sahne alır);
+    /// ADR-0015: "SOFT's anchor-copy semantics are relative continuity FROM a source scene."
+    ///
+    /// Tek-anchor formu terk edilmiş değildir — ADR-0015'in boot spawn'ı (`InitialSpawnAnchor`,
+    /// kaynak sahne YOK) tam olarak onu ister. İki form iki farklı gerçek çağıranı karşılar.
+    /// </summary>
+    public void RepositionTo(Transform sourceAnchor, Transform targetAnchor)
+    {
+        if (sourceAnchor == null || targetAnchor == null)
+        {
+            Debug.LogError("RepositionTo(source, target) — anchor null, repozisyon atlandı.", this);
+            return;
+        }
+
+        // Oyuncunun kaynak anchor'a göre YEREL pozu.
+        Vector3 localPosition = sourceAnchor.InverseTransformPoint(transform.position);
+        Quaternion localRotation = Quaternion.Inverse(sourceAnchor.rotation) * transform.rotation;
+
+        ApplyPose(targetAnchor.TransformPoint(localPosition), targetAnchor.rotation * localRotation);
+    }
+
+    /// <summary>
+    /// İki repozisyon formunun ortak gövdesi. Gövde rotasyonu YAW'a düzleştirilir:
+    /// `FirstPersonController` gövdeyi yapısal olarak yalnız yaw'da döndürür (pitch kamerada,
+    /// `ApplyLook`), bu yüzden eğik bir anchor kalıcı ve KURTARILAMAZ bir gövde eğimi üretirdi
+    /// — `transform.Rotate(Vector3.up, ...)` Space.Self olduğundan eğim asla düzelmez ve
+    /// `transform.forward`/`right` dikey bileşen kazanıp hareket yönünü bozar. Guard KODDA
+    /// zorunludur, tasarımcı disiplinine bırakılmaz (projenin `IsikVolumeFormulas` emsali).
+    /// </summary>
+    private void ApplyPose(Vector3 position, Quaternion rotation)
+    {
+        Quaternion yawOnlyRotation = Quaternion.Euler(0f, rotation.eulerAngles.y, 0f);
+
+        // Gövdenin dünya-uzayı dönüş farkı: korunan hareket yönü bununla birlikte döner
+        // (aşağıya bak). Yazımdan ÖNCE hesaplanmalı.
+        Quaternion rotationDelta = yawOnlyRotation * Quaternion.Inverse(transform.rotation);
+
+        // CharacterController etkinken doğrudan Transform yazımıyla YARIŞIR (kendi sweep
+        // durumunu korur ve bir sonraki Move'da geri çekebilir) — yazım süresince kapatılır.
+        // Bu aynı zamanda `Physics.autoSyncTransforms=false` altında da doğrudur: yeniden
+        // etkinleştirme PhysX controller'ını Transform'DAN yeniden kurar.
+        bool controllerWasEnabled = _characterController.enabled;
+        _characterController.enabled = false;
+        transform.SetPositionAndRotation(position, yawOnlyRotation);
+        _characterController.enabled = controllerWasEnabled;
+
+        // Korunan yön DÜNYA uzayındadır; gövde döndüyse onunla birlikte döner. Aksi hâlde
+        // hız henüz sönmemişken oyuncu eski dünya yönüne doğru kayardı — tam olarak
+        // önlenmesi istenen görünür süreksizlik. Bu bir reset DEĞİL, sürekliliğin korunması.
+        // (`_state.Velocity` neden döndürülmüyor: o her karede gerçekleşen yer değiştirmeden
+        // YENİDEN YAZILIYOR, yani bayat kalamaz; `_lastMoveDirection` ise girdi sıfırken
+        // `_rampTime` boyunca GERÇEKTEN saklanır — asimetri kasıtlı.)
+        _lastMoveDirection = rotationDelta * _lastMoveDirection;
+    }
+
+    /// <summary>Test-gözlemlenebilirlik: hareket girdisi canlı mı (Story 003'ün paylaşılan-asset bug'ının regresyon kancası).</summary>
+    internal bool InputActive => _moveAction != null && _moveAction.enabled;
+
+    /// <summary>Test-gözlemlenebilirlik: korunan dünya-uzayı hareket yönü (repozisyonda döner).</summary>
+    internal Vector3 LastMoveDirection => _lastMoveDirection;
+
     /// <summary>Pitch kelepçesi — saf, `Camera`/Input gerekmeden test edilebilir (thin-driver split).</summary>
     internal static float ClampPitch(float currentPitch, float pitchDelta, float clampDegrees) =>
         Mathf.Clamp(currentPitch + pitchDelta, -clampDegrees, clampDegrees);
