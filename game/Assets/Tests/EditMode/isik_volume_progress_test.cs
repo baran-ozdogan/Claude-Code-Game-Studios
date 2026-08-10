@@ -32,6 +32,25 @@ public class IsikVolumeProgressTest
         Assert.Greater(IsikVolumeFormulas.SmoothStep(0.99f), 0.99f); // simetrik yumuşak bitiş
     }
 
+    // ── Regresyon: uç-nokta float yuvarlaması (isik-volume flaky PlayMode kök nedeni) ──
+
+    [Test]
+    public void SmoothStep_WithinFloatEpsilonOfOne_RoundsToExactlyOne_WhileXStillBelowOne()
+    {
+        // Debug bulgusu: SmoothStep'in x=1'de türevi 0 (ease-out) — x, 1'e ~1.4e-4'ten
+        // daha yakınsa (ama HÂLÂ < 1), 3x²−2x³ float32'de zaten TAM 1.0'a yuvarlanır.
+        // ShiftZone.MonitorAndTick terminal kontrolünü bu yüzden ham X yerine
+        // ShiftProgress'e bağlar (bkz. ShiftZone.cs yorumu): aksi halde dışarıdan
+        // gözlenen weight==1 ile gerçek Held/Dormant geçişi arasında bir kare
+        // açılabiliyordu — isik-volume PlayMode flake'lerinin kök nedeni buydu
+        // (üç ayrı testte üç farklı semptom: eksik Held event'i, 4 yerine 3 event,
+        // 1 yerine 2 event — hepsi bu tek mekanizmadan).
+        const float x = 1f - 5e-5f;
+        Assert.Less(x, 1f, "Test öncülü: x kesinlikle 1'in altında olmalı.");
+        Assert.AreEqual(1f, IsikVolumeFormulas.SmoothStep(x),
+            "Bu x değeri için SmoothStep float32'de tam 1.0'a yuvarlanmalı (flat-zone kanıtı).");
+    }
+
     // ── AC-1: makine — başlangıç durumu, x birikimi, clamp, taze progress ──
 
     [Test]
@@ -80,6 +99,24 @@ public class IsikVolumeProgressTest
         // Assert
         Assert.AreEqual(0f, machine.X);
         Assert.AreEqual(0f, machine.ShiftProgress);
+    }
+
+    [Test]
+    public void Machine_TickLandsXJustBelowOne_ShiftProgressAlreadyReadsExactlyOne()
+    {
+        // ShiftZone'un artık dayandığı sözleşmeyi makine seviyesinde doğrular:
+        // Tick sonrası X < 1 olsa bile ShiftProgress (ApplyProgress'in uyguladığı,
+        // dışarıdan gözlenen weight) float yuvarlamasıyla 1'e ulaşabilir —
+        // ShiftZone'un terminal kontrolü bu yüzden X değil ShiftProgress okur.
+        var machine = new ShiftProgressMachine();
+        machine.BeginShiftIn();
+
+        const float duration = 1f; // Duration=1 ile dt'yi doğrudan hedef X'e eşitler.
+        machine.Tick(duration - 5e-5f, duration);
+
+        Assert.Less(machine.X, 1f, "X hâlâ tam 1 olmamalı (bilinçli ara değer).");
+        Assert.AreEqual(1f, machine.ShiftProgress,
+            "ShiftProgress, X<1 iken bile yuvarlamayla 1'e ulaşabilir (regresyon kanıtı).");
     }
 
     // ── AC-2: yön-flip interrupt — x asla sıfırlanmaz, süreklilik pop'suz ──

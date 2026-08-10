@@ -242,13 +242,21 @@ public sealed class ShiftZone : MonoBehaviour, IShiftZoneHandle
                 case ShiftState.ShiftingIn:
                 case ShiftState.ShiftingOut:
                     _machine.Tick(Time.deltaTime, _activeConfig.Duration);
-                    ApplyProgress(_machine.ShiftProgress);
+                    // Terminal kontrolü ham X yerine ShiftProgress'e bağlı: SmoothStep'in
+                    // uç noktalarda türevi 0 olduğundan (ease-out), X hâlâ < 1 iken
+                    // SmoothStep(X) float32'de zaten tam 1.0'a yuvarlanabilir (~1.4e-4
+                    // genişlikte bant). ApplyProgress'in uyguladığı DEĞERLE aynı kontrolü
+                    // kullanmak, dışarıdan gözlenen terminal weight ile Held/Dormant
+                    // geçişinin AYNI karede gerçekleşmesini garanti eder (bkz. debug notu
+                    // altında — flaky PlayMode testlerinin kök nedeniydi).
+                    float progress = _machine.ShiftProgress;
+                    ApplyProgress(progress);
 
-                    if (_state == ShiftState.ShiftingIn && _machine.X >= 1f)
+                    if (_state == ShiftState.ShiftingIn && progress >= 1f)
                     {
                         TransitionTo(ShiftState.Held);
                     }
-                    else if (_state == ShiftState.ShiftingOut && _machine.X <= 0f)
+                    else if (_state == ShiftState.ShiftingOut && progress <= 0f)
                     {
                         if (_triggerMode == TriggerMode.ManualOnly)
                         {
