@@ -54,11 +54,11 @@ public sealed class FirstPersonController : MonoBehaviour
     [Range(0.01f, 0.03f)]
     [SerializeField] private float _maxBobAmplitude = 0.025f;
 
-    // S (0-100) — erişilebilirlik motion yoğunluk kaydırıcısı.
-    // ÇELİŞKİ (çözülmedi, kullanıcıya bildirildi): `accessibility-requirements.md` §5
-    // "varsayılan %100" diyor, GDD Core Rules "~%40". İkisi de onaylı belge. Kod GDD'yi
-    // izliyor (daha muhafazakâr — motion-sickness riski düşük). Gerçek Ayarlar yüzeyi
-    // henüz YOK (§7 "bilinen boşluk") — değer o epic'te bağlanınca çelişki çözülmeli.
+    // S (0-100) — erişilebilirlik motion yoğunluk kaydırıcısı, varsayılan ~%40.
+    // (Kaynak çelişkisi Story 005'te gate'lerde yakalandı ve KULLANICI KARARIYLA çözüldü,
+    // 2026-08-10: `accessibility-requirements.md` §5 "%100" diyordu, GDD Core Rules "~%40";
+    // GDD kazandı ve §5 düzeltildi. Gerçek Ayarlar yüzeyi henüz YOK — §7 "bilinen boşluk";
+    // o epic geldiğinde bu alan oraya bağlanacak.)
     [Range(0f, 100f)]
     [SerializeField] private float _motionIntensityPercent = 40f;
 

@@ -15,7 +15,8 @@
 ///                                          reachability (yerleşmemiş def), count formülü (TR-ani-tetik-007/010)
 ///   TODO(epic:diyalog-anlati-icerigi):     ADR-0012 — ValidateMaxCallbacksPerScene (TR-diyalog-005)
 ///   TODO(epic:sahne-kesmeli-anlati):       ADR-0015 — NightConfigDef tutarlılık check'leri
-///   TODO(epic:birinci-sahis-kontrolcu):    TR-fpc-016 decoy check'i
+///   birinci-sahis-kontrolcu (EKLENDİ, Story 006): TR-fpc-016 — her MVP alanı sahnesinde
+///                                          en az bir DecoyInteractable (GDD AC17 kamuflaj gereksinimi)
 /// </summary>
 internal static class BuildValidationRegistry
 {
@@ -26,5 +27,8 @@ internal static class BuildValidationRegistry
         new IsikVolumeSharedLightCheck(),
         new IsikVolumeBoxOverlapCheck(),
         new IsikVolumeAutomaticPresenceCheck(),
+
+        // birinci-sahis-kontrolcu Story 006 — TR-fpc-016 decoy içerik gereksinimi:
+        new FpcDecoyPresenceCheck(),
     };
 }

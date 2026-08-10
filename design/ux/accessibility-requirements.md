@@ -61,7 +61,7 @@ Mevcut tasarım zaten uyumlu — bağlayıcı olarak kaydedilir:
 
 ## 5. Motion (A6 — kullanıcı kararı: yoğunluk kaydırıcısı)
 
-- **Head-bob/kamera sway/carry-sway görsel genliği 0-100% kaydırıcı** ile ölçeklenir; varsayılan %100
+- **Head-bob/kamera sway/carry-sway görsel genliği 0-100% kaydırıcı** ile ölçeklenir; varsayılan **~%40** *(düzeltme, 2026-08-10, kullanıcı kararı — bu satır önceden "%100" diyordu ve `birinci-sahis-kontrolcu.md` Core Rules'un "varsayılan ~%40"ıyla çelişiyordu; çelişki Story 005'in wiring'i sırasında LP/QL gate'lerinde yakalandı. GDD kazandı: %40 motion-sickness açısından daha muhafazakâr bir varsayılan ve zaten Formül 3'ün GDD örneğinin dayandığı değer. Kod: `FirstPersonController._motionIntensityPercent`)*
 - **Faz akümülatörü her zaman tam çalışır** — ayak sesleri, jostle zamanlaması ve tüm faz-türevi sistemler (TR-fpc-014, TR-gorev-016) etkilenmez; yalnızca görsel genlik çarpanı uygulanır. Tasarımın bedensellik hissi ile motion-sickness erişilebilirliği bu ayrımla aynı anda korunur.
 - HARD CUT zaten kesme (fade/kamera savrulması yok) — motion açısından güvenli; SOFT geçişler kabin içi, düşük hareketli
 - FOV kaydırıcısı: MVP'de yok; VS aday listesine (yaygın konfor talebi)

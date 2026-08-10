@@ -28,6 +28,7 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 | Sistem | Check'ler | ADR / TR |
 |---|---|---|
 | Işık/Volume (Story 006, 2026-08-09) | `IsikVolume/LightModeMixed`, `IsikVolume/NoSharedLights`, `IsikVolume/NoBoxOverlap`, `IsikVolume/AutomaticZonePresence` (aggregate) | ADR-0005 / TR-isik-016/020/021 |
+| Birinci Şahıs Kontrolcü (Story 006, 2026-08-10) | `Fpc/DecoyPresence` — her MVP seviye sahnesinde (`Depot`/`Ballroom`) en az bir `DecoyInteractable`, hepsi dolu `PromptText` ile | ADR-0003 / TR-fpc-016 (GDD AC17) |
 
 ## Planlanan check sahipleri (kendi epic'lerinde eklenecek)
 
@@ -38,4 +39,3 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 | Anı-Tetikleyici Etkileşim | 6'lı set: def/scene eşleme, reachability (yerleşmemiş def → error), count formülü | ADR-0014 / TR-ani-tetik-007/010 |
 | Diyalog/Anlatı İçeriği | `ValidateMaxCallbacksPerScene` | ADR-0012 / TR-diyalog-005 |
 | Sahne Kesmeli Anlatı | `NightConfigDef` tutarlılık | ADR-0015 |
-| Birinci Şahıs Kontrolcü | Decoy check | TR-fpc-016 |
