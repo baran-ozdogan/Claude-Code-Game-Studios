@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Hareket/kamera/input sürücüsü (ADR-0003 primary; GDD Core Rules). `PlayerStateProvider`'dan
@@ -32,6 +34,12 @@ public sealed class FirstPersonController : MonoBehaviour
     /// <summary>Gamepad çubuğu ORAN girdisidir (mouse delta değil) — derece/saniye olarak ölçeklenir.</summary>
     public const float GamepadLookDegreesPerSecond = 180f;
 
+    /// <summary>
+    /// Bir adımlık mesafe (m) — faz akümülatörünün ayak sesi/bob dönemselliğini
+    /// mesafeye bağlar (SAAT ZAMANINA değil). Tuning Knob adayı.
+    /// </summary>
+    public const float StrideLength = 0.75f;
+
     private const float GroundedStickVelocity = -2f;
 
     [SerializeField] private CharacterController _characterController;
@@ -42,6 +50,18 @@ public sealed class FirstPersonController : MonoBehaviour
     [SerializeField] private float _rampTime = 0.2f;
     [SerializeField] private float _mouseSensitivity = 0.12f;
 
+    /// <summary>A_max (m) — GDD Tuning Knob, 1-3cm.</summary>
+    [Range(0.01f, 0.03f)]
+    [SerializeField] private float _maxBobAmplitude = 0.025f;
+
+    // S (0-100) — erişilebilirlik motion yoğunluk kaydırıcısı.
+    // ÇELİŞKİ (çözülmedi, kullanıcıya bildirildi): `accessibility-requirements.md` §5
+    // "varsayılan %100" diyor, GDD Core Rules "~%40". İkisi de onaylı belge. Kod GDD'yi
+    // izliyor (daha muhafazakâr — motion-sickness riski düşük). Gerçek Ayarlar yüzeyi
+    // henüz YOK (§7 "bilinen boşluk") — değer o epic'te bağlanınca çelişki çözülmeli.
+    [Range(0f, 100f)]
+    [SerializeField] private float _motionIntensityPercent = 40f;
+
     private PlayerStateProvider _state;
     private InputAction _moveAction;
     private InputAction _lookAction;
@@ -51,6 +71,38 @@ public sealed class FirstPersonController : MonoBehaviour
     private float _verticalVelocity;
     private Vector3 _lastMoveDirection = Vector3.forward;
 
+    private readonly MovementPhaseAccumulator _phaseAccumulator = new MovementPhaseAccumulator();
+    private Vector3 _eyeRestLocalPosition;
+    private int _lastFootstepIndex;
+
+    // Kayıt yokken taper etkisiz — TaperRadius yapısal olarak 1.0 çarpan verir.
+    private float _currentTaperDistance = MovementMathFormulas.TaperRadius;
+    private float _lastTickDeltaTime;
+
+    /// <summary>
+    /// Paylaşılan mesafe-tabanlı faz (m) — bob eğrisi VE ayak sesi tetiklemeleri
+    /// AYNI bu değerden türer (TR-fpc-014). Adaptif Ses'in `PlayFootstep` çağrıları
+    /// bunu tüketecek; ayrı bir zamanlayıcı ASLA kurulmamalı (desync yasak).
+    /// </summary>
+    public float MovementPhase => _phaseAccumulator.Phase;
+
+    /// <summary>Kaçıncı adımda olunduğu — faz/StrideLength'in tam kısmı. Ayak sesi bu değer arttığında tetiklenir.</summary>
+    public int FootstepIndex => Mathf.FloorToInt(_phaseAccumulator.Phase / StrideLength);
+
+    /// <summary>Ayak sesi tetiklendi (Adaptif Ses aboneliği için). Payload: o andaki hız (m/s).</summary>
+    public event System.Action<float> FootstepTriggered;
+
+    /// <summary>Erişilebilirlik motion yoğunluğu (S, 0-100). Ayarlar epic'i gelene kadar tek yazma yolu.</summary>
+    internal float MotionIntensityPercent
+    {
+        get => _motionIntensityPercent;
+        set => _motionIntensityPercent = Mathf.Clamp(value, 0f, 100f);
+    }
+
+    /// <summary>Bu karedeki head-bob genliği (m) — Story 002'nin Formül 3'ünden.</summary>
+    internal float CurrentBobAmplitude =>
+        MovementMathFormulas.HeadBobAmplitude(_currentSpeed, _motionIntensityPercent, _maxBobAmplitude);
+
     /// <summary>Test-gözlemlenebilirlik — ilgi-maskesindeki bir çarpışmada artar (ADR-0004 `internal` sapma deseniyle aynı).</summary>
     internal int InterestedHitCount { get; private set; }
 
@@ -58,6 +110,7 @@ public sealed class FirstPersonController : MonoBehaviour
     {
         _state = GetComponent<PlayerStateProvider>();
         _state.EyeCamera = _eyeCamera;
+        _eyeRestLocalPosition = _eyeCamera.localPosition;
 
         _characterController.stepOffset = LockedStepOffset;
         _characterController.skinWidth = _characterController.radius * SkinWidthToRadiusRatio;
@@ -157,10 +210,19 @@ public sealed class FirstPersonController : MonoBehaviour
         }
 
         float carryMultiplier = _state.IsCarrying ? MovementMathFormulas.CarryMultiplier : 1f;
-        // Story 005'e kadar taper etkisiz — d, TaperRadius'ta sabitlenir (InteractableRegistry
-        // henüz okunmuyor; TaperMultiplier(TaperRadius) yapısal olarak tam 1.0 verir).
-        float maxTargetSpeed = MovementMathFormulas.TargetSpeed(carryMultiplier, MovementMathFormulas.TaperRadius);
-        float targetSpeed = maxTargetSpeed * Mathf.Clamp01(moveInput.magnitude);
+        float inputMagnitude = Mathf.Clamp01(moveInput.magnitude);
+
+        // Story 005: `d` artık GERÇEK registry'den. Girdi yokken (boşta VEYA hareket kilitli —
+        // ikisinde de moveInput sıfırdır) taramayı ATLA: `Snapshot()` her yeni karede
+        // `_live.ToArray()` yapar, yani koşulsuz çağrı kalıcı per-frame çöp üretirdi.
+        // ADR-0004'ün "no unconditional per-frame ToArray()" garantisi böyle korunur (LP bulgusu).
+        if (inputMagnitude > 0f)
+        {
+            _currentTaperDistance = DistanceToNearestInteractable();
+        }
+
+        float maxTargetSpeed = MovementMathFormulas.TargetSpeed(carryMultiplier, _currentTaperDistance);
+        float targetSpeed = maxTargetSpeed * inputMagnitude;
 
         _currentSpeed = MovementMathFormulas.SpeedSmooth(_currentSpeed, targetSpeed, deltaTime, _rampTime);
 
@@ -192,6 +254,107 @@ public sealed class FirstPersonController : MonoBehaviour
         // süresi 0.0083s'dir ve hız sessizce sıfırlanırdı. Yalnız gerçek sıfır dışlanır.
         _state.Velocity = deltaTime > 1e-6f ? achievedDisplacement / deltaTime : Vector3.zero;
         _state.IsGrounded = _characterController.isGrounded;
+
+        _lastTickDeltaTime = deltaTime;
+        AdvancePhaseAndApplyBob(achievedDisplacement);
+    }
+
+    /// <summary>
+    /// Faz akümülatörünü GERÇEKLEŞEN YATAY yer değiştirmeyle ilerletir (saat zamanıyla
+    /// DEĞİL — duvara dayanmış oyuncu adım atmaz), sonra bob eğrisini VE ayak sesi
+    /// tetiklemesini AYNI faz değerinden türetir (TR-fpc-014, desync yapısal olarak imkânsız).
+    ///
+    /// Erişilebilirlik bağımsızlığı: `S` yalnız `HeadBobAmplitude`'un çıktısını ölçekler;
+    /// akümülatörün ilerlemesi ve `FootstepIndex` eşikleri `S`'yi HİÇ görmez — S=%0'da
+    /// görsel bob sıfırdır ama ayak sesi zamanlaması değişmez (manifest guardrail,
+    /// accessibility-requirements.md §5/§8).
+    /// </summary>
+    private void AdvancePhaseAndApplyBob(Vector3 achievedDisplacement)
+    {
+        achievedDisplacement.y = 0f;
+        float horizontalDistance = achievedDisplacement.magnitude;
+        _phaseAccumulator.Advance(horizontalDistance);
+
+        // `>` (`!=` değil): faz monotondur, ama bu niyeti ifade eder ve ileride bir reset
+        // ya da işaretli ilerleme eklenirse sahte adım tetiklemez. Bir karede birden çok
+        // stride sınırı geçilirse TEK event fırlar — hitch'te doğru davranış.
+        int footstepIndex = FootstepIndex;
+        if (footstepIndex > _lastFootstepIndex)
+        {
+            _lastFootstepIndex = footstepIndex;
+            // GERÇEKLEŞEN yatay hız yayınlanır (komut edilen DEĞİL) — `Velocity` sözleşmesiyle
+            // tutarlı: duvara sürtünerek ilerleyen oyuncu 1.6 m/s yalanını söylememeli
+            // (Adaptif Ses ayak sesi şiddetini bu değerle ölçekleyecek).
+            float achievedSpeed = _lastTickDeltaTime > 1e-6f ? horizontalDistance / _lastTickDeltaTime : 0f;
+            FootstepTriggered?.Invoke(achievedSpeed);
+        }
+
+        // Bob: adım başına tam bir döngü. `-cos` (sin DEĞİL) — çukur TAM ayak basışına denk
+        // gelir; `sin` onu yarım-stride kaydırıp "bedenin işi bildiği" hissini bozardı.
+        float bobOffset = CurrentBobAmplitude * -Mathf.Cos(_phaseAccumulator.Phase / StrideLength * 2f * Mathf.PI);
+
+        // TEK YAZICI: `_eyeCamera.localPosition`'ı bu satırdan başka hiçbir yer yazmamalı
+        // (manifest'in `Volume.weight` için uyguladığı aynı kural). ADR-0013'ün carry-sway'i
+        // aynı akümülatörü paylaşacak — geldiğinde buraya TOPLAMSAL bir ofset sözleşmesiyle
+        // katılmalı, ayrı bir yazıcı olarak DEĞİL (yoksa sessizce ezilir).
+        _eyeCamera.localPosition = _eyeRestLocalPosition + Vector3.up * bobOffset;
+    }
+
+    /// <summary>
+    /// Formül 2'nin `d` girdisi — kayıtlı interactable'lara olan YATAY mesafelerin MİNİMUMU
+    /// (GDD Edge Case: "en son izlenen nesne" değil; minimum geçiş noktalarında sürekli
+    /// olduğu için TaperMult asla sıçramaz).
+    ///
+    /// **YATAY (xz) mesafe — 3B DEĞİL (LP+QL gate bulgusu, bağımsız olarak iki gate).**
+    /// Oyuncu Transform'u kapsülün TABANINDA (prefab: center y=0.9, height 1.8). 3B mesafeyle,
+    /// GDD'nin kendi kamuflaj decoy'ları — kapı kolu, ışık anahtarı, termostat, hepsi el
+    /// yüksekliğinde (~1.0-1.2m) — `d`'yi ASLA ~1.2'nin altına indiremezdi: TaperMult ≈ 0.97,
+    /// yani tasarlanan %30 yavaşlama yerine %3. Bu, taper'ı gerçek içerikte gürültüye
+    /// indirger ve CD-GDD-ALIGN'ın kapattığı "metal dedektörü" istismarını kısmen geri açardı
+    /// (yer seviyesindeki nesne %30, el yüksekliğindeki %3 yavaşlatırsa fark ipucu olur).
+    /// Yatay mesafe ayrıca `d`'yi keyfî prop pivot yüksekliğinden bağımsız kılar.
+    ///
+    /// Pozisyon kaynağı: `IInteractable` arayüzünde pozisyon YOK (interactable-registry
+    /// epic'i tanımlamadı) — story'nin açık noktası. Arayüze alan eklemek Out of Scope
+    /// (ayrı ADR kararı), bu yüzden `Component` cast'i kullanılır: gerçek interactable'lar
+    /// sahnedeki MonoBehaviour'lardır. Component OLMAYAN kayıtlar sessizce atlanır; Unity
+    /// fake-null kontrolü de gerekli — `Snapshot()` kare-başı cache olduğundan aynı kare
+    /// içinde YOK EDİLMİŞ bir obje hâlâ listede olabilir (ADR-0004 Risks).
+    ///
+    /// SOFT co-residency guard (manifest ZORUNLU kuralı): yalnız AKTİF sahnedeki
+    /// interactable'lar sayılır — geçiş sırasında iki seviye sahnesi eşzamanlı yüklüdür ve
+    /// terk edilen sahnenin propları oyuncuyu yavaşlatmamalıdır.
+    /// </summary>
+    private float DistanceToNearestInteractable()
+    {
+        IReadOnlyList<IInteractable> snapshot = InteractableRegistry.Snapshot();
+        Scene activeScene = SceneManager.GetActiveScene();
+        Vector3 playerPosition = transform.position;
+        float nearestSqr = float.PositiveInfinity;
+
+        for (int i = 0; i < snapshot.Count; i++)
+        {
+            if (snapshot[i] is not Component component || component == null)
+            {
+                continue;
+            }
+
+            if (component.gameObject.scene != activeScene)
+            {
+                continue;
+            }
+
+            Vector3 delta = component.transform.position - playerPosition;
+            delta.y = 0f; // YATAY — yukarıdaki gerekçe.
+            float sqrDistance = delta.sqrMagnitude;
+            if (sqrDistance < nearestSqr)
+            {
+                nearestSqr = sqrDistance;
+            }
+        }
+
+        // Hiç kayıt yoksa taper etkisiz: TaperRadius, TaperMultiplier'ı yapısal olarak tam 1.0 yapar.
+        return float.IsPositiveInfinity(nearestSqr) ? MovementMathFormulas.TaperRadius : Mathf.Sqrt(nearestSqr);
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -248,6 +411,10 @@ public sealed class FirstPersonController : MonoBehaviour
     ///
     /// Tek-anchor formu terk edilmiş değildir — ADR-0015'in boot spawn'ı (`InitialSpawnAnchor`,
     /// kaynak sahne YOK) tam olarak onu ister. İki form iki farklı gerçek çağıranı karşılar.
+    ///
+    /// FAZ İNVARYANTI (her iki form): ışınlanma bir ADIM DEĞİLDİR — repozisyon `ApplyMove`'u
+    /// atlar, bu yüzden `MovementPhase` ilerlemez ve SOFT geçişte hayalet ayak sesi çalmaz.
+    /// Bu, çağrı yerinin tesadüfü değil bilinçli sözleşmedir; testle kilitlidir.
     /// </summary>
     public void RepositionTo(Transform sourceAnchor, Transform targetAnchor)
     {
@@ -303,6 +470,9 @@ public sealed class FirstPersonController : MonoBehaviour
 
     /// <summary>Test-gözlemlenebilirlik: korunan dünya-uzayı hareket yönü (repozisyonda döner).</summary>
     internal Vector3 LastMoveDirection => _lastMoveDirection;
+
+    /// <summary>Test-gözlemlenebilirlik: bu karede kullanılan `d` (Formül 2 girdisi, yatay mesafe).</summary>
+    internal float CurrentTaperDistance => _currentTaperDistance;
 
     /// <summary>Pitch kelepçesi — saf, `Camera`/Input gerekmeden test edilebilir (thin-driver split).</summary>
     internal static float ClampPitch(float currentPitch, float pitchDelta, float clampDegrees) =>

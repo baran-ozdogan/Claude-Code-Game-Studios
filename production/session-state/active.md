@@ -1,5 +1,16 @@
 # Session State — Active
 
+## Session Extract — /dev-story + kapanış, birinci-sahis-kontrolcu Story 005, 2026-08-10
+- Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 5/6 — kalan TEK story: 006 decoy build-check)
+- Files: `FirstPersonController.cs` (taper wiring + faz akümülatörü + bob + ayak sesi eventi + 3 test kancası), `PlayerStateProvider.cs` (`IsCarrying` private set + `SetCarrying`), `Tests/PlayMode/fpc_taper_carry_phase_test.cs` (YENİ, 16 test)
+- Story'nin AÇIK NOKTASI çözüldü: `IInteractable`'da pozisyon yok → güvenli `Component` cast + Unity fake-null (fake-null GERÇEKTEN gerekli: `Snapshot()` kare-cache'i yok edilmiş objeyi aynı kare taşıyabilir, ADR-0004 Risks).
+- **BLOCKING BULGU (iki gate bağımsız olarak, aynı sayılarla)**: `d` 3B mesafeydi ve oyuncu Transform'u kapsül TABANINDA → GDD'nin el yüksekliğindeki kamuflaj decoy'ları (kapı kolu/ışık anahtarı/termostat, ~1.0-1.2m) için `d` asla ~1.2 altına inemiyordu: TaperMult≈0.97, yani %30 yerine %3 yavaşlama. Taper gerçek içerikte gürültüye inerdi + CD-GDD-ALIGN'ın kapattığı "metal dedektörü" istismarı kısmen geri açılırdı. Testler görmüyordu çünkü tüm test nesneleri y=0'daydı. **Fix: YATAY (xz) mesafe** + yükseltilmiş prop testi.
+- Diğer fix'ler: manifest'in ZORUNLU SOFT co-residency guard'ı (per-frame scene-aware mantık aktif sahneye kapılmalı); `Snapshot()` girdi yokken çağrılmıyor (koşulsuz per-frame `ToArray()` kalıcı çöp üretiyordu, ADR-0004 garantisini ihlal ediyordu); ayak sesi payload'ı gerçekleşen hız; bob `sin`→`-cos` (çukur ayak basışına denk); `_eyeCamera.localPosition` tek-yazıcı sözleşmesi belgelendi (ADR-0013 carry-sway toplamsal katılmalı).
+- QL test fix'leri: AC-2'nin "minimum kazanır" yarısı hiç test edilmiyordu (hız üzerinden assert, Formül 1 yumuşatması yüzünden max/ilk/son kurallarını da geçirirdi) → `CurrentTaperDistance` kancası + doğrudan min assert'i; kameranın gerçekten oynadığı okunmuyordu (bob satırı silinse süit yeşildi); GDD AC8 çarpımsal bileşim; ışınlanma-faz invaryantı; geri yürüyüş; mid-motion SetCarrying + dönüş; yok-edilen interactable; Component-olmayan kayıt; registry sıra-bağımsızlığı.
+- **AÇIK KARAR (kullanıcıya soruldu)**: motion slider varsayılanı — `accessibility-requirements.md` §5 "%100" vs GDD "~%40". İki onaylı belge çelişiyor; kod GDD'yi izliyor, yorum düzeltildi. Ayarlar epic'inde çözülmeli.
+- Süit: **EditMode 120/120, PlayMode 77/77**. CI: e926fbb **YEŞİL** (run 31385044110).
+- Next: Story 006 (decoy içerik build doğrulaması) → epic 6/6. Story 005 commit'lenmedi (talimat bekliyor).
+
 ## Session Extract — /dev-story + kapanış, birinci-sahis-kontrolcu Story 004, 2026-08-10
 - Verdict: COMPLETE WITH NOTES → **Status: Complete** (epic 4/6)
 - Files: `FirstPersonController.cs` (+`RepositionTo` İKİ aşırı yükleme + ortak `ApplyPose` + `InputActive`/`LastMoveDirection` test kancaları), `Editor/Story004PlayerSceneSetup.cs` (YENİ, tek seferlik) → `Assets/Scenes/Player.unity` prefab instance'ı taşıyor, `Tests/PlayMode/fpc_persistent_scene_test.cs` (YENİ, 11 test), `Tests/EditMode/fpc_player_scene_asset_test.cs` (YENİ)

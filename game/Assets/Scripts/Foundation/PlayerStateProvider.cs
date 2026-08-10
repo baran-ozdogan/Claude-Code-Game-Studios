@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// `IPlayerState`'in tek implementasyonu (ADR-0003 — Key Interfaces bloğu
-/// birebir). `FirstPersonController`'dan (Story 003) BİLEREK AYRI: test
+/// `IPlayerState`'in tek implementasyonu (ADR-0003 — Key Interfaces bloğu birebir,
+/// TEK sapma: `IsCarrying` `internal set` yerine `private set` + `SetCarrying(bool)`
+/// adlandırılmış tek-yazıcı yüzeyi, Story 005/TR-fpc-013 — ADR-0003'ün kendi diyagramı
+/// zaten yazmanın burada olduğunu söylüyor; ADR metni addendum bekliyor).
+/// `FirstPersonController`'dan (Story 003) BİLEREK AYRI: test
 /// edilebilirlik — `AddComponent&lt;PlayerStateProvider&gt;()` çıplak bir
 /// GameObject'te, `CharacterController`/`Camera` gerekmeden kilit/durum
 /// mantığını sınayabilir (ADR-0003 Alternative 1'in düzeltilmiş gerekçesi).
@@ -28,7 +31,9 @@ public sealed class PlayerStateProvider : MonoBehaviour, IPlayerState
     public Transform EyeCamera { get; internal set; }
     public Vector3 Velocity { get; internal set; }
     public bool IsGrounded { get; internal set; }
-    public bool IsCarrying { get; internal set; }
+
+    /// <summary>Yalnız <see cref="SetCarrying"/> yazar (tek-yazıcı yüzey, TR-fpc-013).</summary>
+    public bool IsCarrying { get; private set; }
 
     public bool MovementLocked => _fullLockHolders.Count > 0 || _moveOnlyLockHolders.Count > 0;
     public bool IsLocked => MovementLocked;
@@ -97,4 +102,19 @@ public sealed class PlayerStateProvider : MonoBehaviour, IPlayerState
     /// </summary>
     public MovementLockScope EffectiveScope() =>
         _fullLockHolders.Count > 0 ? MovementLockScope.Full : MovementLockScope.MoveOnly;
+
+    /// <summary>
+    /// `IsCarrying` aynasının TEK yazıcı yüzeyi (TR-fpc-013). **YALNIZ Görev/Taşıma
+    /// Döngüsü çağırır** — mekanizma ADR-0013'ün `CarrySlotRigController`'ında, bu
+    /// epic yalnız yüzeyi sağlar. Tek-çağıran kısıtı derleme-zamanı zorlanmaz; bu
+    /// projenin yerleşik konvansiyon+XML-doc+code-review deseni (`AddFiredTrigger`,
+    /// `SetRoundState` emsali, control manifest "single-caller writes").
+    ///
+    /// Aynı değerle tekrarlanan çağrılar güvenli no-op — hız hedefi (`CarryMult`)
+    /// her karede taze okunduğu için ek bir invalidasyon gerekmez.
+    /// </summary>
+    public void SetCarrying(bool carrying)
+    {
+        IsCarrying = carrying;
+    }
 }

@@ -118,7 +118,7 @@ public class FpcControllerDriverTest
     [UnityTest]
     public IEnumerator SteadyStateSpeed_WhileCarrying_ConvergesToCarrySpeed()
     {
-        _state.IsCarrying = true;
+        _state.SetCarrying(true);
         yield return DriveToSteadyStateAndAssertRealDisplacement(1.35f);
     }
 
@@ -245,7 +245,7 @@ public class FpcControllerDriverTest
     public IEnumerator LockMidMotion_DecaysAlongExponentialRampCurve_NotTeleportOrLinearDrop()
     {
         // Arrange — kararlı hıza yaklaş, taşıma da açık olsun (AC-6'nın ikinci yarısı).
-        _state.IsCarrying = true;
+        _state.SetCarrying(true);
         for (int frame = 0; frame < 120; frame++)
         {
             _fpc.TickWithInput(new Vector2(0f, 1f), Vector2.zero, Dt);

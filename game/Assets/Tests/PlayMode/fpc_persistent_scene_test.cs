@@ -152,7 +152,7 @@ public class FpcPersistentSceneTest
         // Arrange — çağrı öncesi durum, örtük reset olmadığını kanıtlamak için.
         state.Velocity = new Vector3(0.3f, 0f, 1.1f);
         state.IsGrounded = true;
-        state.IsCarrying = true;
+        state.SetCarrying(true);
         eye.localRotation = Quaternion.Euler(-25f, 0f, 0f);
 
         GameObject playerObjectBefore = state.gameObject;
