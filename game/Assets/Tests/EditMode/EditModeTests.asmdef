@@ -5,7 +5,9 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Foundation",
-        "BuildValidation"
+        "BuildValidation",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [
         "Editor"

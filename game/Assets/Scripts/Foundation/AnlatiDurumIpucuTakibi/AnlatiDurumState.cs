@@ -59,6 +59,36 @@ public sealed class AnlatiDurumState : IAnlatiDurumState
     internal void BindEnsureRegistryLoaded(Action ensureRegistryLoaded) =>
         _ensureRegistryLoaded = ensureRegistryLoaded;
 
+    /// <summary>
+    /// Yükleme kalıcı olarak başarısız oldu mu (LATCH). Story 003'ün karar noktası:
+    /// `WaitForCompletion()` patlarsa indeks null kalır ve BLOKLAYAN Addressables
+    /// çağrısı HER Held'de yeniden denenirdi. Manifest'in "başarısız yükleme bir
+    /// build defektidir, kurtarılabilir bir durum değildir" duruşu gereği bir kez
+    /// denenir, başarısızsa BOŞ indeksle latch'lenir + `Debug.LogError` — Story
+    /// 004'ün build-blocking anahtar kontrolü bu vakayı üretimde zaten imkânsız
+    /// kılıyor (LP gate devri, Story 002).
+    /// </summary>
+    internal bool RegistryLoadFailed { get; private set; }
+
+    /// <summary>Yükleme kalıcı olarak başarısız işaretlenir — boş indeksle latch'lenir.</summary>
+    internal void MarkRegistryLoadFailed()
+    {
+        RegistryLoadFailed = true;
+        BuildReverseIndex(null);
+    }
+
+    /// <summary>
+    /// YALNIZ TEST temizliği: indeksi ve latch'i sıfırlar. Üretimde ASLA çağrılmaz —
+    /// `ResetOnLoad()` cache'i bilerek korur (ADR-0015). Bu seam olmadan, latch'i
+    /// sınayan bir test süreç ömrü boyunca gerçek Addressables yolunu kapatırdı
+    /// (QL gate bulgusu: kalıcı proses zehirlenmesi).
+    /// </summary>
+    internal void ResetRegistryForTests()
+    {
+        _byRequiredShiftId = null;
+        RegistryLoadFailed = false;
+    }
+
     /// <summary>Ters indeks kuruldu mu — lazy yükleme guard'ı (Story 003) ve testler okur.</summary>
     internal bool IsRegistryLoaded => _byRequiredShiftId != null;
 
@@ -129,6 +159,13 @@ public sealed class AnlatiDurumState : IAnlatiDurumState
             return;
         }
 
+        // Bozuk shiftId için BLOKLAYAN yüklemeyi boşuna tetikleme — guard
+        // `ProcessHeldShift`'te de var, burada yalnız yükleme maliyetini eler.
+        if (string.IsNullOrWhiteSpace(shiftId))
+        {
+            return;
+        }
+
         _ensureRegistryLoaded?.Invoke();
         ProcessHeldShift(shiftId);
     }
@@ -147,10 +184,19 @@ public sealed class AnlatiDurumState : IAnlatiDurumState
     /// yukarı yayılır ve KALAN aday tanımlar DEĞERLENDİRİLMEZ — paylaşılan bir
     /// shiftId senaryosunda (GDD AC10) ikinci ipucu, o shift yeniden fırlayana
     /// kadar Unknown kalır. try/catch BİLİNÇLİ olarak eklenmedi (`AddFiredTrigger`
-    /// emsalinin gözden geçirilmiş duruşu: yutma yok). Story 003 bunu canlı
-    /// `OnShiftStateChanged`'e bağladığında istisna Işık/Volume'un multicast'ine
-    /// düşer ve çağrı sırasına göre diğer aboneleri de düşürebilir — orada tekrar
-    /// değerlendirilmeli.
+    /// emsalinin gözden geçirilmiş duruşu: yutma yok).
+    ///
+    /// **Story 003 kararı (LP gate)**: try/catch HÂLÂ eklenmedi ve etki alanı
+    /// ölçüldü. `FoundationBootstrap.ResetAll()` `GeceOturumDurumu`'nu (adım 3)
+    /// Anlatı'dan (adım 4) ÖNCE dokunduğu için Gece'nin static ctor'ı önce koşar
+    /// ve invocation list'te Anlatı'dan ÖNCE gelir — Gece'nin Settled yazımı bu
+    /// handler tarafından ASLA düşürülemez. Gerçek etki alanı SONRADAN abone olan
+    /// `OnEnable` MonoBehaviour'ları (planlanan `AdaptifSesController`) ve
+    /// `ShiftZone`'un kendi tick coroutine'i. Bu, "tek bir story'nin tek taraflı
+    /// çözeceği şey değil, kesişen bir sorun" gerekçesini GÜÇLENDİRİR: doğru
+    /// koruma, tek fırlatma noktası olan `IsikVolumeState.RaiseShiftStateChanged`
+    /// içinde delege başına try/catch (TR-isik-019) — hem yan aboneleri hem
+    /// üreticiyi korur. isik-volume epic'ine iş kalemi olarak yazıldı.
     /// </summary>
     internal void ProcessHeldShift(string shiftId)
     {

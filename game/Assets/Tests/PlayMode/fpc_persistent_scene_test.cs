@@ -339,6 +339,16 @@ public class FpcPersistentSceneTest
         yield return BootAndSettle();
         PlayerStateProvider state = PlayerStateProvider.Current;
         var fpc = state.GetComponent<FirstPersonController>();
+
+        // Sürücü DURDURULUR: aksi halde araya giren karede Update yerçekimini
+        // uygular, oyuncu ~1-2mm oturur ve 0.001'lik 3B ölçüm sıra/zamanlamaya
+        // duyarlı hale gelir (anlati Story 003 yeni bir PlayMode dosyası
+        // eklediğinde bu gizli kırılganlık ortaya çıktı). Böylece ölçüm ÜÇ eksende
+        // de tam kuvvetinde kalır — emsal:
+        // RepositionTo_CopiesPositionAndRotation_PreservesIdentityAndState.
+        fpc.enabled = false;
+        yield return null;
+
         Vector3 positionBefore = state.transform.position;
 
         LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("RepositionTo"));
@@ -355,6 +365,11 @@ public class FpcPersistentSceneTest
         yield return BootAndSettle();
         PlayerStateProvider state = PlayerStateProvider.Current;
         var fpc = state.GetComponent<FirstPersonController>();
+
+        // Sürücü durdurulur — yukarıdaki göreli-form testiyle aynı gerekçe.
+        fpc.enabled = false;
+        yield return null;
+
         Vector3 positionBefore = state.transform.position;
 
         LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("RepositionTo"));

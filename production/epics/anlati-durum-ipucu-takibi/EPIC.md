@@ -38,7 +38,7 @@
 |---|-------|------|--------|-----|
 | 001 | Facade çekirdeği — IAnlatiDurumState + AnlatiDurumState + statik facade | Logic | Complete | ADR-0007 (+0001/0015) |
 | 002 | ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı | Logic | Complete | ADR-0007 |
-| 003 | Addressables lazy-load + gerçek Işık/Volume aboneliği | Integration | Ready | ADR-0007 (+0015) |
+| 003 | Addressables lazy-load + gerçek Işık/Volume aboneliği | Integration | Complete | ADR-0007 (+0015) |
 | 004 | Build-blocking doğrulama dörtlüsü | Logic | Ready | ADR-0007 (+0014) |
 | 005 | Orphaned shiftId uyarısı (build-time aggregate, non-blocking) | Logic | Ready | ADR-0007 (+0014) |
 
@@ -46,19 +46,29 @@
 
 ## Next Step
 
-Story 001+002 Complete (2/5). Kalan: 003 (Addressables + gerçek abonelik), 004 (build-blocking dörtlü), 005 (orphan uyarısı) — üçü de 002'ye bağlı ama BİRBİRİNE değil, paralel ilerleyebilir.
+Story 001+002+003 Complete (3/5). Kalan: 004 (build-blocking dörtlü), 005 (orphan uyarısı) — ikisi de 002'ye bağlı ama BİRBİRİNE değil, paralel ilerleyebilir. Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda.
 
-> **Açık ileri bayrak #2 (Story 001 → 003)**: Işık/Volume aboneliği ADR-0007'nin
-> `AnlatiDurumState` constructor'ında DEĞİL, FACADE'ın static constructor'ında
-> bağlanacak (LP-CODE-REVIEW bulgusu: State-ctor aboneliği, ADR-0001 deseni gereği
-> taze State kuran her testte kalıcı event'e bir handler daha sızdırırdı; proje
-> emsali `GeceOturumDurumu` de facade static ctor kullanıyor). Story 003'ün AC'si
-> ve test şekli buna göre yazıldı; **ADR-0007 addendum'u gerekiyor** — Story 005'in
-> sapmasıyla aynı pakette açılabilir.
->
-> **Açık ileri bayrak (Story 005)**: orphaned-shiftId kontrolünün mekanizması,
-> kullanıcı kararıyla ADR-0007'nin `EditorSceneManager.sceneOpened/sceneSaved`
-> tetikleyicisinden `IBuildCheckAggregate` build-yürüyüşüne taşındı (GDD'nin
-> proje-geneli iddiası tek-sahne bir kontrolle verilemiyordu — çok-sahneli
-> clue'larda yanlış-pozitif). ADR-0007'ye addendum açılmalı
-> (`/architecture-decision`); Story 005 sapmayı kendi dosyasında belgeliyor.
+### ADR-0007 addendum borcu (epic kapanışında tek pakette açılacak)
+
+`/architecture-decision` ile açılacak addendum'un İKİ maddesi var:
+
+1. **Abonelik yeri (Story 001'de tespit, Story 003'te UYGULANDI)**: Işık/Volume
+   aboneliği ADR-0007'nin `AnlatiDurumState` constructor'ında DEĞİL, FACADE'ın
+   (`AnlatiDurumIpucuTakibi`) static constructor'ında bağlanıyor. Gerekçe:
+   State-ctor aboneliği, ADR-0001 deseni gereği taze State kuran her testte
+   kalıcı event'e bir handler daha sızdırırdı; proje emsali `GeceOturumDurumu`
+   de facade static ctor kullanıyor. Story 003'ün testleri bu şekli sabitliyor
+   (`FacadeFirstAccess_SubscribesExactlyOnce_AndSurvivesReset`).
+2. **Orphaned-shiftId kontrolünün mekanizması (Story 005, henüz uygulanmadı)**:
+   kullanıcı kararıyla ADR-0007'nin `EditorSceneManager.sceneOpened/sceneSaved`
+   tetikleyicisinden `IBuildCheckAggregate` build-yürüyüşüne taşındı (GDD'nin
+   proje-geneli iddiası tek-sahne bir kontrolle verilemiyordu — çok-sahneli
+   clue'larda yanlış-pozitif). Story 005 sapmayı kendi dosyasında belgeliyor.
+
+### Dışarı çıkan iş kalemleri
+
+| # | Kalem | Nereye |
+|---|-------|--------|
+| 1 | `IsikVolumeState.RaiseShiftStateChanged` delege-başına try/catch (bir abonenin istisnası multicast'i ve `ShiftZone`'un tick coroutine'ini düşürüyor) | isik-volume EPIC.md → FD-1 |
+| 2 | `ClueRegistry.asset` boş ship ediliyor; üç build kontrolü de boş kayıtta geçiyor — bloklamayan bir "içerik hiç yazılmadı" uyarısı düşünülmeli | Story 004 |
+| 3 | Player-build content-catalog doğrulaması (`anlati-addressables-smoke-evidence.md` §3) | Story 004 |

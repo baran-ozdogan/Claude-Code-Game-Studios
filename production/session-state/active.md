@@ -1224,3 +1224,21 @@ Epic: Proje Kurulumu
 Feature: Foundation altyapı
 Task: story-001 readiness/implementasyon sırada
 <!-- /STATUS -->
+
+## Session Extract — /dev-story anlati-durum-ipucu-takibi/story-003 2026-08-10
+- Verdict: COMPLETE — Story 003 (Addressables lazy-load + gerçek Işık/Volume aboneliği, Integration) kapandı. Epic 3/5.
+- Bu projenin İLK gerçek Addressables tüketicisi: `game/Assets/AddressableAssetsData/` + `game/Assets/Settings/ClueRegistry.asset` (anahtar "ClueRegistry") repoya girdi. Kurulum: `game/Assets/Editor/AnlatiStory003AddressablesSetup.cs` (tek seferlik, idempotent).
+- Files: Foundation/AnlatiDurumIpucuTakibi/{AnlatiDurumIpucuTakibi,AnlatiDurumState}.cs; Editor/AnlatiStory003AddressablesSetup.cs; Foundation.asmdef + iki test asmdef'i (Unity.Addressables + Unity.ResourceManager); Tests/PlayMode/anlati_addressables_subscription_test.cs (6 test); Tests/PlayMode/fpc_persistent_scene_test.cs (2 test sağlamlaştırıldı)
+- Evidence: production/qa/evidence/anlati-addressables-smoke-evidence.md (AC-5, editor-içi PASS / player-build PENDING)
+- Tests: EditMode 182/182, PlayMode 84/84 — ikisi de yeşil
+- Devralınan 2 karar çözüldü: (1) yükleme başarısızlığı LATCH'lenir (süreç başına bir kez, LogError, throw değil — throw ShiftZone tick coroutine'ini öldürürdü); (2) abone istisnası için try/catch EKLENMEDİ — Gece/Oturum invocation list'te ÖNDE olduğu için düşemez; gerçek etki alanı sonradan abone olan MonoBehaviour'lar + ShiftZone coroutine'i, doğru koruma tek fırlatma noktasında (isik-volume FD-1)
+- Gate'ler: LP-CODE-REVIEW → CONCERNS (ölü `finally { _ = handle; }` silindi, başarısız yollarda Release eklendi, blank-shiftId guard'ı yükleme öncesine alındı, katalog-init maliyeti belgelendi, setup betiği AssetDatabase API'sine geçti). QL-TEST-COVERAGE → GAPS (AC-6 hiç yoktu → eklendi; kısır NonHeld testi kanca-sayacıyla değiştirilip AC-1'in tamamını kapsar oldu; latch testinin kalıcı proses zehirlenmesi ResetRegistryForTests seam'iyle kapatıldı; AC-2 tip-filtreli "tam olarak 1" iddiasına yükseltildi). Hepsi uygulandı, yeniden test edildi.
+- AÇIK BORÇ: ADR-0007 addendum'u artık 2 maddeli (abonelik yeri UYGULANDI + Story 005 mekanizma sapması) — epic kapanışında tek pakette. isik-volume EPIC.md'ye FD-1 (RaiseShiftStateChanged delege-başına try/catch) yazıldı. Story 004'e 2 kalem: boş ClueRegistry uyarısı + player-build catalog doğrulaması.
+- COMMIT EDİLMEDİ — kullanıcı talimatı bekliyor
+- NEXT: /dev-story anlati Story 004 (build-blocking dörtlü, AC22/TR-isik-021 çapraz kontrolü dahil) ve Story 005 (orphan aggregate uyarısı) — 002'ye bağlı, birbirine değil
+
+<!-- STATUS -->
+Epic: Anlatı Durum/İpucu Takibi
+Feature: İpucu takibi Foundation
+Task: Story 003 kapandı (3/5) — Story 004 sırada
+<!-- /STATUS -->

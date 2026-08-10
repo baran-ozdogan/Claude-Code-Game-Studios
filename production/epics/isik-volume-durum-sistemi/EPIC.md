@@ -45,6 +45,12 @@ Oyunun görsel çekirdeği: bölge başına `ShiftZone` MonoBehaviour'ı (lokal 
 - Tüm story'ler kapandı; ADR-0005 Validation Criteria testleri geçiyor (lockstep `[UnityTest]`, yön-flip, OnDestroy Held garantisi, box-overlap/Baked/paylaşım EditMode build testleri, Automatic-monitor testleri)
 - Facade addendum sözleşmesi: aboneler `Instance.OnShiftStateChanged`'e derleniyor, in-place reset iki-oturum testi geçiyor
 
+## Follow-up Debt (dışarıdan gelen)
+
+| # | Kalem | Kaynak | Durum |
+|---|-------|--------|-------|
+| FD-1 | `IsikVolumeState.RaiseShiftStateChanged` içinde **delege başına try/catch** (TR-isik-019). Bugün bir abonenin fırlattığı istisna multicast'i keser: invocation list'te SONRA gelen aboneler (planlanan `AdaptifSesController` gibi `OnEnable`-abone MonoBehaviour'ları) çalışmaz **ve** istisna üreticiye — `ShiftZone`'un tick coroutine'ine — geri yayılıp coroutine'i öldürür; Persistent olmayan bir bölge ticker'sız `Held`'de kalabilir. Tek fırlatma noktası olduğu için koruma buraya ait, abonelerin her birine değil. | anlati Story 003, LP-CODE-REVIEW | Açık |
+
 ## Next Step
 
 Run `/create-stories isik-volume-durum-sistemi`.
