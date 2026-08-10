@@ -1,15 +1,22 @@
 /// <summary>
-/// The single registration point for every build-blocking validation check.
-/// System epics add their check instance to this list — a fourth independent
+/// The single registration point for every registered validation check.
+/// System epics add their check instance to this list — a second independent
 /// IPreprocessBuildWithReport implementation is forbidden (control manifest).
+///
+/// Çoğu check BLOKLAYICIDIR (`context.Fail` → `BuildFailedException`), ama hepsi
+/// değil: `Anlati/OrphanedShiftId` (Story 005) bilinçli olarak NON-BLOCKING bir
+/// içerik-yazımı uyarısıdır ve yalnız `Debug.LogWarning` basar. Aynı çatıyı
+/// paylaşmasının sebebi, iddiasının proje-geneli olması — runner'ın sahne
+/// yürüyüşü + `IBuildCheckAggregate` bunu verebilen tek mekanizma.
 ///
 /// Planned owners (added by each system's own epic, not here — Story 006 ships
 /// only the shell; see README.md in this folder for the ADR-referenced list):
-///   anlati-durum-ipucu-takibi (EKLENDİ, Story 004): ADR-0007 dörtlüsü — Addressable "ClueRegistry"
+///   anlati-durum-ipucu-takibi (EKLENDİ, Story 004+005): ADR-0007 dörtlüsü — Addressable "ClueRegistry"
 ///                                          key, boş RequiredShiftIds, çift clueId (TR-anlati-008/009)
-///                                          + AC22 çaprazı (TR-isik-021, isik Story 006'dan devralındı).
-///                                          NOT: orphaned requiredShiftId BU LİSTEDE DEĞİL — o non-blocking
-///                                          bir uyarı, IBuildCheck değil (Story 005, ADR-0007).
+///                                          + AC22 çaprazı (TR-isik-021, isik Story 006'dan devralındı);
+///                                          ARTI orphaned shiftId uyarısı (Story 005) — aynı çatıda ama
+///                                          NON-BLOCKING, çünkü proje-geneli iddiayı yalnız sahne yürüyüşü
+///                                          verebiliyor (ADR-0007 addendum'u bekliyor).
 ///   isik-volume-durum-sistemi (EKLENDİ, Story 006): ADR-0005 sahne-scan dörtlüsü —
 ///                                          Baked-light, shared-light, box-overlap, Automatic-varlık
 ///                                          (TR-isik-016/020/021)
@@ -41,5 +48,10 @@ internal static class BuildValidationRegistry
         new AnlatiRequiredShiftIdsCheck(),
         new AnlatiUniqueClueIdCheck(),
         new AnlatiAutomaticZoneNotClueBearingCheck(),
+
+        // anlati Story 005 — TR-anlati-008'in UYARI yarısı. Bloklamaz
+        // (Debug.LogWarning), aggregate: proje-geneli iddia ancak yürüyüş
+        // bitince verilebilir.
+        new ClueConsistencyValidator(),
     };
 }

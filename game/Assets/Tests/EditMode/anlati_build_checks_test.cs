@@ -661,9 +661,9 @@ public class AnlatiBuildChecksTest
     // ── AC-5: Kayıt, fazlar ve üretim dikişleri ──
 
     [Test]
-    public void AllFourChecks_AreRegistered_WithTheirExpectedPhases()
+    public void AllAnlatiChecks_AreRegistered_WithTheirExpectedPhases()
     {
-        // İsim→faz SÖZLÜĞÜ: anlati seti KARIŞIK fazlı (3 AssetScan + 1 SceneScan),
+        // İsim→faz SÖZLÜĞÜ: anlati seti KARIŞIK fazlı (3 AssetScan + 2 SceneScan),
         // bu yüzden isik emsalinin blanket "prefix'in hepsi SceneScan" deseni
         // kopyalanamaz.
         var expected = new Dictionary<string, BuildCheckPhase>
@@ -672,6 +672,7 @@ public class AnlatiBuildChecksTest
             { "Anlati/RequiredShiftIdsNotEmpty", BuildCheckPhase.AssetScan },
             { "Anlati/UniqueClueIds", BuildCheckPhase.AssetScan },
             { "Anlati/AutomaticZoneNotClueBearing", BuildCheckPhase.SceneScan },
+            { "Anlati/OrphanedShiftId", BuildCheckPhase.SceneScan }, // Story 005, non-blocking
         };
 
         List<IBuildCheck> registered = BuildValidationRegistry.Checks
@@ -699,7 +700,7 @@ public class AnlatiBuildChecksTest
             .Where(c => c.Name.StartsWith("Anlati/")).ToList();
 
         // Sayı iddiası olmadan, kayıtlar düşerse döngü sıfır assert'le geçerdi.
-        Assert.AreEqual(4, anlatiChecks.Count);
+        Assert.AreEqual(5, anlatiChecks.Count);
 
         foreach (IBuildCheck check in anlatiChecks)
         {

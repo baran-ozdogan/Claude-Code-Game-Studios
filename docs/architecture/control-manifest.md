@@ -99,7 +99,7 @@ For the reasoning behind each rule, see the referenced source.
 - **Memory triggers: `Persistent=true` mandatory, `TriggerMode=ManualOnly`, `SuppressDefaultHoldFill=true`, `HoldDuration` from the 0.6–1.5s sub-range** — all edit-time-validated — source: ADR-0014
 - **Saturation counts `SettledCount` only (never Fired)**; evaluated exactly on `OnTriggerSettled`/`OnFinalRoundStarted`/`OnFinalRoundItemPickedUp`; (b) saturation beats (a) task-completion on a tie; `HasTriggeredThisNight` is set BEFORE the outbound trigger event — source: ADR-0015
 - **Ending tone/lock branching**: `Abrupt=true` → `MovementLockScope.Full`; `Abrupt=false` → `MoveOnly`; lock before `RequestHardCut`, released in both callbacks; `EndSession()` on success only — source: ADR-0015
-- **All edit-time content validation contributes to the ONE shared `IPreprocessBuildWithReport` utility** — never a new independent implementation; `BuildFailedException` blocks, no runtime clamping — source: ADR-0007/0012/0013/0014/0015
+- **All edit-time content validation contributes to the ONE shared `IPreprocessBuildWithReport` utility** — never a new independent implementation; `BuildFailedException` blocks, no runtime clamping — source: ADR-0007/0012/0013/0014/0015. *Bir check bilinçli olarak NON-BLOCKING olabilir (`Debug.LogWarning`, `context.Fail` değil) — ama yine AYNI utility'ye kaydolur; ayrı bir mekanizma kurmak yasak. Tek örnek: `Anlati/OrphanedShiftId` (anlati Story 005).*
 - **EditMode test fixtures use `ScriptableObject.CreateInstance` only** — on-disk fixture assets trip the project-wide `AssetDatabase.FindAssets` validation scans — source: ADR-0014
 
 ### Forbidden Approaches

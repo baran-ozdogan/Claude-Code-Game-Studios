@@ -1,12 +1,12 @@
 # Story 005: Orphaned shiftId uyarısı (build-time aggregate, non-blocking)
 
 > **Epic**: Anlatı Durum/İpucu Takibi
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: S-M (~2-3h)
 > **Manifest Version**: 2026-08-09
-> **Last Updated**: —
+> **Last Updated**: 2026-08-10
 
 ## Context
 
@@ -48,14 +48,14 @@
 
 ## Acceptance Criteria
 
-- [ ] Kontrol `IBuildCheck` + `IBuildCheckAggregate` implement eder, `SceneScan` fazında, `BuildValidationRegistry.Checks`'e kayıtlı (ikinci `IPreprocessBuildWithReport` YOK)
-- [ ] `BeginWalk()` biriken gözlemi yürüyüşün BAŞINDA sıfırlar (sonda self-reset DEĞİL — aborted-walk sızıntısı, isik-volume Story 006'nın LP bulgusu)
-- [ ] `Run(context)` her sahnede o sahnenin `ShiftZone`'larının `_shiftId`'lerini biriktirir (inaktif objeler dâhil — build içeriği hepsi)
-- [ ] `FinalizeWalk(context)` yürüyüş sonunda TEK SEFERDE değerlendirir: `ClueRegistry.Definitions`'taki her `requiredShiftIds` girdisi, birleştirilmiş `shiftId` kümesinde YOKSA o `(clueId, shiftId)` çifti orphaned sayılır
-- [ ] Her orphaned çift için bir `Debug.LogWarning` basılır ve çift `GetOrphanedClueIds()` üzerinden okunabilir; **build ENGELLENMEZ** (`context.Fail` ASLA çağrılmaz) — bu bir content-authoring uyarısıdır, çalışma zamanı davranışını bozmaz (GDD AC8)
-- [ ] **Yanlış-pozitif yok**: bir clue'nun `requiredShiftIds`'i FARKLI sahnelerdeki iki `shiftId` içeriyorsa ve ikisi de Build Settings'teki herhangi bir sahnede mevcutsa, uyarı ÜRETİLMEZ (mekanizma sapmasının var oluş sebebi — tek-sahne bir kontrol burada yanlış uyarırdı)
-- [ ] Sıfır sahne yürüyüşünde (henüz seviye sahnesi yok) sessiz kalır — hiçbir `ClueDefinition` yoksa da sessiz; "hiç yok" da geçerli bir toplam sonuçtur
-- [ ] Test şekli: `ValidateScene`/`FinalizeWalk` mantığı DOĞRUDAN test edilir; `[InitializeOnLoad]`/runner kancası ince wiring'dir ve ayrıca reflection'la test edilmez
+- [x] Kontrol `IBuildCheck` + `IBuildCheckAggregate` implement eder, `SceneScan` fazında, `BuildValidationRegistry.Checks`'e kayıtlı (ikinci `IPreprocessBuildWithReport` YOK)
+- [x] `BeginWalk()` biriken gözlemi yürüyüşün BAŞINDA sıfırlar (sonda self-reset DEĞİL — aborted-walk sızıntısı, isik-volume Story 006'nın LP bulgusu)
+- [x] `Run(context)` her sahnede o sahnenin `ShiftZone`'larının `_shiftId`'lerini biriktirir (inaktif objeler dâhil — build içeriği hepsi)
+- [x] `FinalizeWalk(context)` yürüyüş sonunda TEK SEFERDE değerlendirir: `ClueRegistry.Definitions`'taki her `requiredShiftIds` girdisi, birleştirilmiş `shiftId` kümesinde YOKSA o `(clueId, shiftId)` çifti orphaned sayılır
+- [x] Her orphaned çift için bir `Debug.LogWarning` basılır ve çift `GetOrphanedClueIds()` üzerinden okunabilir; **build ENGELLENMEZ** (`context.Fail` ASLA çağrılmaz) — bu bir content-authoring uyarısıdır, çalışma zamanı davranışını bozmaz (GDD AC8)
+- [x] **Yanlış-pozitif yok**: bir clue'nun `requiredShiftIds`'i FARKLI sahnelerdeki iki `shiftId` içeriyorsa ve ikisi de Build Settings'teki herhangi bir sahnede mevcutsa, uyarı ÜRETİLMEZ (mekanizma sapmasının var oluş sebebi — tek-sahne bir kontrol burada yanlış uyarırdı)
+- [x] Sıfır sahne yürüyüşünde (henüz seviye sahnesi yok) sessiz kalır — hiçbir `ClueDefinition` yoksa da sessiz; "hiç yok" da geçerli bir toplam sonuçtur
+- [x] Test şekli: `ValidateScene`/`FinalizeWalk` mantığı DOĞRUDAN test edilir; `[InitializeOnLoad]`/runner kancası ince wiring'dir ve ayrıca reflection'la test edilmez
 
 ## Implementation Notes
 
@@ -97,8 +97,96 @@
 
 ## Test Evidence
 
-**Story Type**: Logic → `game/Assets/Tests/EditMode/anlati_orphaned_clue_test.cs`
-**Status**: [ ] Not yet created
+**Story Type**: Logic → `game/Assets/Tests/EditMode/anlati_orphaned_clue_test.cs` (17 test) + kayıt/faz iddiaları `anlati_build_checks_test.cs`'te (2 test)
+**Status**: [x] Oluşturuldu ve geçiyor — **EditMode 239/239, PlayMode 84/84** (2026-08-10)
+
+| AC | Test |
+|----|------|
+| AC-1 | `OrphanedShiftId_WarnsAndDoesNotFailBuild`, `OrphanWarning_NamesTheAssetAndTheClueId` |
+| AC-2 | `SatisfiedShiftId_DoesNotWarn` |
+| AC-3 | `MultiSceneClue_DoesNotWarn`, `MultiSceneClue_WarnsOnlyForTheGenuinelyMissingHalf` (iki sahneli) |
+| AC-4 | `SecondWalk_DoesNotInheritStaleObservations`, `AbortedWalk_DoesNotLeakStaleShiftIdsIntoTheNextWalk`, `ZeroSceneWalk_IsSilent`, `ZeroSceneWalk_AfterAPopulatedWalk_IsStillSilent`, `EmptyRegistry_IsSilent` |
+| Sınır | `MissingRegistry_IsSilent_…`, `NullSlotInDefinitions_IsSkipped_NotCrashed`, `BlankRequiredShiftIdEntry_IsReportedAsOrphaned`, `BlankZoneShiftId_DoesNotSatisfyAnything`, `ShiftIdMatching_IsCaseSensitive_…`, `MultipleOrphans_AreAllReported`, `DuplicateRequiredEntry_IsReportedOnce` |
+| Kayıt | `AllAnlatiChecks_AreRegistered_WithTheirExpectedPhases`, `RegisteredAnlatiChecks_AreWiredToTheProductionSeams` |
+
+---
+
+## Completion Notes
+
+### Mekanizma sapması artık ÜÇ yerde belgeli
+
+Story'nin "bu notu SİLMEYİN" uyarısı gereği sapma yalnız bu dosyada kalmadı:
+`ClueConsistencyValidator.cs`'in sınıf doc'unda (gerekçesiyle), `BuildValidation/README.md`'de,
+ve **ADR-0007'nin kendisinde** — hem mekanizma maddesinin (satır 152) başına bir
+"UYGULAMADA SÜPERSEDE EDİLDİ" bloğu, hem izlenebilirlik tablosunun satırına
+üstü-çizili + yeni mekanizma. Addendum hâlâ borç, ama artık ADR'ı açan biri
+sapmayı görmeden geçemez.
+
+### Gate bulguları ve uygulananlar
+
+**LP-CODE-REVIEW → CONCERNS.** Kodu onayladı; bulguların HEPSİ çevredeki
+dokümantasyondaydı ve en önemlisi benim Story 004'te yazdığım nottu:
+
+- `BuildValidationRegistry.cs` **kendi kendisiyle çelişiyordu**: satır 11-12
+  "orphaned requiredShiftId BU LİSTEDE DEĞİL — o non-blocking bir uyarı,
+  `IBuildCheck` değil" diyordu, 36 satır altında `new ClueConsistencyValidator()`
+  duruyordu. Story'nin korktuğu "mekanizmayı geri alan okuyucu" senaryosu için
+  bundan iyi yem olamazdı. Sınıf doc'unun "every build-blocking validation check"
+  açılışı da artık yanlıştı — ikisi de düzeltildi.
+- `README.md` aynı yanlış iddiayı taşıyordu; kayıtlı-check tablosuna beşinci
+  check non-blocking işaretiyle eklendi ve "Nasıl check eklenir" adımı 3'e
+  non-blocking varyant yazıldı (çatının artık böyle bir örneği var).
+- `control-manifest.md` satır 102 "hepsi bloklar" gibi okunuyordu — açıklayıcı
+  cümle eklendi (non-blocking olabilir AMA yine aynı utility'ye kaydolur).
+- LP ayrıca doğruladı: `BeginWalk` üç alanı da sıfırlıyor ve `FinalizeWalk` hiç
+  self-reset yapmıyor; `context.Fail`'e giden hiçbir yol yok; paylaşılan static
+  instance'ta biriktirme aggregate sözleşmesinin MEŞRU istisnası (Story 004'ün
+  uyarısı harici KAYNAK cache'lemekle ilgiliydi, yürüyüş gözlemiyle değil) ve bu
+  check kaydı `FinalizeWalk`'ta bir kez yüklüyor — Story 004'ün sahne-başına
+  yüklemesinden daha iyi.
+
+**QL-TEST-COVERAGE → GAPS** (hepsi kapatıldı):
+
+- **`_scenesWalked = 0` sıfırlaması PİNLENMEMİŞTİ**: o satır silinse 15 testin
+  hepsi yeşil kalıyordu, çünkü her test taze bir validator kuruyor ve hiçbiri
+  dolu bir yürüyüşün ARDINDAN sıfır sahneli yürüyüş yapmıyordu. AC-2'nin
+  doğrudan gereği, üç alandan biri kapsamsız. Test eklendi.
+- **Yinelenen girdi (`["x","x"]`) kararsız ve testsizdi** — iki özdeş uyarı
+  basıyordu. `ClueDefinition`'ın tooltip'i yinelenen girdiyi "zararsız" diye
+  yazdığı ve runtime da öyle davrandığı için karar: tanım başına tekilleştir.
+  Pinlendi.
+- **`BlankRequiredShiftIdEntry_…` regex'i yalnız asset adına bakıyordu** — o alt
+  dize `AnlatiContentValidation.Label()`'ın da ürettiği bir şey, yani fixture
+  ileride `OnValidate`'i tetiklerse iddia yanlış log'la tatmin olurdu (Story
+  004'te tam olarak bu yaşandı). `shiftId='…'` şekline bağlandı.
+- **`NullSlotInDefinitions_…` beyan edilmemiş bir uyarı üretiyordu**
+  (`ClueRegistry.OnValidate`'in null-slot ihlali). Açıkça `LogAssert.Expect`
+  edildi ki yan etki kayıtlı olsun.
+- `MultiSceneClue_WarnsOnlyForTheGenuinelyMissingHalf` tek sahneliydi; iki
+  sahneli yapıldı — birleştirme kanıtı ile "blanket-silence değil" kanıtı artık
+  aynı testte.
+- `GetOrphanedClueIds()` CANLI liste dönüyordu; ileride bir editör penceresi
+  tüketirse sonraki build'in `BeginWalk`'ı elindeki sonucu altından temizlerdi.
+  Kopya dönüyor, doc'taki "son TAMAMLANMIŞ yürüyüş" ifadesi de düzeltildi
+  (iptal edilen yürüyüşten sonra BOŞ döner).
+- QL doğruladı: `LogAssert.NoUnexpectedReceived()` uyarılarda GERÇEKTEN düşüyor
+  (paket kaynağı okundu), yani sessizlik iddiaları güçlü; ve hiçbir
+  `LogAssert.Expect` `OnValidate` log'uyla tatmin olamıyor.
+
+### Test fixture hatası (üretim kodu değil)
+
+`AbortedWalk_…` ilk koşuda kırmızıydı: iptal edilen yürüyüşte kurulan bölge yok
+edilmeden ikinci yürüyüşe kalıyordu, `FindObjectsByType` sahne-kör olduğu için
+onu hâlâ görüyordu — yani test kendi fixture sızıntısını ölçüyordu, ölçmek
+istediği gözlem sızıntısını değil. Bölgeler elle yok ediliyor.
+
+### Bilinen sınırlar
+
+| Sınır | Not |
+|-------|-----|
+| Sıfır-sahne guard'ı üretimde fiilen ölü | `IsikVolumeAutomaticPresenceCheck` daha önce kayıtlı ve sıfır sahnede `Fail` ediyor, yani finalize döngüsü buraya ulaşmıyor. Guard yine de doğru ve korunuyor (kayıt sırası değişirse gerekir) |
+| Uyarı yalnız aksi hâlde yeşil build'lerde görünür | Check en sona kayıtlı; bloklayan bir SceneScan hatası önce build'i düşürür. Doğru öncelik (hatalar uyarılardan önce) ama bilinmesi gerekiyor |
+| `FindObjectsByType` sahne başına 6. tam tarama | 2 MVP sahnesinde ihmal edilebilir; paylaşılan bir cache invalidation disiplini gerektirir, ayrı iş kalemi |
 
 ## Dependencies
 

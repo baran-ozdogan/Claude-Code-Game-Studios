@@ -9,6 +9,11 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 2. Instance'ını `BuildValidationRegistry.Checks` dizisine ekle — başka hiçbir yere.
 3. İhlalde `context.Fail("mesaj — offending asset/sahne yolu dahil")` çağır
    (`BuildFailedException` fırlatır, build durur — asla runtime clamp).
+   **Non-blocking varyant**: bir kural bilinçli olarak build'i engellemiyorsa
+   (içerik-yazımı uyarısı; çalışma zamanı davranışını bozmuyor) `context.Fail`
+   YERİNE `Debug.LogWarning` bas ve bunu check'in doc'unda AÇIKÇA gerekçelendir.
+   Tek örnek bugün `Anlati/OrphanedShiftId` (Story 005). Varsayılan bloklamaktır —
+   uyarı, ancak "eksik içerikle build almak meşru bir iş akışı" olduğunda seçilir.
 4. `Phase`:
    - `AssetScan` — sahne AÇMAYAN, ucuz, her zaman önce koşar. Bu bir **maliyet
      sınıfı**, API reçetesi değil: `AssetDatabase.FindAssets` kullanmak ZORUNLU
@@ -34,9 +39,15 @@ Projenin **tek** `IPreprocessBuildWithReport` implementasyonu (`BuildValidationR
 | Işık/Volume (Story 006, 2026-08-09) | `IsikVolume/LightModeMixed`, `IsikVolume/NoSharedLights`, `IsikVolume/NoBoxOverlap`, `IsikVolume/AutomaticZonePresence` (aggregate) | ADR-0005 / TR-isik-016/020/021 |
 | Birinci Şahıs Kontrolcü (Story 006, 2026-08-10) | `Fpc/DecoyPresence` — her MVP seviye sahnesinde (`Depot`/`Ballroom`) en az bir `DecoyInteractable`, hepsi dolu `PromptText` ile | ADR-0003 / TR-fpc-016 (GDD AC17) |
 | Anlatı Durum/İpucu Takibi (Story 004, 2026-08-10) | `Anlati/ClueRegistryKeyResolves`, `Anlati/RequiredShiftIdsNotEmpty`, `Anlati/UniqueClueIds` (üçü AssetScan, `ClueRegistry.Definitions` üzerinde — `FindAssets` DEĞİL), `Anlati/AutomaticZoneNotClueBearing` (SceneScan, AC22 çaprazı) | ADR-0007 / TR-anlati-008/009, TR-isik-021 |
+| Anlatı Durum/İpucu Takibi (Story 005, 2026-08-10) | `Anlati/OrphanedShiftId` — **NON-BLOCKING**, `IBuildCheckAggregate` (SceneScan). Sahnelerin `shiftId`'lerini birleştirir, yürüyüş sonunda hiçbir bölgenin ateşleyemeyeceği `requiredShiftIds` girdilerini `Debug.LogWarning` ile bildirir | ADR-0007 (mekanizma sapması) / TR-anlati-008 |
 
-> **Anlatı notu**: orphaned `requiredShiftId` uyarısı bu tabloda YOKTUR ve bir
-> `IBuildCheck` DEĞİLDİR — build'i bloklamayan bir uyarıdır (Story 005, ADR-0007).
+> **Anlatı mekanizma sapması**: ADR-0007 orphaned kontrolünü
+> `EditorSceneManager.sceneOpened`/`sceneSaved` + `ValidateScene(sceneId)` ile
+> tarif ediyordu — **tek sahne** gören bir tetikleyici. GDD'nin iddiası proje
+> geneli olduğu için (MVP'de Depot ve Ballroom ayrı sahneler, `ClueRegistry`
+> sahne-üstü), tek-sahne bir kontrol çok-sahneli her meşru clue'da YANLIŞ
+> uyarırdı. Kullanıcı kararıyla build-time aggregate'e taşındı; ADR'ın iki kısıtı
+> (non-blocking, player build'ine girmez) korundu. **ADR-0007 addendum'u bekliyor.**
 >
 > **Kayıt konumu**: anlati'nın üç içerik check'i `ClueRegistry`'yi Addressable
 > ADRESİ üzerinden bulur (`entry.address` → `entry.AssetPath` → `LoadAssetAtPath`),

@@ -1311,3 +1311,32 @@ Epic: Anlatı Durum/İpucu Takibi
 Feature: İpucu takibi Foundation
 Task: Story 004 kapandı (4/5) — Story 005 son
 <!-- /STATUS -->
+
+## Session Extract — anlati Story 005 KAPANDI + EPIC TAMAMLANDI 2026-08-10
+- Verdict: COMPLETE — Story 005 (orphaned shiftId uyarısı, non-blocking aggregate). **ANLATI EPIC'İ 5/5 TAMAMLANDI.**
+- Tests: **EditMode 239/239, PlayMode 84/84**
+- Story 004 CI YEŞİL (a368e97 completed success)
+- Files: Editor/BuildValidation/ClueConsistencyValidator.cs (YENİ), BuildValidationRegistry.cs, README.md; Tests/EditMode/anlati_orphaned_clue_test.cs (YENİ, 17 test); docs/architecture/adr-0007 (sapma işareti x2), control-manifest.md
+- Beş anlati check kayıtlı: 4 bloklayan (Story 004) + 1 NON-BLOCKING uyarı (Story 005)
+
+### Gate bulguları
+- LP: `BuildValidationRegistry.cs` KENDİ KENDİSİYLE ÇELİŞİYORDU — Story 004'te yazdığım "orphaned requiredShiftId BU LİSTEDE DEĞİL, IBuildCheck değil" notu, 36 satır altında new ClueConsistencyValidator() dururken. README + control-manifest + ADR-0007'de de aynı sınıf düzeltmeler yapıldı.
+- QL: BeginWalk'taki `_scenesWalked = 0` PİNLENMEMİŞTİ (silinse 15 testin hepsi yeşil kalıyordu — her test taze validator kuruyordu). Test eklendi. Ayrıca yinelenen girdi `["x","x"]` kararsızdı → tanım başına tekilleştirildi; GetOrphanedClueIds canlı liste dönüyordu → kopya; iki regex/beyan düzeltmesi.
+- Test fixture hatası (üretim değil): AbortedWalk testi iptal yürüyüşünün bölgesini yok etmiyordu, FindObjectsByType sahne-kör olduğu için ikinci yürüyüşe sızıyordu.
+
+### KALAN TEK BORÇ: ADR-0007 addendum'u (2 madde, ikisi de UYGULANDI ama resmileşmedi)
+1. Abonelik FACADE static ctor'ında (State ctor'ında değil) — Story 001 tespit, 003 uygulama
+2. Orphaned kontrolü build-time aggregate'te (sceneOpened/sceneSaved değil) — Story 005 uygulama
+`/architecture-decision` ile tek pakette açılmalı. Sapmalar kodda + README'de + ADR'ın kendisinde işaretli.
+
+### Dışarı çıkan iş kalemleri (anlati EPIC.md tablosunda, 6 kalem)
+En önemlisi: **CI'da player-build job'ı YOK** → BEŞ epic'in TÜM build-blocking check'leri CI'da hiç koşmuyor. Proje geneli kapsam boşluğu, CI/DevOps iş kalemi.
+Diğerleri: isik-volume FD-1 (RaiseShiftStateChanged try/catch), boş ClueRegistry presence check'i, player-build catalog doğrulaması, m_BuildAddressablesWithPlayerBuild EditorPref, FindObjectsByType kör noktası.
+
+- NEXT: Foundation'da kalan epic'ler — seviye-sahne-gecisi, adaptif-ses-sistemi (henüz /create-stories yapılmadı). Ya da ADR-0007 addendum'u.
+
+<!-- STATUS -->
+Epic: Anlatı Durum/İpucu Takibi — TAMAMLANDI
+Feature: —
+Task: ADR-0007 addendum borcu / sıradaki Foundation epic'i
+<!-- /STATUS -->

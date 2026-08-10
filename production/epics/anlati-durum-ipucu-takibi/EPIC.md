@@ -6,7 +6,7 @@
 > **Governing ADRs**: ADR-0007 (+ADR-0015 in-place rejim)
 > **Engine Risk**: LOW — projenin ilk Addressables tüketicisi (mekanizma stabil, kullanım yeni)
 > **Control Manifest Version**: 2026-08-09
-> **Status**: Ready
+> **Status**: Complete
 > **Stories**: 5 stories
 
 ## Overview
@@ -40,13 +40,17 @@
 | 002 | ClueDefinition/ClueRegistry + ters indeks + Held handler mantığı | Logic | Complete | ADR-0007 |
 | 003 | Addressables lazy-load + gerçek Işık/Volume aboneliği | Integration | Complete | ADR-0007 (+0015) |
 | 004 | Build-blocking doğrulama dörtlüsü | Logic | Complete | ADR-0007 (+0014) |
-| 005 | Orphaned shiftId uyarısı (build-time aggregate, non-blocking) | Logic | Ready | ADR-0007 (+0014) |
+| 005 | Orphaned shiftId uyarısı (build-time aggregate, non-blocking) | Logic | Complete | ADR-0007 (+0014) |
 
 **Bağımlılık grafiği** (düz zincir DEĞİL): 001 → 002 → {003, 004, 005} — son üçü 002'ye bağlı ama BİRBİRİNE bağlı değil, paralel ilerleyebilir.
 
 ## Next Step
 
-Story 001+002+003+004 Complete (4/5). Kalan: yalnız 005 (orphaned shiftId, build-time aggregate uyarısı). Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda.
+**EPIC TAMAMLANDI — 5/5 story Complete** (2026-08-10). EditMode 239/239, PlayMode 84/84.
+
+Story 003 bu projenin İLK gerçek Addressables tüketicisiydi: `Assets/AddressableAssetsData/` + `Assets/Settings/ClueRegistry.asset` (anahtar `"ClueRegistry"`) artık repoda. Story 004+005 beş build check’i ekledi (dördü bloklayan, biri non-blocking uyarı).
+
+**Kapanış öncesi TEK borç: ADR-0007 addendum’u** — aşağıdaki iki madde `/architecture-decision` ile açılmalı. Sapmalar kodda, README’de ve ADR’ın kendisinde işaretli, ama addendum resmileşmedi.
 
 ### ADR-0007 addendum borcu (epic kapanışında tek pakette açılacak)
 
@@ -59,11 +63,14 @@ Story 001+002+003+004 Complete (4/5). Kalan: yalnız 005 (orphaned shiftId, buil
    kalıcı event'e bir handler daha sızdırırdı; proje emsali `GeceOturumDurumu`
    de facade static ctor kullanıyor. Story 003'ün testleri bu şekli sabitliyor
    (`FacadeFirstAccess_SubscribesExactlyOnce_AndSurvivesReset`).
-2. **Orphaned-shiftId kontrolünün mekanizması (Story 005, henüz uygulanmadı)**:
+2. **Orphaned-shiftId kontrolünün mekanizması (Story 005'te UYGULANDI)**:
    kullanıcı kararıyla ADR-0007'nin `EditorSceneManager.sceneOpened/sceneSaved`
    tetikleyicisinden `IBuildCheckAggregate` build-yürüyüşüne taşındı (GDD'nin
    proje-geneli iddiası tek-sahne bir kontrolle verilemiyordu — çok-sahneli
-   clue'larda yanlış-pozitif). Story 005 sapmayı kendi dosyasında belgeliyor.
+   clue'larda yanlış-pozitif). ADR'ın iki kısıtı korundu: non-blocking ve player
+   build'ine girmez. Uygulama: `ClueConsistencyValidator.cs`; sapma ADR-0007'nin
+   satır 152'sinde ve izlenebilirlik tablosunda işaretli, `MultiSceneClue_DoesNotWarn`
+   testi geri alınmasını engelliyor.
 
 ### Dışarı çıkan iş kalemleri
 
